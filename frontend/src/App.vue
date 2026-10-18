@@ -6,7 +6,10 @@ const { locale, t } = useI18n()
 
 function selectLocale(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
-  if (value === 'en' || value === 'cs') locale.value = value
+  if (value === 'en' || value === 'cs') {
+    locale.value = value
+    document.documentElement.lang = value
+  }
 }
 </script>
 
@@ -23,7 +26,7 @@ function selectLocale(event: Event): void {
           class="form-select form-select-sm"
           style="width: auto"
           :value="locale"
-          aria-label="Interface language"
+          :aria-label="t('languageControl')"
           @change="selectLocale"
         >
           <option value="en">English</option>
