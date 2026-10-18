@@ -127,7 +127,7 @@ Sources:
 - https://github.com/ueberdosis/tiptap
 - https://tiptap.dev/docs/editor/getting-started/overview
 
-**Preliminary recommendation:** Start with the structured blocks already described in the functional specification. Revisit Tiptap if actual author needs justify formatting beyond straightforward text/media composition.
+**Agreed PoC choice:** Implement a **small application-owned Vue block editor** rather than integrating a general-purpose rich-text editor. Content blocks are typed text/image/video records with stable IDs; use a shared `ContentBlocksEditor` for prompts, options and matching items, and a `ContentBlocksViewer` for learners. Start with adding/removing/reordering blocks via accessible buttons; avoid drag-and-drop. Text stays plain text initially; revisit a richer editor such as Tiptap only if actual author needs justify it. Keep the content model and component boundaries independent of the editing widget so it can be replaced later.
 
 ## 7. Matching-task interaction
 
@@ -165,12 +165,12 @@ Verify with the target hosting provider:
 - JSON files for tests; ordinary files for uploaded media.
 - **Bootstrap 5 CSS** for styling/layout, with Vue controlling interactivity.
 - **FilePond** behind an application-owned `MediaUploader` wrapper; Uppy is a possible later replacement.
-- Structured text/image/video blocks; matching interaction designed after a mockup.
+- **Application-owned Vue block editor** for structured text/image/video content, shared across question types; matching interaction designed after a mockup.
 
 **Decisions intentionally deferred:**
 
 1. FilePond chosen for PoC (subject to hosting validation); Bootstrap 5 CSS already selected (no general Vue component suite planned).
-2. Whether the editor needs rich text beyond simple blocks.
+2. Rich-text formatting is deferred; a small Vue block editor is selected for PoC.
 3. Whether the first API justifies a routing framework.
 4. Detailed scoring rules and matching UX.
 5. Exact video size limits and whether resumable upload is needed.
