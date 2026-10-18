@@ -1,0 +1,13 @@
+# Example for the domain document root after copying frontend/dist/* into public_html.
+# Adapt and verify for the actual hosting provider before production use.
+Options -Indexes
+RewriteEngine On
+
+# API front controller (preserve /api/* request path for Slim routes).
+RewriteRule ^api/index\.php$ - [L]
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Static frontend and actual media files pass through unchanged.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . index.html [L]
