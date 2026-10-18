@@ -7,6 +7,7 @@ export const i18n = createI18n({
   messages: {
     en: {
       home: 'Home',
+      languageControl: 'Interface language',
       author: 'Author area',
       title: 'TestBraid',
       status: 'Foundation preview',
@@ -20,6 +21,7 @@ export const i18n = createI18n({
     },
     cs: {
       home: 'Úvod',
+      languageControl: 'Jazyk rozhraní',
       author: 'Administrace',
       title: 'TestBraid',
       status: 'Základ projektu',
