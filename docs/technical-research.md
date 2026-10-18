@@ -1,6 +1,6 @@
 # TestBraid — Preliminary Technical Research
 
-**Status:** Working notes; Bootstrap 5 CSS and FilePond agreed for PoC, other library decisions pending  
+**Status:** Working notes; frontend, uploader, block editor, and PHP API framework choices agreed for PoC  
 **Date:** 2026-10-18  
 **Scope:** Reusable components and libraries for the intended Vue 3 + PHP + JSON/filesystem architecture.
 
@@ -105,7 +105,7 @@ Sources:
 - https://github.com/nikic/FastRoute
 - https://github.com/slimphp/Slim
 
-**Preliminary recommendation:** Keep the first PoC's PHP layer small; evaluate FastRoute if a router is needed. Do not adopt Slim just to expose a handful of endpoints. Composer packages can be installed during development and deployed as vendor files; Composer itself need not run on the production host, subject to hosting constraints.
+**Agreed PoC choice:** Use **Slim 4** for HTTP routing, middleware and uniform API error handling. Use **native PHP sessions** and built-in password hashing/verification for the small author population, without a separate authentication platform or database. Slim is not an authentication implementation; the project will implement secure login/session authorization, CSRF checks, login-attempt throttling and backend permission enforcement explicitly. Choose a compatible PSR-7 implementation for Slim at setup. Composer runs during development/build; deploy prepared `vendor/` dependencies to the host without requiring Composer there, subject to hosting verification.
 
 ## 6. Question content editing
 
@@ -161,7 +161,7 @@ Verify with the target hosting provider:
 **Reasonable baseline to test:**
 
 - Vue 3, TypeScript, Vite, Vue Router, Vue I18n.
-- PHP with native sessions, secure password hashes, and a small API.
+- **Slim 4 PHP API**, with native PHP sessions, secure password hashes and explicit authorization/CSRF middleware.
 - JSON files for tests; ordinary files for uploaded media.
 - **Bootstrap 5 CSS** for styling/layout, with Vue controlling interactivity.
 - **FilePond** behind an application-owned `MediaUploader` wrapper; Uppy is a possible later replacement.
@@ -171,7 +171,7 @@ Verify with the target hosting provider:
 
 1. FilePond chosen for PoC (subject to hosting validation); Bootstrap 5 CSS already selected (no general Vue component suite planned).
 2. Rich-text formatting is deferred; a small Vue block editor is selected for PoC.
-3. Whether the first API justifies a routing framework.
+3. Slim 4 selected for the PoC; exact PSR-7 implementation and backend package versions remain to be selected during setup.
 4. Detailed scoring rules and matching UX.
 5. Exact video size limits and whether resumable upload is needed.
 6. Repository license and dependency license policy.
