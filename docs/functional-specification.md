@@ -5,7 +5,7 @@
 **Project:** TestBraid  
 **Primary project language:** English
 
-> This document captures the requirements discussed so far. It distinguishes agreed requirements from suggested defaults and open decisions. It is not an implementation plan, and the scope of the first proof of concept has not yet been selected.
+> This document captures the requirements discussed so far. It distinguishes agreed requirements from suggested defaults and open decisions. It is not an implementation plan. The scope of the first proof of concept is described separately in [PoC 1 scope](poc-scope.md).
 
 ## 1. Purpose and audience
 
@@ -192,10 +192,10 @@ Source repository: [Radouch/TestBraid](https://github.com/Radouch/TestBraid) (pr
 1. Refine and agree on the functional specification.
 2. Select the project name (**TestBraid** selected as the working name).
 3. Research existing open-source solutions and maintained, appropriately licensed Vue/PHP components before implementing commonplace functionality anew.
-4. Define a **small proof of concept / MVP**, validating both essential interactions and deployment on the target shared webhost.
+4. Define a **small proof of concept / MVP**, validating both essential interactions and deployment on the target shared webhost (**done**: [PoC 1 scope](poc-scope.md)).
 5. Implement, review, deploy and validate iteratively in the GitHub repository.
 
-The precise scope of the PoC/MVP has **not** yet been decided.
+The scope and acceptance criteria for PoC 1 are agreed in [PoC 1 scope](poc-scope.md).
 
 ## 13. Requirements and priorities at a glance
 
