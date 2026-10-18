@@ -1,6 +1,6 @@
 # TestBraid — Preliminary Technical Research
 
-**Status:** Working notes; frontend styling choice agreed, other library decisions pending  
+**Status:** Working notes; Bootstrap 5 CSS and FilePond agreed for PoC, other library decisions pending  
 **Date:** 2026-10-18  
 **Scope:** Reusable components and libraries for the intended Vue 3 + PHP + JSON/filesystem architecture.
 
@@ -62,7 +62,7 @@ Sources:
 - https://github.com/pqina/filepond
 - https://github.com/pqina/filepond/blob/master/LICENSE
 
-**Preliminary recommendation:** With Bootstrap CSS selected (rather than PrimeVue), compare **FilePond** and **Uppy** as standalone upload widgets. A simple native file input remains a fallback if it meets the PoC needs. No upload library has been chosen. Whichever UI approach we select, backend validation, authorization and secure storage remain our responsibility.
+**Agreed PoC choice:** Use **FilePond**, its Vue adapter and only the necessary validation/preview plugins. Integrate through a local `MediaUploader` Vue component that exposes a stable application-level API (media ID and metadata), without leaking FilePond-specific state into the question editor. **Uppy** remains the alternative if real-world hosting or large-file requirements expose limitations. Whichever UI approach we select, backend validation, authorization and secure storage remain our responsibility.
 
 For big video files we must test hosting limits. A client library cannot bypass PHP `upload_max_filesize`, `post_max_size`, timeouts or server-side restrictions merely by displaying a progress bar. Chunked/resumable upload would require explicit backend support.
 
@@ -164,12 +164,12 @@ Verify with the target hosting provider:
 - PHP with native sessions, secure password hashes, and a small API.
 - JSON files for tests; ordinary files for uploaded media.
 - **Bootstrap 5 CSS** for styling/layout, with Vue controlling interactivity.
-- An upload widget to be selected separately (FilePond or Uppy are candidates).
+- **FilePond** behind an application-owned `MediaUploader` wrapper; Uppy is a possible later replacement.
 - Structured text/image/video blocks; matching interaction designed after a mockup.
 
 **Decisions intentionally deferred:**
 
-1. Upload widget; Bootstrap 5 CSS is already selected (no general Vue component suite planned).
+1. FilePond chosen for PoC (subject to hosting validation); Bootstrap 5 CSS already selected (no general Vue component suite planned).
 2. Whether the editor needs rich text beyond simple blocks.
 3. Whether the first API justifies a routing framework.
 4. Detailed scoring rules and matching UX.
