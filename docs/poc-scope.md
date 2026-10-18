@@ -200,11 +200,11 @@ This is one agreed PoC milestone split into two increments, not two separate pro
 
 **Note:** Draft/published state is included because publication and protection of unpublished content are essential to the agreed scenario; more elaborate editorial workflows are excluded.
 
-## 7. Library and architecture decisions still pending
+## 7. Library and architecture decisions
 
-Agree on these **after this scope document**, informed by the technical-research document and deployment constraints:
+The frontend styling choice above is agreed. The remaining choices require separate decisions, informed by technical research and hosting constraints:
 
-- Which Vue component library (if any) to adopt.
+- **Agreed:** Use Vue 3 with **Bootstrap 5 CSS** for layouts and basic styling, without Bootstrap JS manipulating Vue-controlled DOM. No general Vue component suite for the PoC.
 - Which upload widget to use, with native PHP handling on the server.
 - How to implement the simple content-block editor without excessive dependencies.
 - Whether PHP needs a microframework/router or just small native endpoints.
