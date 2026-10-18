@@ -25,7 +25,7 @@ The goal is to **avoid reimplementing established components** while keeping dep
 | Translations | Vue I18n | Recommended, including admin, errors and feedback messages |
 | Styling and layout | Bootstrap 5 CSS | **Agreed** for PoC; interactive behavior remains controlled by Vue |
 | Vue component suites | PrimeVue / BootstrapVueNext | Not planned for PoC; re-evaluate only if a specific need arises |
-| Runtime JSON validation | Ajv | Candidate; useful for validating data in the browser and tests |
+| JSON validation | JSON Schema Draft 2020-12 + Ajv (client) + Opis JSON Schema (PHP) | **Agreed**; use shared portable schemas and additional semantic checks |
 
 Sources:
 - Vue TypeScript: https://vuejs.org/guide/typescript/overview
@@ -35,6 +35,8 @@ Sources:
 - Bootstrap Vue guidance: https://getbootstrap.com/docs/5.3/getting-started/javascript/#using-bootstrap-with-javascript-frameworks
 - PrimeVue (considered, not selected): https://github.com/primefaces/primevue
 - Ajv: https://github.com/ajv-validator/ajv
+- Opis JSON Schema: https://github.com/opis/json-schema
+- JSON Schema specification: https://json-schema.org/draft/2020-12/
 
 **Agreed decision:** Use **Vue 3 + Bootstrap 5 CSS** for the PoC. Use standard HTML controls and Vue components for interaction. Avoid Bootstrap's JavaScript plugins manipulating Vue-managed DOM. Do not adopt a general-purpose Vue component suite for now; add focused dependencies only when justified. Vue Router and Vue I18n remain recommended.
 
@@ -137,8 +139,9 @@ A click-to-select or two-column matching interface may be more accessible and ea
 
 ## 8. Data validation and persistence
 
-- Define a versioned JSON schema for test files once the data model is agreed.
-- Ajv can validate draft test data in the browser, but **PHP must independently validate incoming data on the server**; frontend validation is not a security boundary.
+- **Agreed:** JSON Schema Draft 2020-12 defines shared, versioned schemas for tests/groups/media; Ajv validates in Vue and Opis JSON Schema validates in PHP.
+- **PHP must independently validate incoming data on the server**; frontend validation is not a security boundary. Both sides must also perform/check applicable semantic constraints.
+- See [data model and API proposal](data-model-and-api.md) for the proposed document layout, semantics, endpoints, file publishing and validation stages.
 - Save JSON atomically where feasible and back up files and referenced media together.
 - Use stable identifiers independent of filenames and user-facing labels.
 - Do not build full reusable question banks or a generalized plugin platform in the first iteration.
@@ -166,6 +169,7 @@ Verify with the target hosting provider:
 - **Bootstrap 5 CSS** for styling/layout, with Vue controlling interactivity.
 - **FilePond** behind an application-owned `MediaUploader` wrapper; Uppy is a possible later replacement.
 - **Application-owned Vue block editor** for structured text/image/video content, shared across question types; matching interaction designed after a mockup.
+- **JSON Schema Draft 2020-12, Ajv and Opis JSON Schema** for portable structure validation, complemented by application semantic validation.
 
 **Decisions intentionally deferred:**
 
@@ -177,4 +181,4 @@ Verify with the target hosting provider:
 6. Repository license and dependency license policy.
 7. Detailed PoC implementation plan; scope and acceptance criteria are in [PoC 1 scope](poc-scope.md).
 
-These notes are **not** a declaration that any listed library is already selected, installed or tested against the real hosting provider.
+The selected stack is recorded above; all remaining design details are proposals until reviewed. No dependencies have yet been installed or tested against the target hosting provider.
