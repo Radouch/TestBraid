@@ -202,13 +202,13 @@ This is one agreed PoC milestone split into two increments, not two separate pro
 
 ## 7. Library and architecture decisions
 
-The following PoC components are now agreed; the remaining choices require separate decisions, informed by technical research and hosting constraints:
+The following PoC components are now agreed; concrete formats and endpoints are proposed in [data model and API design](data-model-and-api.md) and remain subject to review:
 
 - **Agreed:** Use Vue 3 with **Bootstrap 5 CSS** for layouts and basic styling, without Bootstrap JS manipulating Vue-controlled DOM. No general Vue component suite for the PoC.
 - **Agreed:** FilePond for the PoC upload widget behind a `MediaUploader` abstraction, with native PHP handling on the server. Uppy can replace it if needed.
 - **Agreed:** A small application-owned Vue block editor for typed text/image/video blocks, with reusable `ContentBlocksEditor` and `ContentBlocksViewer` components, simple reorder controls, and no rich-text editor dependency. This may be replaced later without changing the data model.
 - **Agreed:** Slim 4 for the PHP API, using native PHP sessions and secure password hashing. Authorization, CSRF checks, login throttling and other security requirements remain necessary application responsibilities; no separate identity service or database.
-- JSON validation approach on the frontend **and** the backend.
+- **Agreed:** JSON Schema Draft 2020-12, Ajv for Vue and Opis JSON Schema for PHP, plus semantic validation for references and publication rules. See [data model and API design](data-model-and-api.md) for the proposed concrete format.
 - Accepted image/video formats and practical upload limits.
 - Draft media exposure, file deletion and asset-reuse policy.
 - Accessible matching interaction and exact evaluation screen behavior.
