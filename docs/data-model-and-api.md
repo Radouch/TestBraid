@@ -1,6 +1,6 @@
 # TestBraid — Data Model and API Design
 
-**Status:** Proposal for review — not yet an implementation contract  
+**Status:** Technical proposal; three core design choices approved, remaining details subject to review  
 **Date:** 2026-10-18  
 **Target:** PoC-A foundation and PoC-B usable vertical slice  
 **Companion documents:** [Functional specification](functional-specification.md), [PoC scope](poc-scope.md), [Technical research](technical-research.md)
@@ -16,7 +16,7 @@ The following technical choices were agreed before this proposal:
 - JSON Schema **Draft 2020-12** for structural contracts, validated by **Ajv** in the client and **Opis JSON Schema** in PHP.
 - Learners remain anonymous, and attempts/results are not persisted.
 
-This document **proposes**, but does not yet finalize, the precise JSON fields, endpoint paths and media publication policy. All names and examples are illustrative until reviewed.
+**Approved design choices:** (1) complete edits saved to already-published tests become visible immediately; (2) uploaded media remains private until publication, when referenced assets become publicly accessible as static files; (3) matching questions store independently identified left/right items with explicit ID-based associations. The exact JSON field names, endpoint paths, file-copy/cleanup mechanics and other design defaults remain proposals until reviewed.
 
 Guiding principles:
 
@@ -197,7 +197,7 @@ Publication checks:
 - `leftItems` and `rightItems`: independently identified content items.
 - `matches`: associations `{leftId, rightId}` holding the correct one-to-one mapping.
 
-This representation deliberately **does not assume parallel array indices are the answer**. The UI may shuffle the display order independently on each side.
+**Approved representation:** This model deliberately **does not assume parallel array indices are the answer**. The UI may shuffle the display order independently on each side. While the PoC enforces one-to-one correspondence, storing items separately from the `matches` relationship leaves room for later distractors or different matching rules.
 
 Publication checks:
 
@@ -257,9 +257,9 @@ Each uploaded asset has a private metadata record: `storage/media/<media-id>.jso
 - Media attachment is via `mediaId`, which can be reused in more than one task.
 - Do not implement general media deletion in PoC 1; preserve unused uploads until a deliberate cleanup policy is designed.
 
-### 5.1 Proposed publication and preview policy
+### 5.1 Approved media visibility policy; proposed implementation
 
-**Goal:** draft attachments remain private, while published videos are served as efficient static files.
+**Approved policy:** Draft attachments remain private; assets used by published tests are exposed as static files served efficiently by Apache, including video. The mechanics below (staging, file copying/linking, shared references and cleanup) remain implementation proposals to validate on the actual host.
 
 1. All uploads start in private storage, accessible for preview only through an authenticated author endpoint.
 2. When a test is published, the backend validates its media references and makes approved media available as files under `public/media/<media-id>.<extension>` (copying or safely linking as supported by the host).
@@ -273,11 +273,11 @@ This makes publication more complex than a single JSON write, but avoids exposin
 
 ## 6. Draft and published lifecycle
 
-Proposed initial states: `draft` and `published`.
+Initial states for the PoC: `draft` and `published`.
 
 - **Save draft:** Structural schema validity required, but a question can be incomplete (empty prompt, incomplete options, incomplete matches). Metadata and references must still have structurally valid types.
 - **Publish:** Run structural and **publication-ready semantic checks**, verify group and media references, stage public media, then change status to `published` and set `publishedAt`.
-- **Edit published test:** To satisfy the PoC acceptance flow, saving a published test **updates its public content immediately**, but only if the resulting test remains publication-ready. Otherwise return a validation error and preserve the previously saved test.
+- **Edit published test (approved behavior):** Saving a published test **updates its public content immediately**, but only if the resulting test remains publication-ready. Otherwise return a validation error and preserve the previously saved test.
 - **Unpublish:** Proposed as a small API operation, but a dedicated UI is optional in PoC 1; it must stop public test access and handle public media references correctly.
 - **Learner:** Only published tests are accessible. Publishing does **not** create learner accounts or store answers.
 
@@ -521,20 +521,25 @@ The exact physical layout depends on the hosting provider. Shared schemas and PH
 - Existing public assets remain available if shared by another published test.
 - English/Czech UI and a test whose language is neither English nor Czech.
 
-## 12. Points for review before implementation
+## 12. Decisions and remaining points for review
 
-**Proposed defaults (request confirmation if materially important):**
+**Approved in discussion:**
+
+1. Saving a valid edit to an already-published test updates the published content immediately; incomplete/invalid changes must be rejected.
+2. Uploaded media is private initially. Media referenced by published tests becomes accessible as static public files, while draft-only attachments remain inaccessible anonymously.
+3. Matching questions represent the left and right collections separately and store correct relationships by stable item IDs. The PoC continues to enforce one-to-one matching.
+
+**Implementation details still proposed (not yet individually approved):**
 
 1. UUID v4 and file-per-entity JSON storage.
-2. `leftItems` / `rightItems` with explicit `matches` rather than parallel pair arrays.
-3. Minimum of two pairs for publishing a matching question.
-4. Direct saved edits to already published tests must remain complete and appear immediately.
-5. Private uploads with static public copies created when referenced by published tests; define safe cleanup rules.
-6. Public access initially via a shared test URL, not a full public group directory.
-7. `PUT` replaces all author-editable test fields and questions; status transitions have dedicated endpoints.
-8. Test and media file-size/count limits to be determined after host measurements.
+2. At least two pairs required to publish a matching question.
+3. Exact strategy for staging/copying public media, handling shared references, cleanup and recovery after partial failures.
+4. Direct public access via share URL initially, without a public directory of groups/tests.
+5. `PUT` replaces all editable test fields, while status transitions use dedicated endpoints.
+6. Test and media size/count limits based on measurements on the target host.
+7. Exact API response shapes, error codes, route names and the selected PSR-7 implementation.
 
-These are technical proposals, **not additional approved functional requirements**.
+This distinction separates the approved product/architecture choices from the detailed contract that will be finalized before implementation.
 
 ## 13. References
 
