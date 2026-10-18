@@ -22,9 +22,10 @@ Randomized test generation from question banks is a **future feature**, not part
 - [Functional specification](docs/functional-specification.md) — agreed requirements, priorities and open questions.
 - [PoC 1 scope](docs/poc-scope.md) — agreed functionality, PoC-A/PoC-B increments, and acceptance criteria.
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.
+- [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 
 ## Status
 
-We have agreed the first PoC scope and acceptance criteria. The library choices, detailed architecture and implementation are still pending.
+The PoC scope and main library choices have been agreed. A concrete data model/API design has been proposed for review; implementation has not started.
 
 Project documentation and source code will be primarily in English.
