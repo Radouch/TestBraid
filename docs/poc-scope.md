@@ -202,10 +202,10 @@ This is one agreed PoC milestone split into two increments, not two separate pro
 
 ## 7. Library and architecture decisions
 
-The frontend styling choice above is agreed. The remaining choices require separate decisions, informed by technical research and hosting constraints:
+Frontend styling and the PoC upload widget are now agreed. The remaining choices require separate decisions, informed by technical research and hosting constraints:
 
 - **Agreed:** Use Vue 3 with **Bootstrap 5 CSS** for layouts and basic styling, without Bootstrap JS manipulating Vue-controlled DOM. No general Vue component suite for the PoC.
-- Which upload widget to use, with native PHP handling on the server.
+- **Agreed:** FilePond for the PoC upload widget behind a `MediaUploader` abstraction, with native PHP handling on the server. Uppy can replace it if needed.
 - How to implement the simple content-block editor without excessive dependencies.
 - Whether PHP needs a microframework/router or just small native endpoints.
 - JSON validation approach on the frontend **and** the backend.
