@@ -8,5 +8,5 @@ const route = useRoute()
 
 <template>
   <h1 class="h2">{{ t('learnerPlaceholder') }}</h1>
-  <p class="text-secondary">{{ t('learnerTest', { id: route.params.id }) }}</p>
+  <p class="text-secondary">{{ t('learnerTest', { id: String(route.params.id) }) }}</p>
 </template>
