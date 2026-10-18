@@ -206,7 +206,7 @@ Frontend styling and the PoC upload widget are now agreed. The remaining choices
 
 - **Agreed:** Use Vue 3 with **Bootstrap 5 CSS** for layouts and basic styling, without Bootstrap JS manipulating Vue-controlled DOM. No general Vue component suite for the PoC.
 - **Agreed:** FilePond for the PoC upload widget behind a `MediaUploader` abstraction, with native PHP handling on the server. Uppy can replace it if needed.
-- How to implement the simple content-block editor without excessive dependencies.
+- **Agreed:** A small application-owned Vue block editor for typed text/image/video blocks, with reusable `ContentBlocksEditor` and `ContentBlocksViewer` components, simple reorder controls, and no rich-text editor dependency. This may be replaced later without changing the data model.
 - Whether PHP needs a microframework/router or just small native endpoints.
 - JSON validation approach on the frontend **and** the backend.
 - Accepted image/video formats and practical upload limits.
