@@ -1,6 +1,6 @@
 # TestBraid — Preliminary Technical Research
 
-**Status:** Working notes, not a technology decision  
+**Status:** Working notes; frontend styling choice agreed, other library decisions pending  
 **Date:** 2026-10-18  
 **Scope:** Reusable components and libraries for the intended Vue 3 + PHP + JSON/filesystem architecture.
 
@@ -23,17 +23,20 @@ The goal is to **avoid reimplementing established components** while keeping dep
 | Framework/build | Vue 3 + TypeScript + Vite | Recommended; build-time Node.js only |
 | Client routes | Vue Router 4 | Recommended; check Apache SPA fallback behavior |
 | Translations | Vue I18n | Recommended, including admin, errors and feedback messages |
-| Component library | PrimeVue | Candidate; MIT and includes forms, dialogs, and an upload control |
+| Styling and layout | Bootstrap 5 CSS | **Agreed** for PoC; interactive behavior remains controlled by Vue |
+| Vue component suites | PrimeVue / BootstrapVueNext | Not planned for PoC; re-evaluate only if a specific need arises |
 | Runtime JSON validation | Ajv | Candidate; useful for validating data in the browser and tests |
 
 Sources:
 - Vue TypeScript: https://vuejs.org/guide/typescript/overview
 - Vue Router: https://router.vuejs.org/guide/
 - Vue I18n: https://vue-i18n.intlify.dev/guide/introduction
-- PrimeVue: https://github.com/primefaces/primevue
+- Bootstrap: https://getbootstrap.com/docs/5.3/getting-started/introduction/
+- Bootstrap Vue guidance: https://getbootstrap.com/docs/5.3/getting-started/javascript/#using-bootstrap-with-javascript-frameworks
+- PrimeVue (considered, not selected): https://github.com/primefaces/primevue
 - Ajv: https://github.com/ajv-validator/ajv
 
-**Recommendation:** Use the first three. Choose a visual component library only after we have a basic editor mockup; it may reduce form-building work but should not dictate the question data model.
+**Agreed decision:** Use **Vue 3 + Bootstrap 5 CSS** for the PoC. Use standard HTML controls and Vue components for interaction. Avoid Bootstrap's JavaScript plugins manipulating Vue-managed DOM. Do not adopt a general-purpose Vue component suite for now; add focused dependencies only when justified. Vue Router and Vue I18n remain recommended.
 
 ## 3. Upload widgets
 
@@ -59,18 +62,7 @@ Sources:
 - https://github.com/pqina/filepond
 - https://github.com/pqina/filepond/blob/master/LICENSE
 
-### PrimeVue FileUpload
-
-- Convenient when using PrimeVue for the wider application.
-- Provides a customizable upload handler that can call our PHP API.
-- MIT licensed with PrimeVue.
-- Simpler integration if we only need a file picker plus progress; check video upload ergonomics.
-
-Sources:
-- https://primevue.dev/fileupload/
-- https://github.com/primefaces/primevue/blob/master/LICENSE.md
-
-**Preliminary recommendation:** Try PrimeVue's upload control if we adopt PrimeVue, otherwise compare FilePond against Uppy. Do **not** implement our own elaborate file picker. Whichever widget we choose, backend validation, ownership and secure storage remain our responsibility.
+**Preliminary recommendation:** With Bootstrap CSS selected (rather than PrimeVue), compare **FilePond** and **Uppy** as standalone upload widgets. A simple native file input remains a fallback if it meets the PoC needs. No upload library has been chosen. Whichever UI approach we select, backend validation, authorization and secure storage remain our responsibility.
 
 For big video files we must test hosting limits. A client library cannot bypass PHP `upload_max_filesize`, `post_max_size`, timeouts or server-side restrictions merely by displaying a progress bar. Chunked/resumable upload would require explicit backend support.
 
@@ -171,17 +163,18 @@ Verify with the target hosting provider:
 - Vue 3, TypeScript, Vite, Vue Router, Vue I18n.
 - PHP with native sessions, secure password hashes, and a small API.
 - JSON files for tests; ordinary files for uploaded media.
-- A tested upload widget (PrimeVue, FilePond or Uppy).
+- **Bootstrap 5 CSS** for styling/layout, with Vue controlling interactivity.
+- An upload widget to be selected separately (FilePond or Uppy are candidates).
 - Structured text/image/video blocks; matching interaction designed after a mockup.
 
 **Decisions intentionally deferred:**
 
-1. Component library and file upload widget.
+1. Upload widget; Bootstrap 5 CSS is already selected (no general Vue component suite planned).
 2. Whether the editor needs rich text beyond simple blocks.
 3. Whether the first API justifies a routing framework.
 4. Detailed scoring rules and matching UX.
 5. Exact video size limits and whether resumable upload is needed.
 6. Repository license and dependency license policy.
-7. Precise PoC acceptance criteria.
+7. Detailed PoC implementation plan; scope and acceptance criteria are in [PoC 1 scope](poc-scope.md).
 
 These notes are **not** a declaration that any listed library is already selected, installed or tested against the real hosting provider.
