@@ -10,9 +10,21 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 // private backend, where the schemas are copied under backend/schemas.
 $localSchemas = dirname(__DIR__) . '/schemas';
 $repositorySchemas = dirname(__DIR__, 2) . '/schemas';
-$schemas = is_file($localSchemas . '/test.schema.json') ? $localSchemas : $repositorySchemas;
+if (is_file($localSchemas . '/test.schema.json')) {
+    $schemas = $localSchemas;
+} elseif (is_file($repositorySchemas . '/test.schema.json')) {
+    $schemas = $repositorySchemas;
+} else {
+    fwrite(STDERR, "Shared JSON schemas are missing. On the hosting server, copy the repository's entire schemas/ directory (including fixtures/) into private testbraid-backend/schemas/.\n");
+    exit(2);
+}
 
-$manifest = json_decode(file_get_contents($schemas . '/fixtures/manifest.json'), false, 512, JSON_THROW_ON_ERROR);
+$manifestPath = $schemas . '/fixtures/manifest.json';
+if (!is_file($manifestPath) || !is_readable($manifestPath)) {
+    fwrite(STDERR, "Schema fixtures are missing. Copy the complete schemas/ directory, including fixtures/manifest.json.\n");
+    exit(2);
+}
+$manifest = json_decode(file_get_contents($manifestPath), false, 512, JSON_THROW_ON_ERROR);
 $validator = new SchemaValidator($schemas);
 $publicationValidator = new PublicationValidator();
 $groups = array_fill_keys($manifest->knownGroups, true);
