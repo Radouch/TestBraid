@@ -16,7 +16,9 @@
     "lint": "find public src bin -type f -name '*.php' -exec php -l {} \\;",
     "test:schemas": "php bin/test-schema-fixtures.php",
     "test:auth": "bash bin/test-auth-smoke.sh",
-    "test:setup": "bash bin/test-first-author-setup.sh"
+    "test:setup": "bash bin/test-first-author-setup.sh",
+    "test:storage": "php bin/test-storage-failures.php",
+    "test:storage-http": "bash bin/test-storage-http.sh"
   },
   "autoload": {
     "psr-4": {
