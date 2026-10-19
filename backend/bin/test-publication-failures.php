@@ -85,8 +85,12 @@ try {
     // Simulate a crash after creating an orphaned public copy but before
     // completing the test's status change. Reconciliation removes the orphan.
     copy($storage . '/media-files/' . $mid . '.png', $web . '/media/' . $mid . '.png');
+    file_put_contents($web . '/media/.stage-ABC123', 'interrupted copy');
     $normal = new PublicationService($backend, $web);
     $normal->reconcile();
+    if (file_exists($web . '/media/.stage-ABC123')) {
+        throw new RuntimeException('Reconciliation left an orphaned staging file.');
+    }
     if (file_exists($web . '/media/' . $mid . '.png')) {
         throw new RuntimeException('Reconciliation did not clean orphaned public media.');
     }
