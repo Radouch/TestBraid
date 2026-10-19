@@ -12,6 +12,7 @@ use TestBraid\Auth\FirstAuthorSetup;
 use TestBraid\Auth\LoginLimiter;
 use TestBraid\Auth\SessionManager;
 use TestBraid\Http\JsonResponse;
+use TestBraid\Http\AdminDataRoutes;
 
 // This application is private; only the separate public api/index.php is web-accessible.
 $root = dirname(__DIR__);
@@ -166,10 +167,13 @@ $app->post('/api/auth/logout', static function (Request $request, Response $resp
 })->add($csrf)->add($authorAccess);
 
 // Every future admin route must be registered in this protected route group.
-$app->group('/api/admin', static function (RouteCollectorProxy $group): void {
+$adminData = new AdminDataRoutes($root);
+$app->group('/api/admin', static function (RouteCollectorProxy $group) use ($adminData): void {
     $group->get('/ping', static function (Request $request, Response $response): Response {
         return JsonResponse::send($response, ['status' => 'ok', 'user' => $request->getAttribute('author')]);
     });
+    // All persistence routes inherit both guards from the enclosing group.
+    $adminData->register($group);
 })->add($csrf)->add($authorAccess);
 
 $app->run();
