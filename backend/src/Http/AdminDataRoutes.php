@@ -28,6 +28,13 @@ final class AdminDataRoutes
 
     public function register(RouteCollectorProxy $group): void
     {
+        // Troubleshooting endpoint intentionally lives behind the author and
+        // CSRF-protected admin route group. Never return absolute filesystem
+        // paths, environment values or unfiltered PHP exception messages.
+        $group->get('/storage-diagnostics', fn (Request $r, Response $p): Response =>
+            JsonResponse::send($p, $this->storageDiagnostics())
+        );
+
         $group->get('/groups', fn (Request $r, Response $p): Response => $this->handle($p, function (): array {
             return ['groups' => $this->store()->all('groups')];
         }));
@@ -152,6 +159,73 @@ final class AdminDataRoutes
                 return $test;
             })
         );
+    }
+
+    /**
+     * Diagnose host-specific storage failures from web PHP (which may run
+     * as a different OS user or see a different DOCUMENT_ROOT than PHP CLI).
+     *
+     * Return only booleans and a small allowlist of internal storage errors.
+     * The final listing probe performs the same initialization as GET /groups.
+     * No credentials, raw exceptions, filesystem paths or ACL details leak.
+     *
+     * @return array<string, bool|string|null>
+     */
+    private function storageDiagnostics(): array
+    {
+        $configured = getenv('TESTBRAID_STORAGE_DIR');
+        $root = is_string($configured) && $configured !== ''
+            ? $configured
+            : $this->backendRoot . '/storage';
+        $root = rtrim($root, DIRECTORY_SEPARATOR);
+        $groups = $root . '/groups';
+        $rootResolved = realpath($root);
+        $publicSetting = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        $publicResolved = is_string($publicSetting) && $publicSetting !== ''
+            ? realpath($publicSetting)
+            : false;
+
+        $status = [
+            'storageDirectoryExists' => is_dir($root),
+            'storageDirectoryWritable' => is_writable($root),
+            'groupsDirectoryExists' => is_dir($groups),
+            'groupsDirectoryWritable' => is_writable($groups),
+            'storageIsSymbolicLink' => is_link($root),
+            'documentRootResolved' => $publicResolved !== false,
+            'storageUnderDocumentRoot' => $rootResolved !== false && $publicResolved !== false
+                ? $rootResolved === $publicResolved
+                    || str_starts_with($rootResolved, $publicResolved . DIRECTORY_SEPARATOR)
+                : null,
+            'storageOverrideConfigured' => is_string($configured) && $configured !== '',
+            'groupListing' => 'not-checked',
+            'failure' => null,
+        ];
+
+        try {
+            // This is the same safe, idempotent operation as GET /groups.
+            $this->store()->all('groups');
+            $status['groupListing'] = 'ok';
+        } catch (\\Throwable $e) {
+            error_log('TestBraid storage diagnostic probe failed: ' . get_class($e));
+            $status['groupListing'] = 'failed';
+            $message = $e->getMessage();
+            $safeMessages = [
+                'Cannot initialize private storage directory.',
+                'Private storage cannot be located within the public document root.',
+                'Refusing a symbolic link for private storage.',
+                'Unable to list private records.',
+                'Unexpected private record filename.',
+                'Refusing a symbolic link in private storage.',
+                'Cannot safely read the private JSON record.',
+                'Corrupt private JSON record.',
+                'Private record ID or structure is invalid.',
+            ];
+            $status['failure'] = in_array($message, $safeMessages, true)
+                ? $message
+                : 'Unexpected storage error (' . get_class($e) . ').';
+        }
+
+        return $status;
     }
 
     private function store(): JsonFileRepository
