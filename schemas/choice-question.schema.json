@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.testbraid.invalid/v1/choice-question.schema.json",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "mode",
+    "prompt",
+    "options",
+    "correctOptionIds"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "type": {
+      "const": "choice"
+    },
+    "mode": {
+      "enum": [
+        "single",
+        "multiple"
+      ]
+    },
+    "prompt": {
+      "type": "array",
+      "items": {
+        "$ref": "content-block.schema.json"
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "content"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "content-block.schema.json"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "correctOptionIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

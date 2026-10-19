@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "id": "test-001",
+  "groupId": "group-lesson-1",
+  "language": "en",
+  "title": "Recognizing objects",
+  "description": "Identify the objects",
+  "status": "draft",
+  "createdAt": "2026-10-18T19:00:00Z",
+  "updatedAt": "2026-10-18T20:00:00Z",
+  "publishedAt": null,
+  "questions": [
+    {
+      "id": "question-1",
+      "type": "choice",
+      "mode": "single",
+      "prompt": [
+        {
+          "id": "b-1",
+          "type": "text",
+          "text": "Which tree is shown?"
+        },
+        {
+          "id": "b-2",
+          "type": "image",
+          "mediaId": "media-photo-1"
+        }
+      ],
+      "options": [
+        {
+          "id": "opt-1",
+          "content": [
+            {
+              "id": "b-3",
+              "type": "text",
+              "text": "Oak"
+            }
+          ]
+        },
+        {
+          "id": "opt-2",
+          "content": [
+            {
+              "id": "b-4",
+              "type": "text",
+              "text": "Beech"
+            }
+          ]
+        }
+      ],
+      "correctOptionIds": [
+        "opt-1"
+      ]
+    },
+    {
+      "id": "question-2",
+      "type": "matching",
+      "prompt": [
+        {
+          "id": "b-5",
+          "type": "text",
+          "text": "Match the clips"
+        }
+      ],
+      "leftItems": [
+        {
+          "id": "l-1",
+          "content": [
+            {
+              "id": "b-6",
+              "type": "video",
+              "mediaId": "media-video-1"
+            }
+          ]
+        },
+        {
+          "id": "l-2",
+          "content": [
+            {
+              "id": "b-7",
+              "type": "video",
+              "mediaId": "media-video-2"
+            }
+          ]
+        }
+      ],
+      "rightItems": [
+        {
+          "id": "r-1",
+          "content": [
+            {
+              "id": "b-8",
+              "type": "text",
+              "text": "Description A"
+            }
+          ]
+        },
+        {
+          "id": "r-2",
+          "content": [
+            {
+              "id": "b-9",
+              "type": "text",
+              "text": "Description B"
+            }
+          ]
+        }
+      ],
+      "matches": [
+        {
+          "leftId": "l-1",
+          "rightId": "r-2"
+        },
+        {
+          "leftId": "l-2",
+          "rightId": "r-1"
+        }
+      ]
+    }
+  ]
+}

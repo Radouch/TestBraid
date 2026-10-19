@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.testbraid.invalid/v1/matching-question.schema.json",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "prompt",
+    "leftItems",
+    "rightItems",
+    "matches"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "type": {
+      "const": "matching"
+    },
+    "prompt": {
+      "type": "array",
+      "items": {
+        "$ref": "content-block.schema.json"
+      }
+    },
+    "leftItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "content"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "content-block.schema.json"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "rightItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "content"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "content-block.schema.json"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "leftId",
+          "rightId"
+        ],
+        "properties": {
+          "leftId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "rightId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

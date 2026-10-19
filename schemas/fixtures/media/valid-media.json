@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "media-video-1",
+  "kind": "video",
+  "mimeType": "video/mp4",
+  "extension": "mp4",
+  "sizeBytes": 456,
+  "originalName": "test.mp4",
+  "createdAt": "2026-10-18T19:00:00Z"
+}
