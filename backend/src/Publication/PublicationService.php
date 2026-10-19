@@ -204,8 +204,20 @@ class PublicationService
             }
             $this->persist($next);
         } catch (\Throwable $e) {
-            foreach ($created as $path) {
-                if (!is_link($path) && is_file($path)) @unlink($path);
+            // A public copy created by this request may repair a missing file
+            // that another published test already references. Never roll such
+            // a repair back, even if this new publication fails afterwards.
+            try {
+                $active = $this->activeFiles();
+                foreach ($created as $path) {
+                    if (!isset($active[basename($path)]) && !is_link($path) && is_file($path)) {
+                        @unlink($path);
+                    }
+                }
+            } catch (\Throwable $rollbackError) {
+                // Fail closed on uncertainty: retain copies rather than
+                // delete an asset used by a currently published test.
+                error_log('TestBraid publication rollback requires reconciliation: ' . get_class($rollbackError));
             }
             throw $e;
         }
@@ -316,9 +328,9 @@ class PublicationService
         $this->exclusive(fn () => $this->reconcileUnlocked());
     }
 
-    private function reconcileUnlocked(): void
+    /** @return array<string, true> Filenames still needed by published tests. */
+    private function activeFiles(): array
     {
-        $this->assertPublicDirectory();
         $active = [];
         foreach ($this->store->all('tests') as $test) {
             if ($test->status !== 'published') continue;
@@ -327,6 +339,13 @@ class PublicationService
                 if ($meta !== null) $active[basename($this->publicPath($meta))] = true;
             }
         }
+        return $active;
+    }
+
+    private function reconcileUnlocked(): void
+    {
+        $this->assertPublicDirectory();
+        $active = $this->activeFiles();
         $iterator = new \DirectoryIterator($this->publicDir);
         foreach ($iterator as $item) {
             if ($item->isDot()) continue;
