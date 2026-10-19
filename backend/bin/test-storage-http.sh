@@ -47,7 +47,7 @@ expect() {
   fi
 }
 check() {
-  if ! jq -e "$1" "$TEMP/body" >/dev/null; then
+  if ! jq -e "$@" "$TEMP/body" >/dev/null; then
     echo "Unexpected response: $(cat "$TEMP/body")" >&2
     exit 1
   fi
