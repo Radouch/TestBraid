@@ -5,13 +5,20 @@
   "require": {
     "php": "^8.1",
     "slim/slim": "^4.15.3",
-    "slim/psr7": "^1.6"
+    "slim/psr7": "^1.6",
+    "opis/json-schema": "^2.6"
   },
   "config": {
     "sort-packages": true,
     "optimize-autoloader": true
   },
   "scripts": {
-    "lint": "php -l public/index.php && php -l dev-router.php"
+    "lint": "php -l public/index.php && php -l dev-router.php",
+    "test:schemas": "php bin/test-schema-fixtures.php"
+  },
+  "autoload": {
+    "psr-4": {
+      "TestBraid\\\\": "src/"
+    }
   }
 }
