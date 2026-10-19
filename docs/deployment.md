@@ -211,6 +211,17 @@ composer run test:storage-http
 
 The storage HTTP test starts its **own loopback-only** PHP server, creates disposable author credentials and private storage under a temporary directory, and verifies authentication, CSRF, group/test CRUD, invalid requests and missing references. It never contacts the deployed domain. The separate storage-failure test checks that a simulated failed atomic rename leaves the original record intact and removes temporary files.
 
+### Diagnose storage failures on shared hosting
+
+When `GET /api/admin/groups` returns HTTP 500 and the host does not expose PHP error logs, a **logged-in author** can visit `GET /api/admin/storage-diagnostics` (available in the storage branch). It reports only boolean directory checks and a short allowlisted failure category, never filesystem paths, passwords, or raw exception text.
+
+- `storageDirectoryWritable: false` indicates that the web PHP process cannot write the configured private storage directory. CLI user ownership alone is not decisive, especially with ACLs.
+- `storageUnderDocumentRoot: true` means the storage path fails the private-storage safety check. Inspect the web server's document-root configuration and the private/backend layout; do **not** remove that check to silence the error.
+- `groupListing: failed` plus `failure` distinguishes directory creation/listing failures from unexpected runtime failures.
+- `groupListing: ok` means the web PHP process can complete the same initialization and listing as `GET /api/admin/groups`; retry the latter.
+
+The endpoint is authenticated and is read-only apart from the same lazy creation of the empty private `groups/` directory that the ordinary list endpoint already performs. Do not publish the diagnostics through the anonymous `/api/health` route.
+
 ### Back up and restore
 
 Before a deployment or restore, take a consistent private copy of `config/authors.json` and the entire `storage/` directory, retaining group/test/media relationships and permissions. To obtain a consistent snapshot across multiple files, **pause writes during backup**: atomic replacement is only per record. Never expose a backup under `www/`, and never include actual author credentials or storage JSON in Git. After restoring, verify the PHP user can read the private files and write lock/temp files. There is no automated migration or recovery UI yet.
