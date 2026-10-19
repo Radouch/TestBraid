@@ -22,6 +22,7 @@ Randomized test generation from question banks is a **future feature**, not part
 - [Functional specification](docs/functional-specification.md) — agreed requirements, priorities and open questions.
 - [PoC 1 scope](docs/poc-scope.md) — agreed functionality, PoC-A/PoC-B increments, and acceptance criteria.
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.
+- [Private media upload and host acceptance](docs/media-uploads.md) — supported formats, server limits, authentication and verification.
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
 - [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
@@ -29,7 +30,7 @@ Randomized test generation from question banks is a **future feature**, not part
 
 ## Status
 
-The PoC scope and main library choices have been agreed. The data model/API design remains a proposal. The scaffold, shared validation and author authentication are implemented in stacked draft PRs. The first author was created on the live host. The filesystem persistence increment is under review; media upload, publication and the learner flow are not yet implemented.
+The PoC scope and main library choices have been agreed. The data model/API design remains a proposal. The scaffold, shared validation and author authentication are implemented in stacked draft PRs. The first author was created on the live host. The filesystem persistence increment has passed a live create/read smoke test; author-only media uploading and preview are implemented in stacked draft PR #13, but publication and the learner flow are not yet implemented.
 
 Project documentation and source code will be primarily in English; see [AGENTS.md](AGENTS.md) for code-comment and contribution conventions.
 
