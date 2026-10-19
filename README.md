@@ -26,13 +26,13 @@ Randomized test generation from question banks is a **future feature**, not part
 - [Static published media and consistency](docs/published-media.md) — publication workflow, shared references, crash recovery and Apache acceptance.
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
-- [PoC-A acceptance evidence and runbook](docs/poc-a-acceptance.md) — tested CI/hosting behavior, repeatable deploy checks, remaining PHP/cookie/quota confirmations.
+- [PoC-A acceptance evidence and runbook](docs/poc-a-acceptance.md) — tested CI/hosting behavior, repeatable deploy checks and confirmed PHP/cookie/quota configuration.
 - [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
 - [Shared JSON schemas](schemas/) — versioned contracts and common structural/publication validation fixtures.
 
 ## Status
 
-PoC-A 01–07 are implemented and merged into `main` as PRs #9–#14. On 2026-10-19 the owner verified the live Vue/Slim stack, author login, private JSON storage, authenticated image/video upload, anonymous static video playback, publication/unpublication, shared-media preservation, and Apache deny policies. **The PoC-A 08 integration acceptance gate is in progress:** packaged-deployment verification and allowlisted web-PHP runtime diagnostics have been added; host PHP/cookie/available-quota evidence still needs recording. No full browser question editor or learner runner exists yet; these are PoC-B work.
+PoC-A 01–07 are implemented and merged into `main` as PRs #9–#14. On 2026-10-19 the owner verified the live Vue/Slim stack, author login, private JSON storage, authenticated image/video upload, anonymous static video playback, publication/unpublication, shared-media preservation, and Apache deny policies. **PoC-A 08 acceptance checks passed:** deployment-package audits and web-PHP runtime diagnostics are implemented, and the owner confirmed PHP 8.5.2 FPM, configured upload/post limits of 256M, secure session-cookie attributes and unmetered hosting storage on 2026-10-19. The overall PoC-A technical foundation is accepted; follow-up hardening tasks remain tracked separately. No full browser question editor or learner runner exists yet; these are PoC-B work.
 
 Project documentation and source code will be primarily in English; see [AGENTS.md](AGENTS.md) for code-comment and contribution conventions.
 
