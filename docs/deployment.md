@@ -1,6 +1,6 @@
 # TestBraid — Deployment on Apache/PHP Shared Hosting
 
-**Status:** Initial frontend/API smoke test passed on the example host (2026-10-19); broader deployment/security checks remain open  
+**Status:** PoC-A 01–07 merged into `main`, and core live-host functional/security checks passed on 2026-10-19. The PoC-A 08 integration gate documents remaining runtime/cookie/hosting-capacity evidence; see [acceptance runbook](poc-a-acceptance.md).  
 **Example target:** `https://testbraid.mariebila.cz/` (PHP 8.5, Apache document root `www/`)  
 **Portability:** The hostname is an example only. The app is not bound to a specific domain; see subdirectory and alternate-layout notes below.
 
@@ -8,7 +8,7 @@
 
 The owner verified that the routing fix in the authentication branch restored `/api/health` and `/api/auth/session` on the actual hosting environment. On 2026-10-19, the owner also confirmed successfully creating the first author through the browser with a private `setup.key`. This confirms the provisioning flow and the required author-file write path. The owner also verified login, logout and automatic removal of `setup.key`; production cookie attributes have not been independently inspected.
 
-**Still not implemented:** browser-based test editing, published media, and learner evaluation. Private image/video upload and author preview in PR #13 passed owner-hosted acceptance on 2026-10-19. This storage branch adds authenticated draft-test persistence endpoints; successful authentication smoke tests do not mean PoC-A is finished.
+**Still not implemented:** the browser-based test/question editor and the anonymous learner evaluation UI. **Implemented and host-tested:** author authentication, JSON persistence, private media upload, secure author previews, static publication/unpublication, shared-media protection and anonymous published MP4 streaming.
 
 ### Hosting facts and initial deployment results
 
@@ -66,7 +66,7 @@ The `www/api/index.php` file is only a public bootstrap. Its default path points
 Only Node.js/npm are needed on your computer. No local Composer installation is required.
 
 ```sh
-git clone -b feature/poc-a-foundation https://github.com/Radouch/TestBraid.git
+git clone https://github.com/Radouch/TestBraid.git
 cd TestBraid/frontend
 npm install
 npm run build
@@ -312,7 +312,7 @@ Security spot checks:
 | SSH PHP differs from web PHP | Use the correct CLI binary for Composer; inspect the website's PHP handler configuration |
 | `composer run test:schemas` reports missing `fixtures/manifest.json` or unavailable schemas | The root `schemas/` was not copied into the **private** `testbraid-backend/schemas/`; upload the whole directory, including `fixtures/`, and rerun the test |
 
-The root Apache rewrite template has passed the owner's live smoke test; the media directory's separate `.htaccess`, security hardening and future upload/video behavior have **not** been validated. Report HTTP statuses and relevant error-log lines if an issue occurs; do **not** share passwords, tokens or private config files.
+The root Apache rewrite and media-directory `.htaccess` passed owner-hosted checks on 2026-10-19. The owner verified a **real existing** harmless non-allowlisted file was denied, and published MP4 playback, HTTP Range/206 and shared-media cleanup worked. Report relevant HTTP statuses and error-log categories if problems recur; never share passwords, tokens or private configuration files.
 
 ## 9. Installation portability
 
@@ -322,14 +322,16 @@ By default `deploy/www/api/index.php` computes the sibling private backend locat
 
 The SPA uses Vite's public base path and Vue Router uses the same base. This allows root and subdirectory deployment (with the appropriate build and rewrite configuration). For hosted public test links, production code must also derive the base URL rather than assume the example domain.
 
-## 10. Remaining hosting checks
+## 10. Remaining hosting checks (Issues #2, #4, #6 and #8)
 
-Before marking [issue #2](https://github.com/Radouch/TestBraid/issues/2) done:
+Most deployment/privacy checks passed on the actual Apache host on 2026-10-19. **Do not repeat the old, already completed playback tests solely to satisfy this checklist.** The remaining facts are:
 
-- Confirm PHP **8.5 via web** and required extensions, not only PHP CLI.
-- The root `.htaccess`/`mod_rewrite` path is confirmed working; **separately verify** private directory isolation, access permissions and the future media-directory `.htaccess`.
-- Confirm allowed upload sizes, timeouts and storage quota.
-- Test static video HTTP Range responses after the media workflow exists.
-- Verify browser setup, PHP session storage, secure cookies, login throttling directory permissions, and private author-file access after deploying the updated authentication branch.
+- Confirm the **web PHP SAPI** version and enabled fileinfo extension; the owner's reported PHP 8.5 applies to hosting documentation, not yet to an authenticated runtime diagnostic result.
+- Record PHP `upload_max_filesize`, `post_max_size`, `max_input_time`, `max_execution_time` and the approximate usable account storage quota from the provider. The practical host upload test passed, but the exact maximum accepted is not known.
+- Verify that session cookies on the real HTTPS installation use `Secure`, `HttpOnly`, `SameSite=Lax` and strict session mode. The application configures these attributes; **effective production values** remain to be recorded.
+- Confirm all temporary test media and the temporary `publication-deny-check.txt` sentinel have been cleaned up; permanent originals remain in private storage until reference-aware deletion is implemented.
+- Preserve `www/media/.htaccess` during deployments, and retain file-backed private `storage/`, `config/`, public published copies, and `vendor/` when uploading a new release.
 
-Additional environment-specific deployment adjustments should stay in `deploy/` or this guide rather than introduce hardcoded domain logic.
+The PoC-A 08 branch introduces an **authenticated, read-only** `GET /api/admin/environment-diagnostics` endpoint to inspect these allowlisted PHP/session values in the actual web process, with no secret material, server paths, or cookie IDs. Use it after deploying PR #15. See [PoC-A acceptance evidence and deployment gate](poc-a-acceptance.md) for the exact, repeatable checks and restoration instructions.
+
+Additional host-specific adjustments should remain in `deploy/` or this guide instead of hardcoding domains or installation paths into application source.
