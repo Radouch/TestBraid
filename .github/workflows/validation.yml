@@ -33,6 +33,7 @@ jobs:
           test -f deployment-package/testbraid-backend/schemas/test.schema.json
           test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
           test -f deployment-package/www/api/index.php
+          test -f deployment-package/testbraid-backend/.htaccess
           test ! -e deployment-package/testbraid-backend/config/authors.json
           test ! -e deployment-package/testbraid-backend/vendor
 
