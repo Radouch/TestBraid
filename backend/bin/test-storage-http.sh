@@ -55,6 +55,8 @@ check() {
 
 # Privileged routes must be protected before AND after an author logs out.
 expect 401 "$HOST/api/admin/groups"
+check '.error.code == "AUTH_REQUIRED"
+expect 401 "$HOST/api/admin/storage-diagnostics"
 check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' -d '{"name":"Not allowed"}'
 expect 200 "$HOST/api/auth/session"
@@ -63,6 +65,15 @@ expect 200 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" \
   -d '{"username":"alice","password":"Only-A-Test-Password-456"}'
 CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
+
+# The diagnostic probe runs through web PHP, remains author-only, does not
+# reveal server paths, and exercises the same directory setup as GET /groups.
+expect 200 "$HOST/api/admin/storage-diagnostics"
+check '.storageDirectoryExists == true and .storageDirectoryWritable == true
+  and .documentRootResolved == true and .storageUnderDocumentRoot == false
+  and .groupListing == "ok" and .failure == null'
+expect 200 "$HOST/api/admin/groups"
+check '.groups == []'
 
 expect 403 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' -d '{"name":"Missing CSRF"}'
 check '.error.code == "INVALID_CSRF"'
