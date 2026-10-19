@@ -165,7 +165,20 @@ final class AdminDataRoutes
 
     private function validator(): SchemaValidator
     {
-        return $this->schemas ??= new SchemaValidator($this->backendRoot . '/schemas');
+        if ($this->schemas !== null) {
+            return $this->schemas;
+        }
+
+        // Production copies schemas into the private backend; a source checkout
+        // keeps the same canonical schemas at the repository root. Resolve both
+        // layouts, as the standalone schema fixture runner already does.
+        $deployedSchemas = $this->backendRoot . '/schemas';
+        $checkoutSchemas = dirname($this->backendRoot) . '/schemas';
+        $directory = is_file($deployedSchemas . '/test.schema.json')
+            ? $deployedSchemas
+            : $checkoutSchemas;
+
+        return $this->schemas = new SchemaValidator($directory);
     }
 
     private function validate(string $kind, stdClass $document): void
