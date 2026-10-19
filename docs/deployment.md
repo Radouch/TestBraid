@@ -8,7 +8,7 @@
 
 The owner verified that the routing fix in the authentication branch restored `/api/health` and `/api/auth/session` on the actual hosting environment. On 2026-10-19, the owner also confirmed successfully creating the first author through the browser with a private `setup.key`. This confirms the provisioning flow and the required author-file write path. The owner also verified login, logout and automatic removal of `setup.key`; production cookie attributes have not been independently inspected.
 
-**Still not implemented:** browser-based test editing, published media, and learner evaluation. Media uploads and private author previews are implemented in draft PR #13 but still need live host acceptance. This storage branch adds authenticated draft-test persistence endpoints; successful authentication smoke tests do not mean PoC-A is finished.
+**Still not implemented:** browser-based test editing, published media, and learner evaluation. Private image/video upload and author preview in PR #13 passed owner-hosted acceptance on 2026-10-19. This storage branch adds authenticated draft-test persistence endpoints; successful authentication smoke tests do not mean PoC-A is finished.
 
 ### Hosting facts and initial deployment results
 
@@ -24,7 +24,7 @@ The paths, PHP version, SSH and Composer availability were **reported by the own
 - `/admin` loaded the placeholder admin view, including a page refresh.
 - `/tests/example` loaded the placeholder test view, including a page refresh.
 
-This establishes working frontend/API routing on the selected host; PHP 8.5 was reported, but its version was **not independently checked through the web SAPI**. Composer dependencies are evidently available to Slim, but installation commands and package versions have not been independently audited. JSON storage and group/test creation/read have now passed a live host smoke test. Image/video uploading and playback remain untested on the host; see the media deployment notes below.
+This establishes working frontend/API routing on the selected host; PHP 8.5 was reported, but its version was **not independently checked through the web SAPI**. Composer dependencies are evidently available to Slim, but installation commands and package versions have not been independently audited. JSON storage and group/test creation/read passed live host smoke tests. Image/video uploading and playback with seeking, access denial, file-type rejection, persistence and a practical file-size check also passed owner-hosted acceptance on 2026-10-19; see the media deployment notes below.
 
 ## 2. Target directory layout
 
@@ -238,7 +238,7 @@ Before a deployment or restore, take a consistent private copy of `config/author
 
 ---
  
-## 6B. Private media upload increment (Issue #6; host acceptance pending)
+## 6B. Private media upload increment (Issue #6; owner-hosted acceptance passed 2026-10-19)
 
 The next stacked branch, `feature/poc-a-media`, adds `POST /api/admin/media` and authenticated `GET/HEAD /api/admin/media/{id}/preview`. FilePond appears on the logged-in `/admin` page; uploads are **not** yet attached to test questions. No public media publication or deletion has been implemented. See [media upload policy, formats and testing](media-uploads.md).
 
@@ -248,7 +248,7 @@ The next stacked branch, `feature/poc-a-media`, adds `POST /api/admin/media` and
 - The application accepts JPEG/PNG/WebP to **10 MiB** and MP4/WebM to **64 MiB**. Real host `upload_max_filesize`, `post_max_size`, server limits and available disk space may be lower. Verify web-PHP values and adjust limits only after consulting the host.
 - Private media binaries live under `testbraid-backend/storage/media-files/`, alongside metadata in `storage/media/`. The PHP web process must be able to write them. Never upload them to `www/media/`.
 - Optional isolated regression run: `cd testbraid-backend && composer run test:media-http`. It uses a local loopback server and temporary files, **not** the deployed site.
-- On the host, upload and preview a small real PNG and browser-playable MP4 after signing in. Check video seeking, rejected executable/mismatched formats and anonymous access (401). **Do not mark Issue #6 accepted until host testing succeeds.**
+- **Owner-hosted acceptance passed (2026-10-19):** Image/video uploads and previews, playback seeking, denial of access while logged out, unsafe-file rejection, persistence and practical upload-size testing were reported successful. The exact supported host-side maximum remains unmeasured, so do not promise the full 64 MiB application limit without a direct host test. Repeat the checks after hosting or configuration changes.
 
 ---
 
