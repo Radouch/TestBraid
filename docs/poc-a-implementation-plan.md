@@ -96,6 +96,10 @@ The Vue `/admin` placeholder becomes a minimal bilingual sign-in/sign-out form. 
 
 GitHub Actions **passed** on 2026-10-19 (PHP 8.5 + Node 22): Vue typecheck/build, both schema fixture runners and the HTTP authentication integration checks for anonymous access, login/logout, CSRF rotation, origin validation and brute-force throttling. See [CI run](https://github.com/Radouch/TestBraid/actions/runs/39248989019). Actual host authentication, filesystem permissions, secure cookies and HTTPS remain to be verified. See [deployment guide](deployment.md#6-author-provisioning-and-security-authentication-increment).
 
+### Apache route-base regression
+
+After the first auth-branch deployment, the owner reported HTTP 404 from `/api/health`, although this endpoint had worked on the foundation branch. Auth had introduced automatic base-path detection from `SCRIPT_NAME`; this was unnecessary for the domain-root deployment and potentially wrong under Apache rewrites. The base path now defaults to empty and may be set explicitly using `TESTBRAID_BASE_PATH` only for subdirectory hosting. The PHP dev-router smoke test simulates a rewritten internal `SCRIPT_NAME` and verifies root API routes remain reachable. The corrected backend still requires a live Apache retest.
+
 ## Hosting verification — initial live smoke test passed
 
 On **2026-10-19**, the owner confirmed the Vue home page, `/api/health` JSON response, and both `/admin` and `/tests/example` deep links (including page reloads) on the example domain.
