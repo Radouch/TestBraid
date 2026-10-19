@@ -88,6 +88,14 @@ Backend fixtures can also run on shared hosting after copying `backend/bin/`, `b
 
 **Limits:** schemas and validation helpers are not yet connected to HTTP routes or persistence. The fixture corpus verifies behavior only once dependencies are installed. Real datastore-backed group/media existence checks will be added when storage is implemented. The proposed minimum of two matching pairs is currently enforced as a provisional PoC default.
 
+## Authentication increment (Issue #4)
+
+The authentication PR adds server-side author sessions, login/logout, CSRF protection for mutating operations, brute-force throttling and a guarded `GET /api/admin/ping` endpoint. Credentials are provisioned with `backend/bin/create-author.php` into a private JSON file outside `www/`; no public registration exists.
+
+The Vue `/admin` placeholder becomes a minimal bilingual sign-in/sign-out form. The API still does not allow creating/editing tests; all future `/api/admin/*` routes must live in the protected Slim route group.
+
+GitHub Actions includes an HTTP integration smoke test running an isolated disposable PHP instance, but the result must be checked before marking the increment ready. Actual host authentication, filesystem permissions, secure cookies and HTTPS remain to be verified. See [deployment guide](deployment.md#6-author-provisioning-and-security-authentication-increment).
+
 ## Hosting verification — initial live smoke test passed
 
 On **2026-10-19**, the owner confirmed the Vue home page, `/api/health` JSON response, and both `/admin` and `/tests/example` deep links (including page reloads) on the example domain.

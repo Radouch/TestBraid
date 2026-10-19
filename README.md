@@ -39,3 +39,7 @@ See [deployment guide](docs/deployment.md) for a frontend-only local build and i
 ## Schema fixtures
 
 After installing dependencies, run `npm run test:schemas` from `frontend/` and `composer run test:schemas` from `backend/`. These execute the same JSON fixtures against Ajv and Opis. See the [PoC-A plan](docs/poc-a-implementation-plan.md#schema-validation-increment-issue-3). No HTTP validation endpoint exists yet.
+
+## Author authentication (incremental)
+
+The stacked authentication branch adds a bilingual sign-in/out form backed by PHP sessions, CSRF protection and a private author file. See [deployment instructions](docs/deployment.md#6-author-provisioning-and-security-authentication-increment). There are still no test editing or storage endpoints. No author credentials or private files belong in this repository.

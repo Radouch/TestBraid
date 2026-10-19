@@ -6,9 +6,9 @@
 
 ## 1. What this build demonstrates
 
-The current branch includes only a Vue UI (English and Czech), placeholder admin/test routes, and one Slim API endpoint: `GET /api/health`.
+The deployed base was verified with a Vue UI (English and Czech) and `GET /api/health`. The new authentication increment adds a sign-in/out form, native PHP sessions and a protected `GET /api/admin/ping`; **these features have not yet been deployed to the host**.
 
-**Not implemented:** author login, editing tests, JSON persistence, FilePond uploads and learner evaluation. Successful deployment does not mean PoC-A is finished.
+**Still not implemented:** editing/saving tests, media uploads and learner evaluation. Successful authentication smoke tests do not mean PoC-A is finished.
 
 ### Hosting facts and initial deployment results
 
@@ -41,12 +41,16 @@ This establishes working frontend/API routing on the selected host; PHP 8.5 was 
 └── testbraid-backend/              # Private: NOT served by Apache
     ├── composer.json
     ├── composer.lock               # Created on first install, commit afterwards
+    ├── config/
+    │   └── authors.json            # Provisioned password hashes (NEVER in Git/www)
+    ├── storage/
+    │   └── login-attempts/         # Writable only by the PHP process
     ├── public/
     │   └── index.php               # Actual Slim application
     └── vendor/                      # Installed by Composer on the host
 ```
 
-The `www/api/index.php` file is only a public bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. Credentials, JSON data and original media will also be stored privately once implemented.
+The `www/api/index.php` file is only a public bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. Author password hashes and the login throttling state must remain **private and writable by the PHP process as appropriate**.
 
 ## 3. Prepare frontend locally
 
@@ -110,7 +114,45 @@ When `composer.lock` does not exist, the first `composer install` resolves depen
 
 If `php -v` on SSH differs from the PHP version serving the website, select the correct CLI binary for Composer and investigate web PHP compatibility separately. Never assume that the CLI and web SAPIs have the same version.
 
-## 6. Test the web deployment (initial smoke test passed)
+## 6. Author provisioning and security (authentication increment)
+
+**Requires deployment of the authentication branch and successful CI before use.** This feature is not part of the previously verified health-only hosting snapshot.
+
+From the private backend directory on the host, create an author account without putting the password in command history or process arguments. Run this in **Bash** over SSH:
+
+```bash
+cd /ABSOLUTE/DOMAIN-DIR/testbraid-backend
+read -r -s -p 'New author password: ' TESTBRAID_PASSWORD
+printf '\n'
+printf '%s\n' "$TESTBRAID_PASSWORD" | php bin/create-author.php alice
+unset TESTBRAID_PASSWORD
+```
+
+The password must contain at least 12 bytes. The command creates or updates `config/authors.json` using `password_hash()`, with restrictive file permissions. The file and `storage/login-attempts/` **must never be placed under** `www/` or committed to Git. The script refuses duplicate usernames; password updates/revocation are not implemented yet.
+
+The PHP webserver user needs read access to `config/authors.json` and write access to `storage/login-attempts/`. SSH and webserver PHP may use different Unix users; configure owner/group and permissions accordingly **without making secrets world-readable**. Session storage must also be usable by PHP.
+
+Then visit:
+
+- `/admin` — sign in with the provisioned username and password.
+- `/api/auth/session` — reports `authenticated`, a session CSRF token, and the current author when logged in.
+- `/api/admin/ping` — returns HTTP 401 anonymously or author info when logged in.
+- Sign out — invalidates author login, rotates session identifier and CSRF token.
+
+**Security policy:** production sessions use `Secure`, `HttpOnly`, `SameSite=Lax` cookies and do not accept session IDs in URLs. Use HTTPS for the actual site. CSRF is required for state-changing requests, including sign-in, and privileged routes check the server session. The only HTTP exception (`TESTBRAID_ALLOW_HTTP_LOCAL=1`) is restricted to the loopback development server; never configure it on the public host.
+
+For a shell-controlled local integration test or GitHub Actions runner:
+
+```sh
+cd backend
+composer run test:auth
+```
+
+This integration test creates a disposable local test account and starts PHP's development webserver. It is not designed to test the public production domain.
+
+The `/api/auth/session` endpoint is intentionally public to provide the CSRF token needed **before** login. The session cookie itself remains `HttpOnly`. The initial login throttling implementation stores hashed-key failure counters on disk; an eventual cleanup job and multi-server support are outside this first increment.
+
+## 7. Test the web deployment (initial foundation smoke test passed)
 
 Visit:
 
@@ -140,7 +182,7 @@ Security spot checks:
 - Public `/media/` contains no original private uploads.
 - Only the bootstrap PHP file under `/api/` is public; do not put actual backend source or secrets there.
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | Likely reason / check |
 | --- | --- |
@@ -154,7 +196,7 @@ Security spot checks:
 
 The root Apache rewrite template has passed the owner's live smoke test; the media directory's separate `.htaccess`, security hardening and future upload/video behavior have **not** been validated. Report HTTP statuses and relevant error-log lines if an issue occurs; do **not** share passwords, tokens or private config files.
 
-## 8. Installation portability
+## 9. Installation portability
 
 No hostname or absolute path is hardcoded in Vue or Slim. For other domains, copy the same artifacts and point the domain document root to their deployed public directory.
 
@@ -162,7 +204,7 @@ By default `deploy/www/api/index.php` computes the sibling private backend locat
 
 The SPA uses Vite's public base path and Vue Router uses the same base. This allows root and subdirectory deployment (with the appropriate build and rewrite configuration). For hosted public test links, production code must also derive the base URL rather than assume the example domain.
 
-## 9. Remaining hosting checks
+## 10. Remaining hosting checks
 
 Before marking [issue #2](https://github.com/Radouch/TestBraid/issues/2) done:
 
@@ -170,6 +212,6 @@ Before marking [issue #2](https://github.com/Radouch/TestBraid/issues/2) done:
 - The root `.htaccess`/`mod_rewrite` path is confirmed working; **separately verify** private directory isolation, access permissions and the future media-directory `.htaccess`.
 - Confirm allowed upload sizes, timeouts and storage quota.
 - Test static video HTTP Range responses after the media workflow exists.
-- Confirm logging and session-storage paths when authentication is added.
+- Verify PHP session storage, secure cookie behavior, login throttling directory permissions, and private author-file access after deploying auth.
 
 Additional environment-specific deployment adjustments should stay in `deploy/` or this guide rather than introduce hardcoded domain logic.
