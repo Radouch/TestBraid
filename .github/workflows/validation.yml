@@ -76,3 +76,6 @@ jobs:
       - name: Authenticated media upload and range HTTP integration
         run: composer run test:media-http
         working-directory: backend
+      - name: Publication lifecycle and static media HTTP integration
+        run: composer run test:publication-http
+        working-directory: backend
