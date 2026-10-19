@@ -47,3 +47,6 @@ jobs:
       - name: Shared schema fixtures (Opis)
         run: composer run test:schemas
         working-directory: backend
+      - name: HTTP authentication smoke test
+        run: composer run test:auth
+        working-directory: backend
