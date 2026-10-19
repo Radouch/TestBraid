@@ -27,7 +27,13 @@ The `mediaUrls` paths honor `TESTBRAID_BASE_PATH`; there are no server paths or 
 3. Copy any newly referenced binaries to temporary `.stage-*` names in the protected public `www/media` directory. Flush/sync and compare cryptographic hashes before atomic rename to their final UUID file paths.
 4. Atomically replace the canonical private JSON test document **after** all new public files exist. Failed validation or failed JSON write leaves the previous test state intact; newly created copies are removed on an ordinary exception.
 5. After success, scan all currently published tests before removing obsolete public media copies. Shared files stay while any other published test references them. Editing an already published test uses the same promotion-before-commit ordering.
-6. If the process is forcibly terminated between steps, an orphaned copy or `.stage-*` file may remain. A later successful transition performs reconciliation. For explicit repair, call `PublicationService::reconcile()` through a **private PHP CLI** script after taking a backup. Do not expose reconciliation anonymously.
+6. If the process is forcibly terminated between steps, an orphaned copy or `.stage-*` file may remain. A later successful transition performs reconciliation. For explicit repair, back up private and public files first, then run the installed **private CLI script** from the backend directory with the actual public root as an explicit absolute path:
+
+```sh
+php bin/reconcile-public-media.php /absolute/path/to/served/www
+```
+
+This avoids relying on a host's ambiguous `DOCUMENT_ROOT`. The script invokes `PublicationService::reconcile()` under the private lock and deletes only generated static media copies which are unreferenced by *every* published test and abandoned `.stage-*` files. **Do not run against an unrelated public directory.** Do not expose reconciliation anonymously.
 
 **Important limitation:** Standard Apache static files and JSON records do not share an atomic transaction. During the short promotion-before-JSON interval, the final URL can technically serve a newly copied binary even though the test is not yet publicly published. The URL is a random UUID and is not linked by the public API before the JSON commit, but this is **not strict access revocation or cryptographic capability security**. Similarly, removing a previously published file cannot revoke bytes already downloaded/cached by third parties. `.htaccess` disables browser/proxy caching where mod_headers is available, and denies stage names. We must not describe publication/unpublication as perfectly atomic across HTTP clients. For deployments requiring strict draft isolation at every instant, a PHP access gate or a different artifact-publishing design is necessary, at the expense of direct static video delivery.
 
