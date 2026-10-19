@@ -54,3 +54,9 @@ jobs:
       - name: First-author browser setup smoke test
         run: bash bin/test-first-author-setup.sh
         working-directory: backend
+      - name: JSON storage atomicity and path checks
+        run: composer run test:storage
+        working-directory: backend
+      - name: Protected JSON persistence HTTP integration
+        run: composer run test:storage-http
+        working-directory: backend
