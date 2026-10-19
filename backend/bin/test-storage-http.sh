@@ -71,6 +71,8 @@ CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
 expect 200 "$HOST/api/admin/storage-diagnostics"
 check '.storageDirectoryExists == true and .storageDirectoryWritable == true
   and .documentRootResolved == true and .storageUnderDocumentRoot == false
+  and .publicRootSource == "bootstrap" and .servedPublicRootResolved == true
+  and .storageUnderServedPublicRoot == false
   and .groupListing == "ok" and .failure == null'
 expect 200 "$HOST/api/admin/groups"
 check '.groups == []'
