@@ -2,7 +2,7 @@
 
 **TestBraid** is a planned lightweight, multilingual, self-hosted application for creating, sharing and completing multimedia self-assessment tests.
 
-The project is **in the specification and technical-research stage**. There is no runnable application yet.
+The project is **under active PoC-A development**. The Vue/Slim foundation has passed its initial live deployment smoke test; later schema/authentication features are implemented in stacked PRs but have not been deployed.
 
 ## Project goals
 
@@ -34,8 +34,12 @@ Project documentation and source code will be primarily in English; see [AGENTS.
 
 ## Initial developer scaffold
 
-See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The only operational API route in this scaffold is `GET /api/health`; all other application routes are placeholders.
+See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The original deployed scaffold exposes `GET /api/health`. Later incremental branches add schema validators and author authentication without yet implementing test editing.
 
 ## Schema fixtures
 
 After installing dependencies, run `npm run test:schemas` from `frontend/` and `composer run test:schemas` from `backend/`. These execute the same JSON fixtures against Ajv and Opis. See the [PoC-A plan](docs/poc-a-implementation-plan.md#schema-validation-increment-issue-3). No HTTP validation endpoint exists yet.
+
+## Author authentication (incremental)
+
+The stacked authentication branch adds bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-author-provisioning-and-security-authentication-increment). There are still no test editing or storage endpoints. No author credentials or private files belong in this repository.

@@ -13,8 +13,10 @@
     "optimize-autoloader": true
   },
   "scripts": {
-    "lint": "php -l public/index.php && php -l dev-router.php",
-    "test:schemas": "php bin/test-schema-fixtures.php"
+    "lint": "find public src bin -type f -name '*.php' -exec php -l {} \\;",
+    "test:schemas": "php bin/test-schema-fixtures.php",
+    "test:auth": "bash bin/test-auth-smoke.sh",
+    "test:setup": "bash bin/test-first-author-setup.sh"
   },
   "autoload": {
     "psr-4": {

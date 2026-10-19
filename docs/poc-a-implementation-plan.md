@@ -88,6 +88,26 @@ Backend fixtures can also run on shared hosting after copying `backend/bin/`, `b
 
 **Limits:** schemas and validation helpers are not yet connected to HTTP routes or persistence. The fixture corpus verifies behavior only once dependencies are installed. Real datastore-backed group/media existence checks will be added when storage is implemented. The proposed minimum of two matching pairs is currently enforced as a provisional PoC default.
 
+## Authentication increment (Issue #4)
+
+The authentication PR adds server-side author sessions, login/logout, CSRF protection for mutating operations, brute-force throttling and a guarded `GET /api/admin/ping` endpoint. Credentials are provisioned with `backend/bin/create-author.php` into a private JSON file outside `www/`; no public registration exists.
+
+The Vue `/admin` placeholder becomes a minimal bilingual sign-in/sign-out form. The API still does not allow creating/editing tests; all future `/api/admin/*` routes must live in the protected Slim route group.
+
+GitHub Actions **passed** on 2026-10-19 (PHP 8.5 + Node 22): Vue typecheck/build, both schema fixture runners and the HTTP authentication integration checks for anonymous access, login/logout, CSRF rotation, origin validation and brute-force throttling. See [CI run](https://github.com/Radouch/TestBraid/actions/runs/39248989019). Actual host authentication, filesystem permissions, secure cookies and HTTPS remain to be verified. See [deployment guide](deployment.md#6-author-provisioning-and-security-authentication-increment).
+
+### Apache route-base regression
+
+After the first auth-branch deployment, the owner reported HTTP 404 from `/api/health`, although this endpoint had worked on the foundation branch. Auth had introduced automatic base-path detection from `SCRIPT_NAME`; this was unnecessary for the domain-root deployment and potentially wrong under Apache rewrites. The base path now defaults to empty and may be set explicitly using `TESTBRAID_BASE_PATH` only for subdirectory hosting. The PHP dev-router smoke test simulates a rewritten internal `SCRIPT_NAME` and verifies root API routes remain reachable. The corrected backend still requires a live Apache retest.
+
+### First-author browser setup
+
+A follow-up to Issue #4 now provides one-time first-author provisioning via the Vue `/admin` page, without running a PHP script over SSH. The owner must upload a randomly generated one-time key as `testbraid-backend/config/setup.key` using SFTP or a hosting file manager. The backend checks that key and the session's CSRF token; no user can be created via the browser after an initial author exists. Invalid setup keys are rate-limited, and concurrent requests use the same private lock as the optional CLI author creator.
+
+The first author is logged in immediately. The private key is removed after successful creation where permissions permit; setup stays locked even if removal fails. A separate PHP HTTP integration test exercises missing/incorrect key, CSRF, successful bootstrap, denial of further bootstrap, and persistence.
+
+This setup flow is implemented in the auth branch but **must pass CI and be tested on the actual shared hosting** before considering author provisioning complete.
+
 ## Hosting verification — initial live smoke test passed
 
 On **2026-10-19**, the owner confirmed the Vue home page, `/api/health` JSON response, and both `/admin` and `/tests/example` deep links (including page reloads) on the example domain.
@@ -105,7 +125,7 @@ The domain is an example, not an application-code dependency. Portable installat
 
 ## Exclusions and cautions
 
-- No login, groups, tests, schema validation or upload exists in the scaffold.
+- The initially deployed foundation contains no login, groups, tests, schema validation or upload; authentication and schema code are implemented only on later stacked branches until deployed.
 - No secrets or account configuration may be committed.
 - The `/api/health` response reveals no environment details.
 - API errors must not expose server paths or stack traces.
