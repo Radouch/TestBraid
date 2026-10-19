@@ -189,15 +189,19 @@ The existing `php bin/create-author.php alice` CLI provisioner remains available
 
 The CI runners use disposable configuration paths: `composer run test:auth` and `composer run test:setup`. Neither test targets the public hosting domain.
 
-## 6A. Private JSON storage increment (Issue #5; not yet deployed)
+## 6A. Private JSON storage increment (Issue #5; live create/read smoke test passed)
 
-The `feature/poc-a-storage` branch adds authenticated endpoints to create/list/rename groups and to create/list/read/update **draft** tests. Publishing tests, browser test editing and media uploading are deliberately not implemented yet. **Do not overwrite a verified live installation with this branch solely to test storage without a backup.**
+The `feature/poc-a-storage` branch adds authenticated endpoints to create/list/rename groups and to create/list/read/update **draft** tests. Publishing tests, browser test editing and media uploading are deliberately not implemented yet. On 2026-10-19, the owner verified authenticated creation of a group and draft test and successful read-back on the live host; group rename and test update remain tested in CI but not yet manually confirmed on that host. For future upgrades, protect persistent `config/` and `storage/` data before replacing code.
 
 - Private records live in `testbraid-backend/storage/groups/*.json` and `testbraid-backend/storage/tests/*.json` by default. The same repository abstraction reserves `storage/media/` for the subsequent upload increment.
 - The PHP web user must be able to create the private `storage/` directory and subdirectories, create lock files and temporary files, and atomically rename completed JSON files. `TESTBRAID_STORAGE_DIR` can relocate storage to another **private** path; never set it inside `www/`.
 - Deploy `backend/src/Http/`, `backend/src/Storage/`, and the updated `backend/public/index.php` together with the existing schema and authentication code. New admin endpoints inherit the session and CSRF protections. The frontend has **no** corresponding authoring screens yet.
 - Each record uses a server-generated UUID v4 filename. Uploaded data cannot choose filenames, overwrite server-managed timestamps/status, or publish tests. Malformed documents and missing group/media references are rejected.
 - A write obtains a per-kind filesystem lock, writes a complete temporary file in the same directory, and renames it into place. This protects an existing record from a partial replacement; it is **not** a multi-file transaction or simultaneous-editor conflict resolution.
+
+### Live host verification (2026-10-19)
+
+The owner confirmed that `/api/admin/groups` returned `{"groups":[]}`, private `composer.json` was not accessible over HTTP, the storage diagnostics reported `groupListing=ok` and `storageUnderServedPublicRoot=false`, and a browser-console smoke test created and successfully read back group `1c03bcff-15bb-471c-b5c4-78d60456e906` and draft test `1533e443-51bc-42f8-a448-79f2538801eb`. These test records remain in private storage for later editor testing. This validates create/read, not every persistence API operation or a future media workflow.
 
 ### Verify locally / before any host upgrade
 
