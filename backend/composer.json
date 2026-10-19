@@ -22,7 +22,8 @@
     "test:storage-roots": "php bin/test-storage-public-root.php",
     "test:storage-http": "bash bin/test-storage-http.sh",
     "test:media-http": "bash bin/test-media-http.sh",
-    "test:publication-http": "bash bin/test-publication-http.sh"
+    "test:publication-http": "bash bin/test-publication-http.sh",
+    "test:publication-failures": "php bin/test-publication-failures.php"
   },
   "autoload": {
     "psr-4": {
