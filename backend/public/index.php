@@ -14,6 +14,7 @@ use TestBraid\Auth\SessionManager;
 use TestBraid\Http\JsonResponse;
 use TestBraid\Http\AdminDataRoutes;
 use TestBraid\Http\AdminMediaRoutes;
+use TestBraid\Http\PublicTestRoutes;
 
 // This application is private; only the separate public api/index.php is web-accessible.
 $root = dirname(__DIR__);
@@ -166,6 +167,10 @@ $app->post('/api/auth/logout', static function (Request $request, Response $resp
         'csrfToken' => $sessions->csrfToken(),
     ]);
 })->add($csrf)->add($authorAccess);
+
+// Published test data is public, but only for records in published state.
+// This route performs its own state gate; it never exposes author credentials.
+(new PublicTestRoutes($root))->register($app);
 
 // Every future admin route must be registered in this protected route group.
 $adminData = new AdminDataRoutes($root);

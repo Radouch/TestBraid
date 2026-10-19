@@ -23,6 +23,7 @@ Randomized test generation from question banks is a **future feature**, not part
 - [PoC 1 scope](docs/poc-scope.md) — agreed functionality, PoC-A/PoC-B increments, and acceptance criteria.
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.
 - [Private media upload and host acceptance](docs/media-uploads.md) — supported formats, server limits, authentication and verification.
+- [Static published media and consistency](docs/published-media.md) — publication workflow, shared references, crash recovery and Apache acceptance.
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
 - [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
@@ -30,7 +31,7 @@ Randomized test generation from question banks is a **future feature**, not part
 
 ## Status
 
-The PoC scope and main library choices have been agreed. The data model/API design remains a proposal. The scaffold, shared validation and author authentication are implemented in stacked draft PRs. The first author was created on the live host. The filesystem persistence increment has passed a live create/read smoke test; author-only media uploading and preview are implemented in stacked draft PR #13, but publication and the learner flow are not yet implemented.
+The PoC scope and main library choices have been agreed. The data model/API design remains a proposal. The scaffold, shared validation and author authentication are implemented in stacked draft PRs. The first author was created on the live host. The filesystem persistence increment passed a live create/read smoke test and author-only media upload/preview passed live host acceptance in PR #13. Static published media, test publication/withdrawal and live published updates are implemented in stacked draft PR #14; core live Apache publish/unpublish, anonymous Range/206 and shared-media lifecycle checks passed on 2026-10-19. Existing-file `.htaccess` denial and browser playback of a published static video also passed on 2026-10-19; PoC-A 07 functional host acceptance is complete. The stacked PRs await repository integration. The browser test editor and learner test runner are not yet implemented.
 
 Project documentation and source code will be primarily in English; see [AGENTS.md](AGENTS.md) for code-comment and contribution conventions.
 
