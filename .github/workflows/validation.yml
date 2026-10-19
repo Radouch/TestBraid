@@ -51,3 +51,6 @@ jobs:
       - name: HTTP authentication smoke test
         run: composer run test:auth
         working-directory: backend
+      - name: First-author browser setup smoke test
+        run: bash bin/test-first-author-setup.sh
+        working-directory: backend
