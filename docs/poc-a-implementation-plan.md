@@ -1,11 +1,13 @@
 # TestBraid — PoC-A Implementation Plan
 
-**Status:** Active plan; scaffold submitted for review  
+**Status:** PoC-A 01–07 merged to `main` and core host scenarios accepted on 2026-10-19. PoC-A 08 evidence audit in progress; see [acceptance matrix](poc-a-acceptance.md).  
 **Date:** 2026-10-18  
 **Scope authority:** [PoC 1 scope](poc-scope.md)  
 **Design input:** [Data model and API](data-model-and-api.md)
 
 ## Goal and completion gate
+
+**Current evidence:** See [PoC-A acceptance runbook](poc-a-acceptance.md). The early implementation notes below describe how milestones were introduced; they are not a current deployment status report. All PRs #9–#14 are merged, and real-host publication/audio-video scenarios passed. Remaining confirmation covers effective web-PHP settings, secure cookies and hosting capacity.
 
 PoC-A proves the deployment and security foundation on an actual Apache/PHP host, before building the full author/editor and learner flows. A successful PoC-A demonstrates:
 
