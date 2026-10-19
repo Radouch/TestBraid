@@ -128,7 +128,7 @@ check '.error.code == "ALREADY_PUBLISHED"'
 
 # A second published test shares an asset. Withdrawing the first must NOT
 # delete its image. A published edit immediately promotes the new video.
-jq --arg img "$IMAGE_ID" '.title = "Shared media"; .questions[0].prompt[0].mediaId = $img' \
+jq --arg img "$IMAGE_ID" '.title = "Shared media" | .questions[0].prompt[0].mediaId = $img' \
   "$TEMP/test1.json" > "$TEMP/test2.json"
 expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" \
   -H 'Content-Type: application/json' --data-binary "@$TEMP/test2.json"
