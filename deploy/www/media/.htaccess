@@ -1,6 +1,9 @@
-# Published media only: prevent directory listing and executable uploads.
-# This is defense in depth; the PHP uploader must also enforce file allowlists.
-Options -Indexes -ExecCGI
-<FilesMatch "(?i)\.(php[0-9]?|phtml|phar|cgi|pl|py)$">
+# Public media contains only generated UUID filenames with allowlisted
+# non-executable image/video extensions. Every other file, including temporary
+# .stage-* copies, is denied. This avoids relying on host-specific Options.
+<FilesMatch "^(?![0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(?:jpg|png|webp|mp4|webm)$)">
   Require all denied
 </FilesMatch>
+
+# Hide filenames if Apache's autoindex module is enabled by the host.
+IndexIgnore *
