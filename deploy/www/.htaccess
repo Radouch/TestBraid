@@ -1,17 +1,17 @@
-# Template for the Apache document root. Copy alongside the built Vite index.html.
-# Tested hosting still needs to confirm mod_rewrite and .htaccess support.
-Options -Indexes
+# Apache rewrite rules for the application's public document root.
+# [END] prevents additional per-directory rewrites after choosing a target.
+# Avoid Options directives: not all shared hosts permit overriding them.
 RewriteEngine On
 
-# Serve the public PHP entry point while retaining the original /api/* URI
-# for Slim's router. Avoid recursively rewriting the entry point itself.
-RewriteRule ^api/index\.php$ - [L]
-RewriteRule ^api(/.*)?$ api/index.php [QSA,L]
+# Pass API requests to Slim; preserve the original URI for route matching.
+# Skip the physical entry point to avoid rewriting it back into itself.
+RewriteRule ^api/index\.php$ - [END]
+RewriteRule ^api(/.*)?$ api/index.php [END]
 
-# A missing media file must return 404, not the Vue application HTML.
-RewriteRule ^media(/|$) - [L]
+# Missing media must return an actual 404 rather than the SPA's HTML.
+RewriteRule ^media(/|$) - [END]
 
-# Let Apache serve real frontend assets; fall back to the SPA for client routes.
+# Serve existing static files normally and let Vue Router handle other URLs.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [L]
+RewriteRule ^ index.html [END]
