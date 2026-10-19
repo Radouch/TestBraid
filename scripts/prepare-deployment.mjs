@@ -40,6 +40,7 @@ try {
     'frontend/dist/index.html',
     'deploy/www/.htaccess',
     'deploy/www/api/index.php',
+    'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/public/index.php',
     'schemas/test.schema.json',
@@ -58,6 +59,7 @@ try {
   copyDirectory('schemas', 'testbraid-backend/schemas')
 
   const privateBackend = join(output, 'testbraid-backend')
+  cpSync(join(root, 'deploy/testbraid-backend/.htaccess'), join(privateBackend, '.htaccess'))
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   const composerLock = join(root, 'backend/composer.lock')
   if (existsSync(composerLock)) {
