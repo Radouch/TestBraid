@@ -24,7 +24,7 @@ Randomized test generation from question banks is a **future feature**, not part
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
-- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
+- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.\n- [Shared JSON schemas](schemas/) — versioned contracts and common structural/publication validation fixtures.
 
 ## Status
 
@@ -35,3 +35,7 @@ Project documentation and source code will be primarily in English; see [AGENTS.
 ## Initial developer scaffold
 
 See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The only operational API route in this scaffold is `GET /api/health`; all other application routes are placeholders.
+
+## Schema fixtures
+
+After installing dependencies, run `npm run test:schemas` from `frontend/` and `composer run test:schemas` from `backend/`. These execute the same JSON fixtures against Ajv and Opis. See the [PoC-A plan](docs/poc-a-implementation-plan.md#schema-validation-increment-issue-3). No HTTP validation endpoint exists yet.
