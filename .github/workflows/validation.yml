@@ -66,6 +66,9 @@ jobs:
       - name: JSON storage atomicity and path checks
         run: composer run test:storage
         working-directory: backend
+      - name: Shared-host public-root isolation regression
+        run: composer run test:storage-roots
+        working-directory: backend
       - name: Protected JSON persistence HTTP integration
         run: composer run test:storage-http
         working-directory: backend
