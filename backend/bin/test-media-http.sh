@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
 # Isolated HTTP test: never invoke against a deployed site.
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -14,6 +14,7 @@ cleanup() {
   rm -rf "$TEMP"
 }
 trap cleanup EXIT
+trap 'echo "Media HTTP integration failed at line $LINENO: $BASH_COMMAND" >&2; tail -30 "$TEMP/server.log" >&2' ERR
 
 mkdir -p "$TEMP/config"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
@@ -97,7 +98,7 @@ check --arg ID "$PNG_ID" '.id == $ID and .extension == "png"'
 expect 200 "$HOST/api/admin/media/$PNG_ID/preview"
 cmp "$TEMP/body" "$TEMP/blue.png"
 expect 200 "$HOST/api/admin/media/$PNG_ID/preview" -I
-test ! -s "$TEMP/body"
+grep -q 'Content-Length:' "$TEMP/body"
 
 expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
   -F "file=@$TEMP/clip.mp4;type=application/octet-stream"
