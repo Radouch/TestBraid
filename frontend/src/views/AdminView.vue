@@ -9,6 +9,7 @@ interface Author {
 interface Session {
   authenticated: boolean
   csrfToken: string
+  setupState?: 'ready' | 'needs-key' | 'complete'
   user?: Author
 }
 interface ApiError {
@@ -19,6 +20,7 @@ const { t } = useI18n()
 const session = ref<Session | null>(null)
 const username = ref('')
 const password = ref('')
+const setupKey = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
@@ -61,7 +63,12 @@ async function mutate(route: string, body?: unknown): Promise<Session | null> {
     })
     const data = await response.json() as Session & ApiError
     if (!response.ok) {
-      error.value = data.error?.code === 'RATE_LIMITED' ? t('tooManyAttempts') : t('authFailed')
+      const code = data.error?.code
+      error.value = code === 'RATE_LIMITED' ? t('tooManyAttempts')
+        : code === 'INVALID_SETUP_KEY' ? t('invalidSetupKey')
+        : code === 'SETUP_COMPLETE' ? t('setupAlreadyCompleted')
+        : code === 'SETUP_NOT_ENABLED' ? t('setupNotEnabled')
+        : t('authFailed')
       return null
     }
     return data
@@ -81,6 +88,26 @@ async function signIn(): Promise<void> {
       session.value = data
       // Do not retain the entered password after a successful login.
       password.value = ''
+    }
+  } finally {
+    busy.value = false
+  }
+}
+
+async function createFirstAuthor(): Promise<void> {
+  if (busy.value) return
+  busy.value = true
+  error.value = ''
+  try {
+    const data = await mutate('auth/setup', {
+      username: username.value,
+      password: password.value,
+      setupKey: setupKey.value,
+    })
+    if (data) {
+      session.value = data
+      password.value = ''
+      setupKey.value = ''
     }
   } finally {
     busy.value = false
@@ -116,6 +143,31 @@ onMounted(() => void readSession())
           {{ t('signOut') }}
         </button>
       </template>
+      <form v-else-if="session.setupState === 'ready'" class="d-grid gap-3" @submit.prevent="createFirstAuthor">
+        <p>{{ t('setupIntroduction') }}</p>
+        <div>
+          <label class="form-label" for="setup-username">{{ t('username') }}</label>
+          <input id="setup-username" v-model="username" class="form-control" autocomplete="username"
+            required maxlength="64" />
+        </div>
+        <div>
+          <label class="form-label" for="setup-password">{{ t('password') }}</label>
+          <input id="setup-password" v-model="password" class="form-control" type="password"
+            autocomplete="new-password" required minlength="12" />
+        </div>
+        <div>
+          <label class="form-label" for="setup-key">{{ t('setupKey') }}</label>
+          <input id="setup-key" v-model="setupKey" class="form-control" type="password"
+            autocomplete="off" required minlength="32" maxlength="256" />
+        </div>
+        <button class="btn btn-primary" type="submit" :disabled="busy">{{ t('createFirstAuthor') }}</button>
+      </form>
+      <div v-else-if="session.setupState === 'needs-key'">
+        <p>{{ t('setupNeedsKey') }}</p>
+        <button type="button" class="btn btn-outline-secondary" @click="readSession">
+          {{ t('refreshSetup') }}
+        </button>
+      </div>
       <form v-else class="d-grid gap-3" @submit.prevent="signIn">
         <div>
           <label class="form-label" for="username">{{ t('username') }}</label>
