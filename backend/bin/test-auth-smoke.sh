@@ -82,10 +82,11 @@ assert_status 403 "$HOST/api/auth/logout" -X POST -H "X-CSRF-Token: $CSRF"
 assert_status 200 "$HOST/api/admin/ping"
 assert_status 200 "$HOST/api/auth/logout" -X POST -H "X-CSRF-Token: $NEW_CSRF"
 assert_json '.authenticated == false'
+# Preserve the new anonymous CSRF token before the expected 401 overwrites the body.
+CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
 assert_status 401 "$HOST/api/admin/ping"
 
 # A shared IP is blocked after repeated failed attempts, even for another username.
-CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
 for i in {1..5}; do
   assert_status 401 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/json' -H "X-CSRF-Token: $CSRF" -d '{"username":"other","password":"bad"}'
 done
