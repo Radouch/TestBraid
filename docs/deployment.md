@@ -252,6 +252,22 @@ The next stacked branch, `feature/poc-a-media`, adds `POST /api/admin/media` and
 
 ---
 
+## 6C. Publish static media increment (Issue #7; host acceptance pending)
+
+The `feature/poc-a-publication` branch adds test publication, unpublication and live updates to published tests. It is stacked on the proven media-upload branch, and **does not yet add browser authoring or a learner test runner**. See [full publication/consistency design](published-media.md).
+
+- Rebuild the frontend and create a **complete** deployment package (the private PHP backend and public `www/media/.htaccess` both change). Merge file trees; never delete the live `config/`, `storage/` or `vendor/`.
+- **Before publishing**, ensure `www/media/.htaccess` is present and Apache honors its rules. The PHP process must be able to write and rename files in the public `www/media/` directory. Do **not** make the directory mode `777`.
+- Static files are copied only for media referenced by published tests. Anonymous test JSON is at `/api/public/tests/{id}`; binary URLs are returned in its `mediaUrls` map. The private author preview remains under `/api/admin/media/{id}/preview`.
+- `POST /api/admin/tests/{id}/publish` validates an existing complete draft and publishes its referenced files first. `PUT /api/admin/tests/{id}` permits edits after publication and immediately updates the public JSON when all new referenced files are ready. `POST /api/admin/tests/{id}/unpublish` withdraws the public JSON and cleans copies not referenced by other published tests. All write routes require an author session and CSRF token.
+- The public directory is computed from the actual executing `www/api/index.php` bootstrap, **not** by trusting the hosting provider's potentially too-broad `DOCUMENT_ROOT`. The installation layout remains portable.
+- Run isolated CI regressions before deployment: `composer run test:publication-http` and `composer run test:publication-failures`. These never interact with the live installation.
+- **Host acceptance not yet performed:** confirm draft tests and private media remain inaccessible; anonymously play and seek a *published static* MP4 with HTTP `206` and a `Content-Range` header; edit/withdraw tests without breaking media shared with another published test; Apache must deny `.stage-*` and unsupported filenames.
+
+A filesystem plus Apache cannot make publishing several static media files and one JSON record a perfectly atomic operation. Temporary orphan copies are reconciled under a private lock on subsequent operations, but an administrator should monitor and reconcile failures. See the security and crash-recovery limitations in [published-media.md](published-media.md).
+
+---
+
 ## 7. Test the web deployment (initial foundation smoke test passed)
 
 Visit:
