@@ -77,7 +77,7 @@ Use SFTP or `rsync`; substitute your real SSH account/paths. **Do not create or 
 
 - Copy **the contents** of `frontend/dist/` into `<domain-directory>/www/`.
 - Copy **the contents** of `deploy/www/` into the same `www/` directory, including hidden `.htaccess` files.
-- Copy `backend/composer.json` and `backend/public/index.php` into the matching paths under `<domain-directory>/testbraid-backend/`. Other backend source files will be added later.
+- Copy `backend/composer.json`, `backend/public/`, `backend/src/`, and all contents of root `schemas/` into the corresponding `<domain-directory>/testbraid-backend/` paths. `schemas/` must remain outside `www/`. The validators are implemented but not yet used by an API endpoint.
 - Do **not** copy `deploy/www/` itself as a nested `www/www` directory.
 - Do **not** expose `backend/`, `vendor/`, `storage/` or any password file inside `www/`.
 
@@ -87,10 +87,10 @@ Example `rsync` structure (replace placeholders before running):
 rsync -av frontend/dist/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
 rsync -av deploy/www/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
 rsync -av backend/composer.json USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/
-rsync -av backend/public/index.php USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/public/
+rsync -av backend/public/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/public/\nrsync -av backend/src/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/src/\nrsync -av backend/bin/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/bin/\nrsync -av schemas/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/schemas/
 ```
 
-The destination `testbraid-backend/public/` must exist before the last command. Create it with SSH/SFTP first.
+Create the destination `testbraid-backend/public/`, `testbraid-backend/src/` and `testbraid-backend/schemas/` directories with SSH/SFTP if absent. The optional `backend/bin/` test runner can also be copied for schema verification. The entire `schemas/` directory (including fixtures) should be deployed into the private backend.
 
 ## 5. Install PHP dependencies over SSH
 
@@ -101,10 +101,10 @@ cd /ABSOLUTE/DOMAIN-DIR/testbraid-backend
 php -v
 composer --version
 composer install --no-dev --optimize-autoloader
-composer check-platform-reqs --no-dev
+composer check-platform-reqs --no-dev\ncomposer run test:schemas
 ```
 
-The project currently declares PHP 8.1+ for portability; the example host runs PHP 8.5. The Slim requirement is **`^4.15.3`**, avoiding known vulnerabilities in earlier Slim 4 releases.
+The `test:schemas` command runs shared fixtures against PHP's Opis schema validator and publication rules, once installed. This does not expose test data publicly. The project currently declares PHP 8.1+ for portability; the example host runs PHP 8.5. The Slim requirement is **`^4.15.3`**, avoiding known vulnerabilities in earlier Slim 4 releases.
 
 When `composer.lock` does not exist, the first `composer install` resolves dependencies and creates one. Review and commit that generated lockfile to the repository later so subsequent installations are reproducible. Do not fabricate lockfiles by hand.
 

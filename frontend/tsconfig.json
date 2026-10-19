@@ -19,12 +19,14 @@
     "strict": true,
     "jsx": "preserve",
     "types": [
-      "vite/client"
+      "vite/client",
+      "node"
     ]
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.vue",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "scripts/**/*.ts"
   ]
 }

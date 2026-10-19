@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "test-001",
+  "groupId": "group-lesson-1",
+  "language": "en",
+  "title": "Recognizing objects",
+  "description": "Identify the objects",
+  "status": "draft",
+  "createdAt": "2026-10-18T19:00:00Z",
+  "updatedAt": "2026-10-18T20:00:00Z",
+  "publishedAt": null,
+  "questions": [
+    {
+      "id": "question-1",
+      "type": "choice",
+      "mode": "single",
+      "prompt": [],
+      "options": [],
+      "correctOptionIds": []
+    }
+  ]
+}

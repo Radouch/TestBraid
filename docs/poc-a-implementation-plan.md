@@ -65,6 +65,29 @@ The public `www/api/index.php` bootstrap loads the private `testbraid-backend/pu
 
 **Dependency lockfiles:** Generate `frontend/package-lock.json` and `backend/composer.lock` using actual installations, then commit reviewed lockfiles before reproducible CI/production deployment. No lockfiles are fabricated by hand.
 
+## Schema validation increment (Issue #3)
+
+The next incremental PR provides six canonical **JSON Schema Draft 2020-12** contracts under `schemas/`: test, group, media, content block, choice question and matching question. Browser/client code uses Ajv 2020; PHP uses Opis JSON Schema. Both validate the same fixture corpus.
+
+Drafts may contain incomplete questions and still pass structural validation. A separate publication validator checks meaningful content, at least one question, answer-option references, strict one-to-one matching, duplicate IDs, missing groups and missing media.
+
+Run the shared fixtures after installing each runtime's dependencies:
+
+```sh
+cd frontend
+npm install
+npm run typecheck
+npm run test:schemas
+
+cd ../backend
+composer install
+composer run test:schemas
+```
+
+Backend fixtures can also run on shared hosting after copying `backend/bin/`, `backend/src/`, and `schemas/` into the private backend directory. Both runners fail with a nonzero exit code if expectations do not match.
+
+**Limits:** schemas and validation helpers are not yet connected to HTTP routes or persistence. The fixture corpus verifies behavior only once dependencies are installed. Real datastore-backed group/media existence checks will be added when storage is implemented. The proposed minimum of two matching pairs is currently enforced as a provisional PoC default.
+
 ## Hosting verification — initial live smoke test passed
 
 On **2026-10-19**, the owner confirmed the Vue home page, `/api/health` JSON response, and both `/admin` and `/tests/example` deep links (including page reloads) on the example domain.

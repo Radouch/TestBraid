@@ -1,0 +1,103 @@
+{
+  "schemaBase": "https://schemas.testbraid.invalid/v1/",
+  "knownGroups": [
+    "group-lesson-1"
+  ],
+  "knownMedia": [
+    {
+      "id": "media-photo-1",
+      "kind": "image"
+    },
+    {
+      "id": "media-video-1",
+      "kind": "video"
+    },
+    {
+      "id": "media-video-2",
+      "kind": "video"
+    }
+  ],
+  "cases": [
+    {
+      "path": "tests/valid-publish.json",
+      "kind": "test",
+      "structural": true,
+      "publish": true
+    },
+    {
+      "path": "tests/incomplete-draft.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/dangling-correct-option.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/matching-duplicate-right.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/missing-media.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/missing-group.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/unknown-question.json",
+      "kind": "test",
+      "structural": false,
+      "publish": false
+    },
+    {
+      "path": "tests/unknown-block.json",
+      "kind": "test",
+      "structural": false,
+      "publish": false
+    },
+    {
+      "path": "tests/wrong-version.json",
+      "kind": "test",
+      "structural": false,
+      "publish": false
+    },
+    {
+      "path": "tests/extra-property.json",
+      "kind": "test",
+      "structural": false,
+      "publish": false
+    },
+    {
+      "path": "tests/one-matching-pair.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "groups/valid-group.json",
+      "kind": "group",
+      "structural": true
+    },
+    {
+      "path": "media/valid-media.json",
+      "kind": "media",
+      "structural": true
+    },
+    {
+      "path": "media/negative-size.json",
+      "kind": "media",
+      "structural": false
+    }
+  ]
+}
