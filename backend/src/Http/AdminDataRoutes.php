@@ -232,6 +232,11 @@ final class AdminDataRoutes
         $status['storageDirectoryWritable'] = is_writable($root);
         $status['groupsDirectoryExists'] = is_dir($groups);
         $status['groupsDirectoryWritable'] = is_writable($groups);
+        $rootResolved = realpath($root);
+        $status['storageUnderDocumentRoot'] = $rootResolved !== false && $publicResolved !== false
+            ? $rootResolved === $publicResolved
+                || str_starts_with($rootResolved, $publicResolved . DIRECTORY_SEPARATOR)
+            : null;
 
         return $status;
     }
