@@ -1,0 +1,9 @@
+# Defense in depth: no private TestBraid backend files should be served via HTTP.
+# Apache may use a broad DOCUMENT_ROOT or aliases on some shared hosts.
+# This does not affect PHP includes through the local filesystem.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>

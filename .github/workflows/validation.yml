@@ -26,6 +26,16 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+      # Exercise the same staging layout used for the owner's SFTP deployment.
+      - name: Stage deployment and verify private schemas
+        run: |
+          node scripts/prepare-deployment.mjs
+          test -f deployment-package/testbraid-backend/schemas/test.schema.json
+          test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
+          test -f deployment-package/www/api/index.php
+          test -f deployment-package/testbraid-backend/.htaccess
+          test ! -e deployment-package/testbraid-backend/config/authors.json
+          test ! -e deployment-package/testbraid-backend/vendor
 
   backend:
     name: PHP / Opis
@@ -53,4 +63,13 @@ jobs:
         working-directory: backend
       - name: First-author browser setup smoke test
         run: bash bin/test-first-author-setup.sh
+        working-directory: backend
+      - name: JSON storage atomicity and path checks
+        run: composer run test:storage
+        working-directory: backend
+      - name: Shared-host public-root isolation regression
+        run: composer run test:storage-roots
+        working-directory: backend
+      - name: Protected JSON persistence HTTP integration
+        run: composer run test:storage-http
         working-directory: backend

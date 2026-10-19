@@ -10,6 +10,14 @@ declare(strict_types=1);
 //
 // For other layouts, set TESTBRAID_BACKEND_ENTRY to the absolute path of
 // the private backend entry point; no domain name is embedded in the code.
+// Apache DOCUMENT_ROOT may name a wider directory on shared hosting, not
+// the directory that actually serves the TestBraid frontend. Derive the
+// public root from this physically executed bootstrap, not CGI metadata.
+// The private storage layer rejects any storage location inside this root.
+if (!defined('TESTBRAID_PUBLIC_ROOT')) {
+    define('TESTBRAID_PUBLIC_ROOT', realpath(dirname(__DIR__)) ?: dirname(__DIR__));
+}
+
 $privateEntry = getenv('TESTBRAID_BACKEND_ENTRY');
 if (!is_string($privateEntry) || $privateEntry === '') {
     $privateEntry = dirname(__DIR__, 2) . '/testbraid-backend/public/index.php';

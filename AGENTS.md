@@ -20,7 +20,7 @@ These instructions apply to source code, tests, documentation, issues and PRs.
 - Keep private backend code, credentials, JSON and original media outside the public document root.
 - Do not hardcode the example hostname `testbraid.mariebila.cz` or host-specific absolute paths into application code.
 - All privileged operations must be authenticated and CSRF-protected server-side before they are exposed.
-- Create authors only through private SSH provisioning. Never commit password hashes, passwords or login-throttling state; do not disable secure cookies in production.
+- Provision the first author using the private, SFTP-uploaded `setup.key` and the one-time `/admin` setup form, or through the SSH-only CLI provisioner. After the first author exists, browser setup must remain disabled. Never commit keys, password hashes, passwords or login-throttling state; do not disable secure cookies in production.
 
 ## Delivery and testing
 

@@ -24,4 +24,10 @@ if (PHP_SAPI === 'cli-server' && is_string($simulatedScriptName) && $simulatedSc
     $_SERVER['SCRIPT_NAME'] = $simulatedScriptName;
 }
 
+// Serve using the same canonical public-root signal as the production
+// bootstrap. This remains independent of CGI SCRIPT_NAME and DOCUMENT_ROOT.
+if (!defined('TESTBRAID_PUBLIC_ROOT')) {
+    define('TESTBRAID_PUBLIC_ROOT', realpath(__DIR__ . '/public') ?: __DIR__ . '/public');
+}
+
 require __DIR__ . '/public/index.php';

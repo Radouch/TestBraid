@@ -98,7 +98,7 @@ GitHub Actions **passed** on 2026-10-19 (PHP 8.5 + Node 22): Vue typecheck/build
 
 ### Apache route-base regression
 
-After the first auth-branch deployment, the owner reported HTTP 404 from `/api/health`, although this endpoint had worked on the foundation branch. Auth had introduced automatic base-path detection from `SCRIPT_NAME`; this was unnecessary for the domain-root deployment and potentially wrong under Apache rewrites. The base path now defaults to empty and may be set explicitly using `TESTBRAID_BASE_PATH` only for subdirectory hosting. The PHP dev-router smoke test simulates a rewritten internal `SCRIPT_NAME` and verifies root API routes remain reachable. The corrected backend still requires a live Apache retest.
+After the first auth-branch deployment, the owner reported HTTP 404 from `/api/health`, although this endpoint had worked on the foundation branch. Auth had introduced automatic base-path detection from `SCRIPT_NAME`; this was unnecessary for the domain-root deployment and potentially wrong under Apache rewrites. The base path now defaults to empty and may be set explicitly using `TESTBRAID_BASE_PATH` only for subdirectory hosting. The PHP dev-router smoke test simulates a rewritten internal `SCRIPT_NAME` and verifies root API routes remain reachable. The owner subsequently confirmed successful first-author browser setup on the corrected backend, supporting the routing fix; the exact HTTP responses and cookie attributes were not independently captured.
 
 ### First-author browser setup
 
@@ -106,7 +106,7 @@ A follow-up to Issue #4 now provides one-time first-author provisioning via the 
 
 The first author is logged in immediately. The private key is removed after successful creation where permissions permit; setup stays locked even if removal fails. A separate PHP HTTP integration test exercises missing/incorrect key, CSRF, successful bootstrap, denial of further bootstrap, and persistence.
 
-This setup flow is implemented in the auth branch but **must pass CI and be tested on the actual shared hosting** before considering author provisioning complete.
+The setup flow passed automated CI checks, and on **2026-10-19** the owner confirmed successful creation of the first author on the actual shared hosting via `setup.key` and `/admin`. This verifies the first-account flow and PHP write access to private author configuration. Separate logout/login, secure cookie attributes and independent production security checks are not yet fully documented.
 
 ## Hosting verification — initial live smoke test passed
 
