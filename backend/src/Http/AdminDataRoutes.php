@@ -205,7 +205,7 @@ final class AdminDataRoutes
             // This is the same safe, idempotent operation as GET /groups.
             $this->store()->all('groups');
             $status['groupListing'] = 'ok';
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             error_log('TestBraid storage diagnostic probe failed: ' . get_class($e));
             $status['groupListing'] = 'failed';
             $message = $e->getMessage();
