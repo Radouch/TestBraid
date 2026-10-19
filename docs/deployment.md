@@ -6,7 +6,7 @@
 
 ## 1. What this build demonstrates
 
-The owner verified that the routing fix in the authentication branch restored `/api/health` and `/api/auth/session` on the actual hosting environment. The updated first-author browser setup and form are new code and require a fresh deployment.
+The owner verified that the routing fix in the authentication branch restored `/api/health` and `/api/auth/session` on the actual hosting environment. On 2026-10-19, the owner also confirmed successfully creating the first author through the browser with a private `setup.key`. This confirms the provisioning flow and the required author-file write path; production cookie attributes and logout/login behavior have not been independently verified.
 
 **Still not implemented:** editing/saving tests, media uploads and learner evaluation. Successful authentication smoke tests do not mean PoC-A is finished.
 
@@ -117,7 +117,7 @@ If `php -v` on SSH differs from the PHP version serving the website, select the 
 
 ## 6. First-author setup through the browser (no SSH scripts)
 
-The first author can be created from the `/admin` page without invoking any SSH/PHP command. **A private one-time setup key is required** to prevent arbitrary visitors from claiming the first administrator account. There is no unrestricted public sign-up.
+The first author can be created from the `/admin` page without invoking any SSH/PHP command. **Live first-author creation was confirmed by the owner on 2026-10-19.** **A private one-time setup key is required** to prevent arbitrary visitors from claiming the first administrator account. There is no unrestricted public sign-up.
 
 After updating the frontend and backend files from `feature/poc-a-auth`:
 
