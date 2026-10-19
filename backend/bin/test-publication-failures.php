@@ -95,7 +95,27 @@ try {
         throw new RuntimeException('Reconciliation did not clean orphaned public media.');
     }
 
-    echo "PASS: failed publication preserves JSON, removes new public copies and reconciles orphans\n";
+    // Repair scenario: if a published test's static copy went missing, a
+    // second failed publication must not undo its recovery.
+    $normal->publish($tid);
+    $publicImage = $web . '/media/' . $mid . '.png';
+    if (!is_file($publicImage)) throw new RuntimeException('Expected published image.');
+    unlink($publicImage);
+    $second = clone $draft;
+    $second->id = JsonFileRepository::uuid();
+    $repository->write('tests', $second->id, $second, true);
+    try {
+        $failing->publish($second->id);
+        throw new RuntimeException('Injected repair failure did not fire.');
+    } catch (RuntimeException $e) {
+        if ($e->getMessage() !== 'Injected publication metadata failure.') throw $e;
+    }
+    if (!is_file($publicImage) || $repository->get('tests', $tid)?->status !== 'published'
+        || $repository->get('tests', $second->id)?->status !== 'draft') {
+        throw new RuntimeException('Rollback deleted media still needed by another published test.');
+    }
+
+    echo "PASS: failed publication, orphan reconciliation and shared-media repair rollback\n";
 } finally {
     putenv('TESTBRAID_STORAGE_DIR');
     $files = new RecursiveIteratorIterator(
