@@ -18,6 +18,7 @@
     "test:auth": "bash bin/test-auth-smoke.sh",
     "test:setup": "bash bin/test-first-author-setup.sh",
     "test:storage": "php bin/test-storage-failures.php",
+    "test:storage-roots": "php bin/test-storage-public-root.php",
     "test:storage-http": "bash bin/test-storage-http.sh"
   },
   "autoload": {
