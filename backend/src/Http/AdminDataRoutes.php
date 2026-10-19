@@ -37,6 +37,12 @@ final class AdminDataRoutes
             JsonResponse::send($p, $this->storageDiagnostics())
         );
 
+        // Inspect web PHP runtime and effective author cookie policy without
+        // disclosing absolute paths, credentials or phpinfo() output.
+        $group->get('/environment-diagnostics', static fn (Request $r, Response $p): Response =>
+            JsonResponse::send($p, EnvironmentDiagnostics::collect())
+        );
+
         $group->get('/groups', fn (Request $r, Response $p): Response => $this->handle($p, function (): array {
             return ['groups' => $this->store()->all('groups')];
         }));
