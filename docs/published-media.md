@@ -1,6 +1,6 @@
 # PoC-A 07 — Published static media
 
-**Status:** Implemented in stacked draft PR #14. CI and the main real-host publishing/withdrawal/shared-media smoke tests passed on 2026-10-19. Apache deny rules still require an existing-file test, and anonymous video playback should be visually checked. This branch stacks on media upload PR #13 and JSON storage PR #12.
+**Status:** Implemented in stacked draft PR #14. CI, real-host publishing/withdrawal/shared-media smoke tests, and existing-file Apache deny-rule verification passed on 2026-10-19. Anonymous published-static-video playback/seeking remains the final manual check. This branch stacks on media upload PR #13 and JSON storage PR #12.
 
 ## Goals and boundaries
 
@@ -69,4 +69,4 @@ After backing up private `config/` and `storage/`, build the frontend and prepar
 6. Verify Apache restrictions against **an existing harmless sentinel**. Temporarily create `www/media/publication-deny-check.txt` containing only `TESTBRAID-DENY-CHECK` (never credentials). Fetch `/media/publication-deny-check.txt` anonymously; expect HTTP **403** (or a genuine 404 due to server mapping), never HTTP 200 or the sentinel content. Delete the sentinel afterward. Testing a nonexistent `.stage-*` URL alone does **not** prove `.htaccess` enforcement. Do not create a PHP or executable test file.
 7. Confirm `storage/` and the private backend remain inaccessible by anonymous HTTP, and the public response never contains absolute private server paths.
 
-Most host acceptance checks passed on 2026-10-19. The existing-file Apache deny test and visual playback/seeking from a published static video URL remain open. The exact hosting maximum for uploads and Apache rule overrides can differ from the PHP development server.
+The existing-file Apache deny test also passed on 2026-10-19: the owner confirmed that a harmless `.txt` sentinel placed in `www/media/` was denied by Apache. Remove that temporary sentinel after testing. Only visual playback/seeking from a published static MP4 URL remains to be checked manually. The exact hosting maximum for uploads and Apache rule overrides can differ from the PHP development server.
