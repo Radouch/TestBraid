@@ -84,7 +84,7 @@ check '.fileinfoEnabled == true and .jsonEnabled == true
   and .phpSapi == "cli-server"
   and (.uploadMaxFilesize | type == "string")
   and (.postMaxSize | type == "string")
-  and (keys | length) == 13'
+  and (keys | length) == 14'
 if grep -Eiq 'auth(or)?s\.json|setup\.key|/home/|/tmp/|TESTBRAID_|DOCUMENT_ROOT|session\.save_path' "$TEMP/body"; then
   echo 'Environment diagnostics disclosed a private setting or path' >&2
   exit 1
