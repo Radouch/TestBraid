@@ -25,3 +25,6 @@ backend/.phpunit.cache/
 Thumbs.db
 .idea/
 .vscode/
+
+# Generated SFTP staging tree (never track deployment snapshots)
+deployment-package/
