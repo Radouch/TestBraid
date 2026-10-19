@@ -1,7 +1,0 @@
-# Defense in depth only; validate and allowlist uploads in PHP too.
-# Check which directives are permitted by your Apache hosting provider.
-Options -Indexes -ExecCGI
-RemoveHandler .php .phtml .phar .cgi .pl .py
-<FilesMatch "\.(?i:php[0-9]?|phtml|phar|cgi|pl|py)$">
-  Require all denied
-</FilesMatch>

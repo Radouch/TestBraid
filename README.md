@@ -24,12 +24,14 @@ Randomized test generation from question banks is a **future feature**, not part
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
+- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
 
 ## Status
 
 The PoC scope and main library choices have been agreed. The data model/API design remains a proposal. A preliminary frontend/backend scaffold is under review; authentication, persistence, upload and the complete application are not implemented.
 
-Project documentation and source code will be primarily in English.
+Project documentation and source code will be primarily in English; see [AGENTS.md](AGENTS.md) for code-comment and contribution conventions.
+
 ## Initial developer scaffold
 
-See [PoC-A implementation plan](docs/poc-a-implementation-plan.md#initial-scaffold-content) for local Vue + PHP startup. The only operational API route in this scaffold is `GET /api/health`; all other application routes are placeholders.
+See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The only operational API route in this scaffold is `GET /api/health`; all other application routes are placeholders.

@@ -8,7 +8,8 @@ const checked = ref(false)
 
 onMounted(async () => {
   try {
-    const response = await fetch('/api/health', { cache: 'no-store' })
+    // Use the Vite public base path for root and subdirectory installations.
+    const response = await fetch(`${import.meta.env.BASE_URL}api/health`, { cache: 'no-store' })
     if (!response.ok) throw new Error('Health endpoint unavailable')
     const data: unknown = await response.json()
     connected.value = typeof data === 'object' && data !== null

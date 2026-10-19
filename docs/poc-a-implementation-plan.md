@@ -37,58 +37,42 @@ The sequence is dependency-driven, not a calendar estimate. A02 and A03 can proc
 
 - `frontend/`: Vue app with Vite, TS, Bootstrap CSS, Vue Router and Vue I18n. The landing page checks the backend via `GET /api/health`.
 - `backend/`: Slim 4 + `slim/psr7` manifest, health endpoint, PHP development router. No authentication or writable API yet.
-- `deploy/`: **unverified examples** of Apache rewrite and media protection settings.
+- `deploy/www/`: **unverified hosting-specific templates** for the public PHP entry point, Apache rewrites and future public media protection.
+- `docs/deployment.md`: instructions for the initial PHP 8.5 host with a public `www/` and adjacent private backend.
 - Repository-level `.gitignore` excludes build artifacts, installed dependencies, credentials and writable private state.
 
-### Local startup
+### Development and first deployment
 
-Requires a supported Node.js runtime, npm, PHP **8.1+**, Composer and access to npm/Packagist.
-
-Terminal 1:
-
-```sh
-cd backend
-composer install
-php -S 127.0.0.1:8080 -t public dev-router.php
-```
-
-Terminal 2:
+The owner will **build the frontend locally but install PHP dependencies on the hosting server via SSH Composer**. A local Composer installation is not required.
 
 ```sh
 cd frontend
 npm install
-npm run dev
+npm run build
 ```
 
-Open the Vite URL shown by the terminal. Its dev proxy forwards `/api/*` to PHP on port 8080.
+To test the complete stack locally, a developer may *optionally* install Composer and run the PHP development server, but that is not part of the owner's deployment workflow. Without a local API, the frontend correctly shows that the backend is unavailable.
 
-Verification:
+See [deployment guide](deployment.md) for the exact public/private layout, copy commands and Composer installation on the first host. The example host runs PHP **8.5** and has this directory structure:
 
-```sh
-curl -i http://127.0.0.1:8080/api/health
-cd frontend && npm run typecheck && npm run build
-cd ../backend && composer run lint
+```text
+<domain-directory>/
+  www/                 # public document root
+  testbraid-backend/   # sibling private PHP backend
 ```
 
-Expect HTTP 200 JSON with `status: "ok"`. The browser displays either a connected or unavailable API status. The `/admin` and `/tests/:id` routes are placeholders, not usable features.
+The public `www/api/index.php` bootstrap loads the private `testbraid-backend/public/index.php` entry, which in turn loads its own Composer `vendor/`. If a provider uses different paths, override `TESTBRAID_BACKEND_ENTRY` or adapt only the deployment bootstrap.
 
-**Dependency lockfiles:** Install dependencies in a network-enabled environment, review them and commit `frontend/package-lock.json` and `backend/composer.lock` before setting up reproducible CI/deployment. These files are not fabricated by hand.
+**Dependency lockfiles:** Generate `frontend/package-lock.json` and `backend/composer.lock` using actual installations, then commit reviewed lockfiles before reproducible CI/production deployment. No lockfiles are fabricated by hand.
 
-## Hosting deployment — pending real verification
+## Hosting verification — not yet completed
 
-The intended deployment layout has private PHP source/vendor and secrets **outside** the Apache document root. Copy `frontend/dist/*` to the public web root and wire `/api` to a PHP front controller. The provided `deploy/apache.htaccess.example` is only a starting point.
+The provided `deploy/www/.htaccess`, `deploy/www/api/index.php`, and `deploy/www/media/.htaccess` files are templates tailored to the reported host layout. Deployment has **not** yet been verified. Apache rewrite rules, permissions, HTTP 200 for `/api/health`, PHP handling, and video byte-range support must be tested on the actual host.
 
-The PHP entrypoint can use `TESTBRAID_BACKEND_ROOT` to find its private Composer `vendor/`. How to set that value on the actual shared hosting is not decided until issue #2.
-
-Do not upload private JSON, password files or writable originals inside `public_html`. Public media should be approved static files, with script execution disabled. Apache's `.htaccess` capabilities and actual video byte-range handling must be tested.
-
-Record:
-
-- Hosting provider, domain/subpath, document root.
-- PHP version/extensions and ability to set PHP environment variables.
-- HTTPS, rewrites, permission boundaries and session configuration.
-- `upload_max_filesize`, `post_max_size`, timeouts and quota.
-- Static media behavior, anti-execution rules and byte-range support.
+- Frontend and `/admin` / `/tests/example` SPA routes must load, including direct reload.
+- Private Composer/vendor/config/storage remain inaccessible from the browser.
+- `www/api/index.php` is public but the Slim code is not.
+- User-provided domain is an example only; portable installs use Vite base configuration.
 
 ## Exclusions and cautions
 

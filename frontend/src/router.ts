@@ -4,7 +4,8 @@ import AdminView from './views/AdminView.vue'
 import TestView from './views/TestView.vue'
 
 export const router = createRouter({
-  history: createWebHistory(),
+  // Honor the Vite build base so deployment is not tied to a particular domain/path.
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'home', component: HomeView },
     { path: '/admin', name: 'admin', component: AdminView },
