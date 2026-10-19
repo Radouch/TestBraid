@@ -1,9 +1,16 @@
-# Public media contains only generated UUID filenames with allowlisted
-# non-executable image/video extensions. Every other file, including temporary
-# .stage-* copies, is denied. This avoids relying on host-specific Options.
+# Static, published TestBraid media only. Generated UUID filenames and
+# allowlisted non-executable extensions are required for Apache to serve a file.
+# Temporary .stage-* data and unrelated files are denied, even if left after a
+# process crash. Do not rely on shared-host Options overrides.
 <FilesMatch "^(?![0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(?:jpg|png|webp|mp4|webm)$)">
   Require all denied
 </FilesMatch>
 
-# Hide filenames if Apache's autoindex module is enabled by the host.
-IndexIgnore *
+<IfModule mod_autoindex.c>
+  IndexIgnore *
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Cache-Control "no-store"
+</IfModule>
