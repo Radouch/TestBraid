@@ -59,7 +59,7 @@ This establishes working frontend/API routing on the selected host; PHP 8.5 was 
     └── vendor/                      # Installed by Composer on the host
 ```
 
-The `www/api/index.php` file is only a public bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. Author password hashes and the login throttling state must remain **private and writable by the PHP process as appropriate**.
+The `www/api/index.php` file is only a public bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. The bootstrap also identifies its actual served `www/` parent for the storage isolation guard, because `DOCUMENT_ROOT` supplied by Apache can be too broad on shared hosting. Author password hashes and the login throttling state must remain **private and writable by the PHP process as appropriate**.
 
 ## 3. Prepare frontend locally
 
@@ -120,6 +120,7 @@ Use SFTP or `rsync`; substitute your real SSH account/paths. **Do not create or 
 
 - Copy **the contents** of `frontend/dist/` into `<domain-directory>/www/`.
 - Copy **the contents** of `deploy/www/` into the same `www/` directory, including hidden `.htaccess` files.
+- Copy `deploy/testbraid-backend/.htaccess` to the private `testbraid-backend/.htaccess` directory root. This explicitly denies HTTP access to the private backend even if a host exposes a broader document root by mistake. It does not affect PHP `require` / `include` across the filesystem.
 - Copy `backend/composer.json`, `backend/public/`, `backend/src/`, `backend/bin/` and the **entire repository-root `schemas/` directory** to their corresponding private paths. In particular, `schemas/fixtures/manifest.json` must end up as `<domain-directory>/testbraid-backend/schemas/fixtures/manifest.json`, not as `<domain-directory>/schemas/fixtures/manifest.json` or under `www/`.
 - Do **not** copy `deploy/www/` itself as a nested `www/www` directory.
 - Do **not** expose `backend/`, `vendor/`, `storage/` or any password file inside `www/`.
@@ -129,6 +130,7 @@ Example `rsync` structure (replace placeholders before running):
 ```sh
 rsync -av frontend/dist/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
 rsync -av deploy/www/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
+rsync -av deploy/testbraid-backend/.htaccess USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/.htaccess
 rsync -av backend/composer.json USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/
 rsync -av backend/public/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/public/
 rsync -av backend/src/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/src/
@@ -206,6 +208,7 @@ composer run test:schemas
 composer run test:auth
 composer run test:setup
 composer run test:storage
+composer run test:storage-roots
 composer run test:storage-http
 ```
 
@@ -213,14 +216,17 @@ The storage HTTP test starts its **own loopback-only** PHP server, creates dispo
 
 ### Diagnose storage failures on shared hosting
 
-When `GET /api/admin/groups` returns HTTP 500 and the host does not expose PHP error logs, a **logged-in author** can visit `GET /api/admin/storage-diagnostics` (available in the storage branch). It reports only boolean directory checks and a short allowlisted failure category, never filesystem paths, passwords, or raw exception text.
+When `GET /api/admin/groups` returns HTTP 500 and the host does not expose PHP error logs, a **logged-in author** can visit `GET /api/admin/storage-diagnostics`. It reports only boolean directory checks and a short allowlisted failure category, never filesystem paths, passwords, or raw exception text.
 
 - `storageDirectoryWritable: false` indicates that the web PHP process cannot write the configured private storage directory. CLI user ownership alone is not decisive, especially with ACLs.
-- `storageUnderDocumentRoot: true` means the storage path fails the private-storage safety check. Inspect the web server's document-root configuration and the private/backend layout; do **not** remove that check to silence the error.
-- `groupListing: failed` plus `failure` distinguishes directory creation/listing failures from unexpected runtime failures.
-- `groupListing: ok` means the web PHP process can complete the same initialization and listing as `GET /api/admin/groups`; retry the latter.
+- `storageUnderDocumentRoot: true` reports the relationship to PHP's raw `DOCUMENT_ROOT` variable **only**. Some shared hosts report a broader parent directory. This value is not used as the isolation decision when the physical public bootstrap is available.
+- `publicRootSource: bootstrap` means the physical, executed `www/api/index.php` supplied the actual served public web root. `storageUnderServedPublicRoot: false` is required for private storage; `true` means the safety guard should reject it.
+- `publicRootSource: document-root-fallback` indicates the old bootstrap or a nonstandard direct entry point is still used; deploy the updated public bootstrap to provide the correct physical root.
+- `groupListing: failed` plus `failure` distinguishes directory creation/listing failures from unexpected runtime failures; `groupListing: ok` confirms an empty or populated list can be loaded.
 
-The endpoint is authenticated and is read-only apart from the same lazy creation of the empty private `groups/` directory that the ordinary list endpoint already performs. Do not publish the diagnostics through the anonymous `/api/health` route.
+**Security verification on the hosting server:** Before using JSON storage, test `https://testbraid.mariebila.cz/testbraid-backend/composer.json` while logged out (or in a private browser window). It must **not** return the actual `composer.json` file: HTTP 403 or 404 are acceptable. An HTML SPA fallback is not proof of Apache isolation; verify the server's domain/document-root mapping if uncertain. If the raw Composer JSON is publicly accessible, stop deployment and correct the public root / deny rules before storing data. **Never test by requesting `config/authors.json` or other sensitive files.**
+
+The `deploy/testbraid-backend/.htaccess` file provides additional Apache access denial for the private subtree if it is ever reached through HTTP; it is not a substitute for configuring the host's actual public root to `www/`. The private backend and storage must remain separate from the *actually served* `www/` directory. The endpoint is authenticated and is read-only apart from the same lazy creation of the empty `groups/` directory that `GET /api/admin/groups` performs. Do not publish these diagnostics through anonymous `/api/health`.
 
 ### Back up and restore
 
