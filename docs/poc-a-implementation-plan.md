@@ -37,7 +37,7 @@ The sequence is dependency-driven, not a calendar estimate. A02 and A03 can proc
 
 - `frontend/`: Vue app with Vite, TS, Bootstrap CSS, Vue Router and Vue I18n. The landing page checks the backend via `GET /api/health`.
 - `backend/`: Slim 4 + `slim/psr7` manifest, health endpoint, PHP development router. No authentication or writable API yet.
-- `deploy/www/`: **unverified hosting-specific templates** for the public PHP entry point, Apache rewrites and future public media protection.
+- `deploy/www/`: the public PHP bootstrap, the **host-verified root Apache rewrite rules** and future public media protection (not yet tested).
 - `docs/deployment.md`: instructions for the initial PHP 8.5 host with a public `www/` and adjacent private backend.
 - Repository-level `.gitignore` excludes build artifacts, installed dependencies, credentials and writable private state.
 
@@ -65,14 +65,20 @@ The public `www/api/index.php` bootstrap loads the private `testbraid-backend/pu
 
 **Dependency lockfiles:** Generate `frontend/package-lock.json` and `backend/composer.lock` using actual installations, then commit reviewed lockfiles before reproducible CI/production deployment. No lockfiles are fabricated by hand.
 
-## Hosting verification — not yet completed
+## Hosting verification — initial live smoke test passed
 
-The provided `deploy/www/.htaccess`, `deploy/www/api/index.php`, and `deploy/www/media/.htaccess` files are templates tailored to the reported host layout. Deployment has **not** yet been verified. Apache rewrite rules, permissions, HTTP 200 for `/api/health`, PHP handling, and video byte-range support must be tested on the actual host.
+On **2026-10-19**, the owner confirmed the Vue home page, `/api/health` JSON response, and both `/admin` and `/tests/example` deep links (including page reloads) on the example domain.
 
-- Frontend and `/admin` / `/tests/example` SPA routes must load, including direct reload.
-- Private Composer/vendor/config/storage remain inaccessible from the browser.
-- `www/api/index.php` is public but the Slim code is not.
-- User-provided domain is an example only; portable installs use Vite base configuration.
+The original Apache rewrite template caused HTTP 500 for `/api/health`. The owner confirmed that the final rewrite configuration using `[END]`, without the root `Options -Indexes` directive, works for all four checks. We did **not** isolate which original directive caused the failure. The corrected `deploy/www/.htaccess` is committed to this branch; see [deployment guide](deployment.md).
+
+Still to verify before closing [#2](https://github.com/Radouch/TestBraid/issues/2):
+
+- The web PHP handler version and necessary extensions (PHP 8.5 is owner-reported).
+- Private Composer/vendor/config/storage paths and file permissions cannot be read via HTTP.
+- Media-directory `.htaccess` behavior, future uploads, size limits, quotas and byte-range support for video.
+- Error logs and session storage requirements as the auth layer is implemented.
+
+The domain is an example, not an application-code dependency. Portable installations use the Vite base and configurable private backend entry point.
 
 ## Exclusions and cautions
 
