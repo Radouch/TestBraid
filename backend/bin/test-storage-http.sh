@@ -55,7 +55,7 @@ check() {
 
 # Privileged routes must be protected before AND after an author logs out.
 expect 401 "$HOST/api/admin/groups"
-check '.error.code == "AUTH_REQUIRED"
+check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/storage-diagnostics"
 check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' -d '{"name":"Not allowed"}'
