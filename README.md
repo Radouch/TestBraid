@@ -2,7 +2,7 @@
 
 **TestBraid** is a planned lightweight, multilingual, self-hosted application for creating, sharing and completing multimedia self-assessment tests.
 
-The project is **under active PoC-A development**. The Vue/Slim foundation passed a live deployment smoke test, and the owner successfully created the first author through `/admin` on the hosting server (2026-10-19). The storage increment in this branch has not been deployed or validated on the host.
+The project is **under active PoC-A development**. The Vue/Slim foundation passed a live deployment smoke test, and the owner successfully created the first author through `/admin` on the hosting server (2026-10-19). The storage increment has now passed live authenticated group/draft-test creation and read-back on the host (2026-10-19); editing and renaming remain covered by CI but not yet manually verified there.
 
 ## Project goals
 
@@ -43,4 +43,4 @@ After installing dependencies, run `npm run test:schemas` from `frontend/` and `
 
 ## Author authentication (incremental)
 
-The authentication increment adds bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-first-author-setup-through-the-browser-no-ssh-scripts). This branch adds protected JSON group and draft-test endpoints; they are not a browser-based test editor and are not yet deployed. No author credentials or private files belong in this repository.
+The authentication increment adds bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-first-author-setup-through-the-browser-no-ssh-scripts). This branch adds protected JSON group and draft-test endpoints; they are not a browser-based test editor. Basic storage functionality has been live-tested on the host. No author credentials or private files belong in this repository.
