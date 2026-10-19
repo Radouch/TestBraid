@@ -36,6 +36,8 @@ jobs:
           test -f deployment-package/testbraid-backend/.htaccess
           test ! -e deployment-package/testbraid-backend/config/authors.json
           test ! -e deployment-package/testbraid-backend/vendor
+      - name: Audit complete SFTP deployment package
+        run: node scripts/verify-deployment-package.mjs
 
   backend:
     name: PHP / Opis

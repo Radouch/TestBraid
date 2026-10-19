@@ -58,6 +58,8 @@ expect 401 "$HOST/api/admin/groups"
 check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/storage-diagnostics"
 check '.error.code == "AUTH_REQUIRED"'
+expect 401 "$HOST/api/admin/environment-diagnostics"
+check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' -d '{"name":"Not allowed"}'
 expect 200 "$HOST/api/auth/session"
 CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
@@ -68,6 +70,25 @@ CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
 
 # The diagnostic probe runs through web PHP, remains author-only, does not
 # reveal server paths, and exercises the same directory setup as GET /groups.
+# The report must come from web PHP (not a CLI php -i) and expose only
+# allowlisted public capability values; never private filesystem paths.
+expect 200 "$HOST/api/admin/environment-diagnostics"
+check '.fileinfoEnabled == true and .jsonEnabled == true
+  and .fileUploadsEnabled == true
+  and .sessionCookieHttpOnly == true
+  and .sessionCookieSameSite == "Lax"
+  and .sessionStrictMode == true
+  and .sessionUseOnlyCookies == true
+  and .sessionCookieSecure == false
+  and (.phpVersion | type == "string")
+  and .phpSapi == "cli-server"
+  and (.uploadMaxFilesize | type == "string")
+  and (.postMaxSize | type == "string")
+  and (keys | length) == 14'
+if grep -Eiq 'auth(or)?s\.json|setup\.key|/home/|/tmp/|TESTBRAID_|DOCUMENT_ROOT|session\.save_path' "$TEMP/body"; then
+  echo 'Environment diagnostics disclosed a private setting or path' >&2
+  exit 1
+fi
 expect 200 "$HOST/api/admin/storage-diagnostics"
 check '.storageDirectoryExists == true and .storageDirectoryWritable == true
   and .documentRootResolved == true and .storageUnderDocumentRoot == false
