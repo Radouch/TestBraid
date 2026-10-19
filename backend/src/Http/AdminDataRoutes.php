@@ -166,9 +166,8 @@ final class AdminDataRoutes
      * as a different OS user or see a different DOCUMENT_ROOT than PHP CLI).
      *
      * The final listing probe performs the same initialization as GET /groups.
-     * TEMPORARY authenticated diagnostics include actual filesystem paths to
-     * investigate CGI DOCUMENT_ROOT and private/public directory layout.
-     * Never expose this endpoint anonymously or return credentials/secrets.
+     * Only boolean flags and a small allowlist of storage errors are
+     * returned; never expose filesystem paths, environment values or secrets.
      *
      * @return array<string, bool|string|null>
      */
@@ -193,17 +192,6 @@ final class AdminDataRoutes
             : false;
 
         $status = [
-            // Temporary, authenticated-only path inspection. Values are read
-            // from the running PHP process, never from host-specific constants.
-            // Remove these raw paths after investigating the hosting layout.
-            'documentRootRaw' => is_string($publicSetting) ? $publicSetting : null,
-            'documentRootCanonical' => $publicResolved !== false ? $publicResolved : null,
-            'backendRoot' => $this->backendRoot,
-            'backendRootCanonical' => realpath($this->backendRoot) ?: null,
-            'storageRoot' => $root,
-            'storageRootCanonical' => $rootResolved !== false ? $rootResolved : null,
-            'servedPublicRootRaw' => is_string($servedPublicSetting) ? $servedPublicSetting : null,
-            'servedPublicRootCanonical' => $servedPublicResolved !== false ? $servedPublicResolved : null,
             'storageDirectoryExists' => is_dir($root),
             'storageDirectoryWritable' => is_writable($root),
             'groupsDirectoryExists' => is_dir($groups),
