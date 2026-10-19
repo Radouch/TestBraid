@@ -53,14 +53,6 @@ class PublicationService
         $this->media = new PrivateMediaService($backendRoot, $this->schemas);
         $this->publicDir = $canonicalPublic . '/media';
 
-        // Fail closed unless the published directory has been explicitly
-        // deployed, protected and is a real directory (no symlink escape).
-        if (is_link($this->publicDir) || !is_dir($this->publicDir)
-            || !is_file($this->publicDir . '/.htaccess')
-            || is_link($this->publicDir . '/.htaccess')) {
-            throw new RuntimeException('Protected public media directory is missing.');
-        }
-
         $configuredBase = getenv('TESTBRAID_BASE_PATH');
         $this->basePath = is_string($configuredBase) ? rtrim($configuredBase, '/') : '';
         if ($this->basePath !== '' &&
@@ -116,6 +108,7 @@ class PublicationService
             if ($old->status !== 'published') {
                 throw new ApiProblem(409, 'NOT_PUBLISHED', 'Only published tests can be withdrawn.');
             }
+            $this->assertPublicDirectory();
             $next = clone $old;
             $next->status = 'draft';
             $next->publishedAt = null;
@@ -164,6 +157,7 @@ class PublicationService
 
     private function commitPublished(stdClass $next): stdClass
     {
+        $this->assertPublicDirectory();
         if (!$this->schemas->validate('test', $next)['valid']) {
             throw new ApiProblem(422, 'VALIDATION_FAILED', 'The test fails schema validation.');
         }
@@ -324,6 +318,7 @@ class PublicationService
 
     private function reconcileUnlocked(): void
     {
+        $this->assertPublicDirectory();
         $active = [];
         foreach ($this->store->all('tests') as $test) {
             if ($test->status !== 'published') continue;
@@ -341,6 +336,17 @@ class PublicationService
             if (!isset($active[$name]) && $item->isFile() && !unlink($item->getPathname())) {
                 throw new RuntimeException('Cannot clean up obsolete public media.');
             }
+        }
+    }
+
+    private function assertPublicDirectory(): void
+    {
+        // Do not create a publicly writable folder until the operator has
+        // deployed protective Apache rules. Never follow a directory symlink.
+        if (is_link($this->publicDir) || !is_dir($this->publicDir)
+            || !is_file($this->publicDir . '/.htaccess')
+            || is_link($this->publicDir . '/.htaccess')) {
+            throw new RuntimeException('Protected public media directory is missing.');
         }
     }
 
