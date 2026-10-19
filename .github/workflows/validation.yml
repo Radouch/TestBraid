@@ -1,0 +1,49 @@
+name: PoC-A schema and build checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: Vue / Ajv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Until real npm lockfiles are committed, avoid claiming a reproducible npm ci.
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+        working-directory: frontend
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: frontend
+      - name: Shared schema fixtures (Ajv)
+        run: npm run test:schemas
+        working-directory: frontend
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+  backend:
+    name: PHP / Opis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+      # Composer is installed on CI/hosting, never required on a developer laptop.
+      - name: Install backend dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+        working-directory: backend
+      - name: Lint PHP
+        run: composer run lint
+        working-directory: backend
+      - name: Shared schema fixtures (Opis)
+        run: composer run test:schemas
+        working-directory: backend
