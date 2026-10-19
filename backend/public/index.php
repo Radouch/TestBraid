@@ -18,13 +18,19 @@ require $root . '/vendor/autoload.php';
 
 $app = AppFactory::create();
 
-// Derive the base path for subdirectory installations without binding to a domain.
-$scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/api/index.php');
-$index = strrpos($scriptName, '/api/');
-if ($index !== false && $index > 0) {
-    $app->setBasePath(substr($scriptName, 0, $index));
+// Apache rewrites may report SCRIPT_NAME as an internal/private script path.
+// Never infer Slim's public route prefix from CGI metadata: the default
+// deployment lives at the domain root and must remain independent of rewrites.
+// Subdirectory deployments opt in using TESTBRAID_BASE_PATH (e.g. /testbraid).
+$configuredBase = getenv('TESTBRAID_BASE_PATH');
+$basePath = is_string($configuredBase) ? rtrim($configuredBase, '/') : '';
+if ($basePath !== '' && !preg_match('~^/(?:[A-Za-z0-9._~-]+)(?:/[A-Za-z0-9._~-]+)*$~D', $basePath)) {
+    throw new RuntimeException('Invalid TESTBRAID_BASE_PATH deployment setting.');
 }
-$sessions = new SessionManager(SessionManager::cookiePathFromScript($scriptName));
+if ($basePath !== '') {
+    $app->setBasePath($basePath);
+}
+$sessions = new SessionManager($basePath === '' ? '/' : $basePath . '/');
 $authors = new AuthorStore(getenv('TESTBRAID_AUTHORS_FILE') ?: $root . '/config/authors.json');
 $limiterDir = getenv('TESTBRAID_LOGIN_DIR') ?: $root . '/storage/login-attempts';
 $csrf = new CsrfMiddleware($sessions, $app->getResponseFactory());
