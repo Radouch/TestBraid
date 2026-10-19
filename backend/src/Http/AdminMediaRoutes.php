@@ -75,8 +75,7 @@ final class AdminMediaRoutes
                 return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
             }
         };
-        $group->get('/media/{id}/preview', $preview);
-        $group->head('/media/{id}/preview', $preview);
+        $group->map(['GET', 'HEAD'], '/media/{id}/preview', $preview);
     }
 
     /**
