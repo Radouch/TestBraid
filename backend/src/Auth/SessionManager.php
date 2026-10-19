@@ -23,11 +23,11 @@ final class SessionManager
             return;
         }
 
-        // For PHP's built-in development server only. A production proxy must
-        // present an HTTPS URL to browsers; secure cookies are mandatory there.
-        $insecureLocal = getenv('TESTBRAID_ALLOW_HTTP_LOCAL') === '1'
-            && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)
-            && in_array($_SERVER['SERVER_NAME'] ?? '', ['127.0.0.1', 'localhost', '::1'], true);
+        // Only PHP's built-in CLI web server may use insecure test cookies.
+        // The production Apache/PHP runtime always marks cookies Secure.
+        $insecureLocal = PHP_SAPI === 'cli-server'
+            && getenv('TESTBRAID_ALLOW_HTTP_LOCAL') === '1'
+            && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
 
         ini_set('session.use_only_cookies', '1');
         ini_set('session.use_strict_mode', '1');
