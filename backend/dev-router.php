@@ -16,4 +16,12 @@ if ($publicRoot !== false && $candidate !== false
     return false;
 }
 
+// Simulate an Apache/FastCGI rewrite reporting an internal SCRIPT_NAME.
+// This catches regressions where Slim guesses its public base path from CGI
+// metadata rather than from explicit deployment configuration.
+$simulatedScriptName = getenv('TESTBRAID_TEST_REWRITTEN_SCRIPT_NAME');
+if (PHP_SAPI === 'cli-server' && is_string($simulatedScriptName) && $simulatedScriptName !== '') {
+    $_SERVER['SCRIPT_NAME'] = $simulatedScriptName;
+}
+
 require __DIR__ . '/public/index.php';
