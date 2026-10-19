@@ -331,6 +331,15 @@ class PublicationService
         foreach ($iterator as $item) {
             if ($item->isDot()) continue;
             $name = $item->getFilename();
+            // An interrupted stream_copy_to_stream can leave an unpublished
+            // temporary stage. It cannot be in use: every publisher holds the
+            // same exclusive lock. Apache denies all .stage-* paths.
+            if (preg_match('/^\\.stage-[A-Za-z0-9]{6}$/D', $name)) {
+                if ($item->isLink() || !$item->isFile() || !unlink($item->getPathname())) {
+                    throw new RuntimeException('Cannot remove abandoned publication stage.');
+                }
+                continue;
+            }
             if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|mp4|webm)$/D', $name)) continue;
             if ($item->isLink()) throw new RuntimeException('Refusing public media symlink during reconciliation.');
             if (!isset($active[$name]) && $item->isFile() && !unlink($item->getPathname())) {
