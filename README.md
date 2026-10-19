@@ -2,7 +2,7 @@
 
 **TestBraid** is a planned lightweight, multilingual, self-hosted application for creating, sharing and completing multimedia self-assessment tests.
 
-The project is **in the specification and technical-research stage**. There is no runnable application yet.
+The project is **under active PoC-A development**. The Vue/Slim foundation has passed its initial live deployment smoke test; later schema/authentication features are implemented in stacked PRs but have not been deployed.
 
 ## Project goals
 
@@ -34,7 +34,7 @@ Project documentation and source code will be primarily in English; see [AGENTS.
 
 ## Initial developer scaffold
 
-See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The only operational API route in this scaffold is `GET /api/health`; all other application routes are placeholders.
+See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The original deployed scaffold exposes `GET /api/health`. Later incremental branches add schema validators and author authentication without yet implementing test editing.
 
 ## Schema fixtures
 
