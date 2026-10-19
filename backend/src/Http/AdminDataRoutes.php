@@ -225,6 +225,14 @@ final class AdminDataRoutes
                 : 'Unexpected storage error (' . get_class($e) . ').';
         }
 
+        // The listing operation may have created storage/ and groups/.
+        // Report the resulting filesystem state, not a stale preflight state.
+        clearstatcache(true);
+        $status['storageDirectoryExists'] = is_dir($root);
+        $status['storageDirectoryWritable'] = is_writable($root);
+        $status['groupsDirectoryExists'] = is_dir($groups);
+        $status['groupsDirectoryWritable'] = is_writable($groups);
+
         return $status;
     }
 
