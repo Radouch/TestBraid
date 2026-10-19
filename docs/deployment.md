@@ -252,7 +252,7 @@ The next stacked branch, `feature/poc-a-media`, adds `POST /api/admin/media` and
 
 ---
 
-## 6C. Publish static media increment (Issue #7; host acceptance pending)
+## 6C. Publish static media increment (Issue #7; core hosting checks passed 2026-10-19)
 
 The `feature/poc-a-publication` branch adds test publication, unpublication and live updates to published tests. It is stacked on the proven media-upload branch, and **does not yet add browser authoring or a learner test runner**. See [full publication/consistency design](published-media.md).
 
@@ -262,7 +262,7 @@ The `feature/poc-a-publication` branch adds test publication, unpublication and 
 - `POST /api/admin/tests/{id}/publish` validates an existing complete draft and publishes its referenced files first. `PUT /api/admin/tests/{id}` permits edits after publication and immediately updates the public JSON when all new referenced files are ready. `POST /api/admin/tests/{id}/unpublish` withdraws the public JSON and cleans copies not referenced by other published tests. All write routes require an author session and CSRF token.
 - The public directory is computed from the actual executing `www/api/index.php` bootstrap, **not** by trusting the hosting provider's potentially too-broad `DOCUMENT_ROOT`. The installation layout remains portable.
 - Run isolated CI regressions before deployment: `composer run test:publication-http` and `composer run test:publication-failures`. These never interact with the live installation.
-- **Host acceptance not yet performed:** confirm draft tests and private media remain inaccessible; anonymously play and seek a *published static* MP4 with HTTP `206` and a `Content-Range` header; edit/withdraw tests without breaking media shared with another published test; Apache must deny `.stage-*` and unsupported filenames.
+- **Core host tests passed (2026-10-19):** a draft was not publicly readable; publishing returned valid static image and video URLs; an MP4 byte-range request returned 206 and a valid Content-Range; a second test reused the same files, unpublishing the first preserved them, and unpublishing the second removed both public copies. The owner confirmed anonymous access with credentials explicitly omitted. **Remaining security check:** verify the Apache media `.htaccess` actually denies an **existing** harmless non-allowlisted file (not just a missing URL), and visually verify published MP4 playback/seeking. Full procedure: [published-media.md](published-media.md).
 
 A filesystem plus Apache cannot make publishing several static media files and one JSON record a perfectly atomic operation. Temporary orphan copies are reconciled under a private lock on subsequent operations, but an administrator should monitor and reconcile failures. See the security and crash-recovery limitations in [published-media.md](published-media.md).
 
