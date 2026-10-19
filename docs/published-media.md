@@ -1,6 +1,6 @@
 # PoC-A 07 — Published static media
 
-**Status:** Implemented in draft PR #14; automated CI is required and anonymous static Apache playback on the actual host has **not** yet been verified. This branch stacks on the media upload PR #13 and JSON storage PR #12.
+**Status:** Implemented in stacked draft PR #14. CI and the main real-host publishing/withdrawal/shared-media smoke tests passed on 2026-10-19. Apache deny rules still require an existing-file test, and anonymous video playback should be visually checked. This branch stacks on media upload PR #13 and JSON storage PR #12.
 
 ## Goals and boundaries
 
@@ -51,6 +51,12 @@ The `deploy/www/media/.htaccess` policy permits only canonical UUID filenames wi
 
 `composer run test:publication-failures` deliberately fails the test JSON commit *after* staging a media copy and asserts no new static file is left and the old draft document remains unchanged. It also simulates a process crash leaving an orphan published file and a `.stage-*` name; reconciliation must remove both.
 
+### Owner-hosted verification — 2026-10-19
+
+The owner ran two browser-console scenarios on the real shared-hosting Apache environment. Test `be1f8382-0f80-4349-b8ac-86ebcb2fd81c` was private while draft (HTTP 404), published successfully, and returned valid public URLs for image `67c027c4-ebbd-4f68-8f8d-27d267297b17.png` and video `71029b30-a0dc-45ef-9888-f77424bab245.mp4`. A video Range request returned **206** and `Content-Range: bytes 0-15/7863189`.
+
+A second test, `7e261de2-94d4-44cf-a299-a1a2e2e4468c`, was published with the same media. Public API and static asset checks with browser credentials omitted succeeded. After withdrawing the first test, its public API became 404 while the shared assets and second test remained available; after withdrawing the second test, both public asset URLs and public test API returned 404. Both test documents and original private media remain saved. **Do not assume the published Apache deny policy is proven merely because absent paths return 404.**
+
 ### Host acceptance checklist
 
 After backing up private `config/` and `storage/`, build the frontend and prepare deployment package on the new branch; upload/merge `www/` and `testbraid-backend/` without deleting live JSON, credential or vendor files. Include **the changed `www/media/.htaccess`** and ensure PHP can write the public `www/media/` directory without making it world-writable.
@@ -60,7 +66,7 @@ After backing up private `config/` and `storage/`, build the frontend and prepar
 3. Publish through `POST /api/admin/tests/{id}/publish` with the session CSRF token. Check public JSON and image/video URLs while logged out.
 4. Play the *published static* MP4 anonymously and seek to a different position. In DevTools Network, inspect `206 Partial Content` and `Content-Range`. The response must come from Apache static serving, not the private PHP preview API.
 5. Unpublish and check public API returns 404 and unshared static files disappear. If another published test references the same asset, it must remain accessible.
-6. Try `/media/.stage-ABC123` and a dangerous extension such as `/media/example.php` — Apache should return 403/404 (not a file body or index listing). Do not upload a PHP file for this test.
+6. Verify Apache restrictions against **an existing harmless sentinel**. Temporarily create `www/media/publication-deny-check.txt` containing only `TESTBRAID-DENY-CHECK` (never credentials). Fetch `/media/publication-deny-check.txt` anonymously; expect HTTP **403** (or a genuine 404 due to server mapping), never HTTP 200 or the sentinel content. Delete the sentinel afterward. Testing a nonexistent `.stage-*` URL alone does **not** prove `.htaccess` enforcement. Do not create a PHP or executable test file.
 7. Confirm `storage/` and the private backend remain inaccessible by anonymous HTTP, and the public response never contains absolute private server paths.
 
-Do not consider the **host validation complete** until the above checks succeed. The exact hosting maximum for uploads and Apache rule overrides can differ from the PHP development server.
+Most host acceptance checks passed on 2026-10-19. The existing-file Apache deny test and visual playback/seeking from a published static video URL remain open. The exact hosting maximum for uploads and Apache rule overrides can differ from the PHP development server.
