@@ -8,7 +8,7 @@
 
 The owner verified that the routing fix in the authentication branch restored `/api/health` and `/api/auth/session` on the actual hosting environment. On 2026-10-19, the owner also confirmed successfully creating the first author through the browser with a private `setup.key`. This confirms the provisioning flow and the required author-file write path. The owner also verified login, logout and automatic removal of `setup.key`; production cookie attributes have not been independently inspected.
 
-**Still not implemented:** browser-based test editing, media uploads and learner evaluation. This storage branch adds authenticated draft-test persistence endpoints; successful authentication smoke tests do not mean PoC-A is finished.
+**Still not implemented:** browser-based test editing, published media, and learner evaluation. Media uploads and private author previews are implemented in draft PR #13 but still need live host acceptance. This storage branch adds authenticated draft-test persistence endpoints; successful authentication smoke tests do not mean PoC-A is finished.
 
 ### Hosting facts and initial deployment results
 
@@ -24,7 +24,7 @@ The paths, PHP version, SSH and Composer availability were **reported by the own
 - `/admin` loaded the placeholder admin view, including a page refresh.
 - `/tests/example` loaded the placeholder test view, including a page refresh.
 
-This establishes working frontend/API routing on the selected host; PHP 8.5 was reported, but its version was **not independently checked through the web SAPI**. Composer dependencies are evidently available to Slim, but installation commands and package versions have not been independently audited. Writable storage, permissions, future uploads and media handling remain untested.
+This establishes working frontend/API routing on the selected host; PHP 8.5 was reported, but its version was **not independently checked through the web SAPI**. Composer dependencies are evidently available to Slim, but installation commands and package versions have not been independently audited. JSON storage and group/test creation/read have now passed a live host smoke test. Image/video uploading and playback remain untested on the host; see the media deployment notes below.
 
 ## 2. Target directory layout
 
