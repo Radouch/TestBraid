@@ -172,6 +172,12 @@ function editTest(test: TestRecord): void {
 
 async function saveDraft(): Promise<void> {
   if (busy.value || !draftGroupId.value || !draftTitle.value.trim()) return
+  // Another author/tab may publish the selected draft while this form stays
+  // open. Do not silently turn a stale edit into a newly created test.
+  if (selectedTestId.value && !selectedDraft.value) {
+    error.value = t('catalogStaleDraft')
+    return
+  }
   busy.value = true
   error.value = ''
   notice.value = ''
