@@ -42,4 +42,4 @@ After installing dependencies, run `npm run test:schemas` from `frontend/` and `
 
 ## Author authentication (incremental)
 
-The stacked authentication branch adds a bilingual sign-in/out form backed by PHP sessions, CSRF protection and a private author file. See [deployment instructions](docs/deployment.md#6-author-provisioning-and-security-authentication-increment). There are still no test editing or storage endpoints. No author credentials or private files belong in this repository.
+The stacked authentication branch adds bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-author-provisioning-and-security-authentication-increment). There are still no test editing or storage endpoints. No author credentials or private files belong in this repository.

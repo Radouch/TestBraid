@@ -100,6 +100,14 @@ GitHub Actions **passed** on 2026-10-19 (PHP 8.5 + Node 22): Vue typecheck/build
 
 After the first auth-branch deployment, the owner reported HTTP 404 from `/api/health`, although this endpoint had worked on the foundation branch. Auth had introduced automatic base-path detection from `SCRIPT_NAME`; this was unnecessary for the domain-root deployment and potentially wrong under Apache rewrites. The base path now defaults to empty and may be set explicitly using `TESTBRAID_BASE_PATH` only for subdirectory hosting. The PHP dev-router smoke test simulates a rewritten internal `SCRIPT_NAME` and verifies root API routes remain reachable. The corrected backend still requires a live Apache retest.
 
+### First-author browser setup
+
+A follow-up to Issue #4 now provides one-time first-author provisioning via the Vue `/admin` page, without running a PHP script over SSH. The owner must upload a randomly generated one-time key as `testbraid-backend/config/setup.key` using SFTP or a hosting file manager. The backend checks that key and the session's CSRF token; no user can be created via the browser after an initial author exists. Invalid setup keys are rate-limited, and concurrent requests use the same private lock as the optional CLI author creator.
+
+The first author is logged in immediately. The private key is removed after successful creation where permissions permit; setup stays locked even if removal fails. A separate PHP HTTP integration test exercises missing/incorrect key, CSRF, successful bootstrap, denial of further bootstrap, and persistence.
+
+This setup flow is implemented in the auth branch but **must pass CI and be tested on the actual shared hosting** before considering author provisioning complete.
+
 ## Hosting verification — initial live smoke test passed
 
 On **2026-10-19**, the owner confirmed the Vue home page, `/api/health` JSON response, and both `/admin` and `/tests/example` deep links (including page reloads) on the example domain.
