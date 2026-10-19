@@ -7,6 +7,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteCollectorProxy;
 use stdClass;
+use TestBraid\Publication\PublicationService;
 use TestBraid\Storage\JsonFileRepository;
 use TestBraid\Validation\SchemaValidator;
 
@@ -14,13 +15,14 @@ use TestBraid\Validation\SchemaValidator;
  * First persistence API. All routes MUST be installed only in the existing
  * authenticated /api/admin route group with CSRF middleware.
  *
- * No publish transition exists here; published documents are not mutable
- * until media/publication consistency is implemented in the later milestone.
+ * Publication transitions and published updates go through PublicationService.
+ * All updates of test documents share its private publication lock.
  */
 final class AdminDataRoutes
 {
     private ?JsonFileRepository $storage = null;
     private ?SchemaValidator $schemas = null;
+    private ?PublicationService $publication = null;
 
     public function __construct(private readonly string $backendRoot)
     {
@@ -128,14 +130,12 @@ final class AdminDataRoutes
         );
 
         $group->put('/tests/{id}', fn (Request $r, Response $p, array $args): Response =>
-            $this->handle($p, function () use ($r, $args): stdClass {
+            $this->handle($p, fn (): stdClass =>
+                $this->publisher()->exclusive(function () use ($r, $args): stdClass {
                 $id = $this->id($args['id']);
                 $previous = $this->store()->get('tests', $id);
                 if ($previous === null) {
                     throw new ApiProblem(404, 'NOT_FOUND', 'Test not found.');
-                }
-                if ($previous->status !== 'draft') {
-                    throw new ApiProblem(409, 'PUBLISHED_EDIT_UNAVAILABLE', 'Published test editing is not yet available.');
                 }
                 // Replace all editable fields. Server-owned fields are preserved.
                 $data = JsonRequest::fields($r, ['groupId', 'language', 'title', 'description', 'questions']);
@@ -155,9 +155,20 @@ final class AdminDataRoutes
                 ];
                 $this->validate('test', $test);
                 $this->checkDraft($test);
+                if ($previous->status === 'published') {
+                    return $this->publisher()->replacePublished($test);
+                }
                 $this->store()->write('tests', $id, $test, false);
                 return $test;
-            })
+                })
+            )
+        );
+
+        $group->post('/tests/{id}/publish', fn (Request $r, Response $p, array $args): Response =>
+            $this->handle($p, fn (): stdClass => $this->publisher()->publish($this->id($args['id'])))
+        );
+        $group->post('/tests/{id}/unpublish', fn (Request $r, Response $p, array $args): Response =>
+            $this->handle($p, fn (): stdClass => $this->publisher()->unpublish($this->id($args['id'])))
         );
     }
 
@@ -257,6 +268,11 @@ final class AdminDataRoutes
             : null;
 
         return $status;
+    }
+
+    private function publisher(): PublicationService
+    {
+        return $this->publication ??= new PublicationService($this->backendRoot);
     }
 
     private function store(): JsonFileRepository
