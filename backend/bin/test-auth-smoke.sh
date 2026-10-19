@@ -35,6 +35,10 @@ assert_status() {
   actual="$(response -o "$TEMP/body" -w '%{http_code}' "$@")"
   if [[ "$actual" != "$expected" ]]; then
     echo "Expected HTTP $expected; got $actual. Body: $(cat "$TEMP/body")" >&2
+    echo "Session cookie jar:" >&2
+    sed -E 's/(TESTBRAIDSESSID[[:space:]]+).*/\\1[REDACTED]/' "$TEMP/cookies" >&2
+    echo "PHP server diagnostics:" >&2
+    tail -40 "$TEMP/php.log" >&2
     exit 1
   fi
 }
@@ -59,6 +63,11 @@ assert_status 403 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/j
 assert_json '.error.code == "INVALID_CSRF"'
 assert_status 403 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/json' -H 'Origin: https://attacker.invalid' -H "X-CSRF-Token: $CSRF" -d '{"username":"alice","password":"Only-A-Test-Password-456"}'
 assert_json '.error.code == "INVALID_ORIGIN"'
+assert_status 200 "$HOST/api/auth/session"
+if [[ "$(jq -r '.csrfToken' "$TEMP/body")" != "$CSRF" ]]; then
+  echo "CSRF token changed unexpectedly between anonymous requests" >&2
+  exit 1
+fi
 assert_status 401 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/json' -H "X-CSRF-Token: $CSRF" -d '{"username":"alice","password":"wrong-password"}'
 assert_json '.error.code == "INVALID_CREDENTIALS"'
 assert_status 200 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/json' -H "X-CSRF-Token: $CSRF" -d '{"username":"alice","password":"Only-A-Test-Password-456"}'
