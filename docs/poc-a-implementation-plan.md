@@ -94,7 +94,7 @@ The authentication PR adds server-side author sessions, login/logout, CSRF prote
 
 The Vue `/admin` placeholder becomes a minimal bilingual sign-in/sign-out form. The API still does not allow creating/editing tests; all future `/api/admin/*` routes must live in the protected Slim route group.
 
-GitHub Actions includes an HTTP integration smoke test running an isolated disposable PHP instance, but the result must be checked before marking the increment ready. Actual host authentication, filesystem permissions, secure cookies and HTTPS remain to be verified. See [deployment guide](deployment.md#6-author-provisioning-and-security-authentication-increment).
+GitHub Actions **passed** on 2026-10-19 (PHP 8.5 + Node 22): Vue typecheck/build, both schema fixture runners and the HTTP authentication integration checks for anonymous access, login/logout, CSRF rotation, origin validation and brute-force throttling. See [CI run](https://github.com/Radouch/TestBraid/actions/runs/39248989019). Actual host authentication, filesystem permissions, secure cookies and HTTPS remain to be verified. See [deployment guide](deployment.md#6-author-provisioning-and-security-authentication-increment).
 
 ## Hosting verification — initial live smoke test passed
 
@@ -113,7 +113,7 @@ The domain is an example, not an application-code dependency. Portable installat
 
 ## Exclusions and cautions
 
-- No login, groups, tests, schema validation or upload exists in the scaffold.
+- The initially deployed foundation contains no login, groups, tests, schema validation or upload; authentication and schema code are implemented only on later stacked branches until deployed.
 - No secrets or account configuration may be committed.
 - The `/api/health` response reveals no environment details.
 - API errors must not expose server paths or stack traces.
