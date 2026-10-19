@@ -79,3 +79,6 @@ jobs:
       - name: Publication lifecycle and static media HTTP integration
         run: composer run test:publication-http
         working-directory: backend
+      - name: Failed publication rollback and orphan reconciliation
+        run: composer run test:publication-failures
+        working-directory: backend
