@@ -1,6 +1,6 @@
 # TestBraid — Deployment on Apache/PHP Shared Hosting
 
-**Status:** Working guide for the PoC-A foundation; runtime deployment not yet verified  
+**Status:** Initial frontend/API smoke test passed on the example host (2026-10-19); broader deployment/security checks remain open  
 **Example target:** `https://testbraid.mariebila.cz/` (PHP 8.5, Apache document root `www/`)  
 **Portability:** The hostname is an example only. The app is not bound to a specific domain; see subdirectory and alternate-layout notes below.
 
@@ -10,14 +10,21 @@ The current branch includes only a Vue UI (English and Czech), placeholder admin
 
 **Not implemented:** author login, editing tests, JSON persistence, FilePond uploads and learner evaluation. Successful deployment does not mean PoC-A is finished.
 
-### Verified hosting facts supplied by the owner
+### Hosting facts and initial deployment results
 
 - The domain's document root is a directory named `www`.
 - A sibling directory next to `www` is available for non-public backend files.
 - The hosting environment offers PHP **8.5**, SSH and Composer.
 - The first test domain is `testbraid.mariebila.cz`.
 
-These are **reported environment facts**. We have not yet verified the webserver PHP handler, `.htaccess` directives, Composer dependency installation, web response, permissions or upload limits.
+The paths, PHP version, SSH and Composer availability were **reported by the owner**. On **2026-10-19**, the owner also confirmed a successful live smoke test after adjusting the root Apache rewrite rules:
+
+- `/` displayed the Vue frontend.
+- `/api/health` returned `{"status":"ok","service":"testbraid-api"}`.
+- `/admin` loaded the placeholder admin view, including a page refresh.
+- `/tests/example` loaded the placeholder test view, including a page refresh.
+
+This establishes working frontend/API routing on the selected host; PHP 8.5 was reported, but its version was **not independently checked through the web SAPI**. Composer dependencies are evidently available to Slim, but installation commands and package versions have not been independently audited. Writable storage, permissions, future uploads and media handling remain untested.
 
 ## 2. Target directory layout
 
@@ -103,7 +110,7 @@ When `composer.lock` does not exist, the first `composer install` resolves depen
 
 If `php -v` on SSH differs from the PHP version serving the website, select the correct CLI binary for Composer and investigate web PHP compatibility separately. Never assume that the CLI and web SAPIs have the same version.
 
-## 6. Test the web deployment
+## 6. Test the web deployment (initial smoke test passed)
 
 Visit:
 
@@ -115,7 +122,17 @@ Visit:
 3. `https://testbraid.mariebila.cz/admin` — placeholder admin page. Reload it: Apache must serve the SPA, not return 404.
 4. `https://testbraid.mariebila.cz/tests/example` — placeholder test view, including reload.
 
-The home page should display **Connected/Připojeno** when it successfully reads the API response. The health endpoint must have HTTP 200 and a JSON content type.
+The home page should display **Connected/Připojeno** when it successfully reads the API response. The health endpoint must have HTTP 200 and a JSON content type. The four URLs and Vue route refreshes above were **confirmed working by the owner on 2026-10-19**; the exact HTTP headers have not been independently inspected.
+
+### Apache rewrite configuration verified on this host
+
+The initial deployment's `/api/health` responded with a generic HTTP 500. A minimal single-route rule using `[END]` worked; the complete rules using `[END]` and **without** `Options -Indexes` subsequently worked for all tested pages.
+
+The corrected file is `deploy/www/.htaccess`. It routes `/api/*` to the public bootstrap, serves real assets as files, routes Vue deep links to `index.html` and does not turn missing `/media/` resources into SPA HTML.
+
+The exact cause of the original HTTP 500 was **not isolated**: changing the rewrite flags and removing the `Options` directive both differed from the original configuration. Reuse the tested configuration and avoid assuming every Apache host permits `Options`.
+
+A direct request to `/api/index.php` may return Slim HTTP 404 because the only implemented route is `/api/health`; this is not itself a deployment failure.
 
 Security spot checks:
 
@@ -131,11 +148,11 @@ Security spot checks:
 | Home works, API returns HTML | Apache rewrite sends `/api/health` to the Vue `index.html` instead of Slim |
 | API returns 500 | PHP error or missing/incompatible Composer dependencies; inspect private server logs |
 | Direct `/admin` returns 404 | Missing/inactive `mod_rewrite` or disallowed `.htaccess` |
-| All routes return 500 | Apache rejects an `.htaccess` directive (often `Options`); inspect Apache error logs |
+| API `500` with original rewrite file | Use the verified `deploy/www/.htaccess` with `[END]` and without `Options -Indexes`; inspect Apache error logs if it persists |
 | Browser shows API unavailable | Inspect the browser Network tab and open `/api/health` directly |
 | SSH PHP differs from web PHP | Use the correct CLI binary for Composer; inspect the website's PHP handler configuration |
 
-The deployment templates are not yet validated on this host. Report HTTP statuses and relevant error-log lines if an issue occurs; do **not** share passwords, tokens or private config files.
+The root Apache rewrite template has passed the owner's live smoke test; the media directory's separate `.htaccess`, security hardening and future upload/video behavior have **not** been validated. Report HTTP statuses and relevant error-log lines if an issue occurs; do **not** share passwords, tokens or private config files.
 
 ## 8. Installation portability
 
@@ -150,7 +167,7 @@ The SPA uses Vite's public base path and Vue Router uses the same base. This all
 Before marking [issue #2](https://github.com/Radouch/TestBraid/issues/2) done:
 
 - Confirm PHP **8.5 via web** and required extensions, not only PHP CLI.
-- Confirm `.htaccess`/`mod_rewrite` support and the public/private directory boundary.
+- The root `.htaccess`/`mod_rewrite` path is confirmed working; **separately verify** private directory isolation, access permissions and the future media-directory `.htaccess`.
 - Confirm allowed upload sizes, timeouts and storage quota.
 - Test static video HTTP Range responses after the media workflow exists.
 - Confirm logging and session-storage paths when authentication is added.
