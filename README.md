@@ -24,7 +24,8 @@ Randomized test generation from question banks is a **future feature**, not part
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
-- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.\n- [Shared JSON schemas](schemas/) — versioned contracts and common structural/publication validation fixtures.
+- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
+- [Shared JSON schemas](schemas/) — versioned contracts and common structural/publication validation fixtures.
 
 ## Status
 
@@ -34,7 +35,7 @@ Project documentation and source code will be primarily in English; see [AGENTS.
 
 ## Initial developer scaffold
 
-See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. The original deployed scaffold exposes `GET /api/health`. Later incremental branches add schema validators and author authentication without yet implementing test editing.
+See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. After building the Vue frontend, run `node scripts/prepare-deployment.mjs` from the repository root to create the complete public/private SFTP deployment tree in `deployment-package/`. This copies the canonical root `schemas/` (including `fixtures/`) into the private deployed backend without moving it in source control; server `config/`, `storage/` and `vendor/` are deliberately excluded. The original deployed scaffold exposes `GET /api/health`. Later incremental branches add schema validators and author authentication without yet implementing test editing.
 
 ## Schema fixtures
 
@@ -42,4 +43,4 @@ After installing dependencies, run `npm run test:schemas` from `frontend/` and `
 
 ## Author authentication (incremental)
 
-The authentication increment adds bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-author-provisioning-and-security-authentication-increment). This branch adds protected JSON group and draft-test endpoints; they are not a browser-based test editor and are not yet deployed. No author credentials or private files belong in this repository.
+The authentication increment adds bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-first-author-setup-through-the-browser-no-ssh-scripts). This branch adds protected JSON group and draft-test endpoints; they are not a browser-based test editor and are not yet deployed. No author credentials or private files belong in this repository.
