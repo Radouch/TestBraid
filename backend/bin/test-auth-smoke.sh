@@ -16,6 +16,9 @@ trap cleanup EXIT
 export TESTBRAID_AUTHORS_FILE="$TEMP/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"
 export TESTBRAID_ALLOW_HTTP_LOCAL=1
+# Apache can expose an internal script path after rewriting /api/health.
+# The app's root routes and session cookies must ignore that value.
+export TESTBRAID_TEST_REWRITTEN_SCRIPT_NAME='/private/testbraid-backend/public/api/index.php'
 printf 'Only-A-Test-Password-456\n' | php "$ROOT/bin/create-author.php" alice >/dev/null
 cd "$ROOT"
 php -S "127.0.0.1:$PORT" -t public dev-router.php > "$TEMP/php.log" 2>&1 &
