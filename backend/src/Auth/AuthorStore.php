@@ -12,6 +12,12 @@ final class AuthorStore
     {
     }
 
+    /** A valid existing account permanently disables browser bootstrap. */
+    public function hasAuthors(): bool
+    {
+        return count($this->all()) > 0;
+    }
+
     public function byUsername(string $username): ?array
     {
         foreach ($this->all() as $user) {

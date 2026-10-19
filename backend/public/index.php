@@ -8,6 +8,7 @@ use Slim\Routing\RouteCollectorProxy;
 use TestBraid\Auth\AuthorMiddleware;
 use TestBraid\Auth\AuthorStore;
 use TestBraid\Auth\CsrfMiddleware;
+use TestBraid\Auth\FirstAuthorSetup;
 use TestBraid\Auth\LoginLimiter;
 use TestBraid\Auth\SessionManager;
 use TestBraid\Http\JsonResponse;
@@ -31,7 +32,13 @@ if ($basePath !== '') {
     $app->setBasePath($basePath);
 }
 $sessions = new SessionManager($basePath === '' ? '/' : $basePath . '/');
-$authors = new AuthorStore(getenv('TESTBRAID_AUTHORS_FILE') ?: $root . '/config/authors.json');
+$authorsFile = getenv('TESTBRAID_AUTHORS_FILE') ?: $root . '/config/authors.json';
+$authors = new AuthorStore($authorsFile);
+$setup = new FirstAuthorSetup(
+    $authors,
+    $authorsFile,
+    getenv('TESTBRAID_SETUP_KEY_FILE') ?: $root . '/config/setup.key'
+);
 $limiterDir = getenv('TESTBRAID_LOGIN_DIR') ?: $root . '/storage/login-attempts';
 $csrf = new CsrfMiddleware($sessions, $app->getResponseFactory());
 $authorAccess = new AuthorMiddleware($sessions, $authors, $app->getResponseFactory());
@@ -44,15 +51,70 @@ $app->get('/api/health', static function (Request $request, Response $response):
     return JsonResponse::send($response, ['status' => 'ok', 'service' => 'testbraid-api']);
 });
 
-$app->get('/api/auth/session', static function (Request $request, Response $response) use ($sessions, $authors): Response {
+$app->get('/api/auth/session', static function (Request $request, Response $response) use ($sessions, $authors, $setup): Response {
     $id = $sessions->authorId();
     $user = $id === null ? null : $authors->byId($id);
-    $result = ['authenticated' => $user !== null, 'csrfToken' => $sessions->csrfToken()];
+    $result = ['authenticated' => $user !== null, 'csrfToken' => $sessions->csrfToken(), 'setupState' => $setup->state()];
     if ($user !== null) {
         $result['user'] = ['id' => $user['id'], 'username' => $user['username']];
     }
     return JsonResponse::send($response, $result);
 });
+
+
+// This public endpoint is available only before the first author is created.
+// Proof of authorization requires BOTH a session CSRF token and a secret
+// uploaded separately via SFTP to the private backend configuration directory.
+$app->post('/api/auth/setup', static function (Request $request, Response $response) use (
+    $sessions, $setup, $limiterDir
+): Response {
+    $type = strtolower(trim(explode(';', $request->getHeaderLine('Content-Type'))[0]));
+    if ($type !== 'application/json') {
+        return JsonResponse::error($response, 400, 'INVALID_REQUEST', 'A JSON setup request is required.');
+    }
+    $raw = (string) $request->getBody();
+    if (strlen($raw) > 4096) {
+        return JsonResponse::error($response, 400, 'INVALID_REQUEST', 'The setup request is too large.');
+    }
+    try {
+        $data = json_decode($raw, true, 32, JSON_THROW_ON_ERROR);
+    } catch (\JsonException) {
+        return JsonResponse::error($response, 400, 'INVALID_REQUEST', 'Invalid JSON request.');
+    }
+    if (!is_array($data) || !is_string($data['username'] ?? null)
+        || !is_string($data['password'] ?? null) || !is_string($data['setupKey'] ?? null)
+        || !preg_match('/^[A-Za-z0-9._-]{1,64}$/D', $data['username'])
+        || strlen($data['password']) < 12 || strlen($data['password']) > 4096
+        || strlen($data['setupKey']) < 32 || strlen($data['setupKey']) > 256) {
+        return JsonResponse::error($response, 400, 'INVALID_REQUEST', 'Invalid setup fields.');
+    }
+
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $limiter = new LoginLimiter($limiterDir);
+    // One shared identifier limits setup-key guesses independently of username.
+    if (!$limiter->allowed($ip, '__first_author_setup__')) {
+        return JsonResponse::error($response, 429, 'RATE_LIMITED', 'Too many setup attempts. Try later.');
+    }
+    $created = $setup->provision($data['username'], $data['password'], $data['setupKey']);
+    if ($created['state'] === 'complete') {
+        return JsonResponse::error($response, 409, 'SETUP_COMPLETE', 'First-author setup is already complete.');
+    }
+    if ($created['state'] === 'needs-key') {
+        return JsonResponse::error($response, 409, 'SETUP_NOT_ENABLED', 'Private setup key is missing.');
+    }
+    if ($created['state'] === 'invalid-key') {
+        $limiter->failure($ip, '__first_author_setup__');
+        return JsonResponse::error($response, 403, 'INVALID_SETUP_KEY', 'Invalid setup key.');
+    }
+
+    $sessions->login($created['id']);
+    return JsonResponse::send($response, [
+        'authenticated' => true,
+        'user' => ['id' => $created['id'], 'username' => $data['username']],
+        'csrfToken' => $sessions->csrfToken(),
+        'setupState' => 'complete',
+    ], 201);
+})->add($csrf);
 
 $app->post('/api/auth/login', static function (Request $request, Response $response) use ($sessions, $authors, $limiterDir): Response {
     $type = strtolower(trim(explode(';', $request->getHeaderLine('Content-Type'))[0]));
