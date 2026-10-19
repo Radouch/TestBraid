@@ -1,6 +1,6 @@
 # Media upload and private author preview (PoC-A 06)
 
-**Status:** Implemented in draft PR #13; the hosted upload/video smoke test is still pending. This does not publish files or integrate uploads into test questions yet.
+**Status:** Implemented and owner-verified on the live host (2026-10-19), with all five agreed acceptance checks reported as passed. The stacked PR #13 remains open; this increment does not publish files or integrate uploads into test questions.
 
 ## API contract
 
@@ -48,9 +48,11 @@ The public `www/api/index.php` bootstrap determines the physically served web ro
 
 ## Verification
 
+**Live owner acceptance (2026-10-19):** The owner confirmed image/video uploading, video playback and seeking, denial of access to private media while logged out, rejection of disallowed files, persistent binary/metadata files, and a successful practical upload-size test. This is a report of observed behavior rather than an independent server-side audit; the exact maximum accepted by the hosting account and whether a 64 MiB upload succeeds remain unconfirmed. PHP configuration limits must still be checked before promising the application maximum to users.
+
 Automated CI invokes `composer run test:media-http`, which uses disposable local credentials, private storage and small image, MP4 and WebM fixtures. It verifies authentication, CSRF, MIME and extension rejection, private metadata and binary files, full previews, single-byte-range replies, invalid ranges and denial after logout. It does **not** contact the deployed host.
 
-For host acceptance, after backing up `config/` and `storage/` and deploying code and rebuilt `www/`:
+For repeatable acceptance on new deployments or hosting providers, after backing up `config/` and `storage/` and deploying code and rebuilt `www/`:
 
 1. Confirm private backend files remain inaccessible over anonymous HTTP.
 2. Sign in to `/admin`; upload a small PNG/JPEG or WebP, check the displayed preview and its `mediaId`.
