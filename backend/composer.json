@@ -4,6 +4,7 @@
   "type": "project",
   "require": {
     "php": "^8.1",
+    "ext-fileinfo": "*",
     "slim/slim": "^4.15.3",
     "slim/psr7": "^1.6",
     "opis/json-schema": "^2.6"
@@ -19,7 +20,8 @@
     "test:setup": "bash bin/test-first-author-setup.sh",
     "test:storage": "php bin/test-storage-failures.php",
     "test:storage-roots": "php bin/test-storage-public-root.php",
-    "test:storage-http": "bash bin/test-storage-http.sh"
+    "test:storage-http": "bash bin/test-storage-http.sh",
+    "test:media-http": "bash bin/test-media-http.sh"
   },
   "autoload": {
     "psr-4": {

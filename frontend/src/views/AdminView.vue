@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import MediaUploader, { type UploadedMedia } from '../components/MediaUploader.vue'
 
 interface Author {
   id: string
@@ -24,6 +25,11 @@ const setupKey = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
+const uploadedMedia = ref<UploadedMedia[]>([])
+
+function recordUpload(media: UploadedMedia): void {
+  uploadedMedia.value.unshift(media)
+}
 
 const api = (route: string): string => `${import.meta.env.BASE_URL}api/${route}`
 
@@ -120,7 +126,10 @@ async function signOut(): Promise<void> {
   error.value = ''
   try {
     const data = await mutate('auth/logout')
-    if (data) session.value = data
+    if (data) {
+      session.value = data
+      uploadedMedia.value = []
+    }
   } finally {
     busy.value = false
   }
@@ -139,6 +148,20 @@ onMounted(() => void readSession())
       <template v-if="session.authenticated && session.user">
         <p>{{ t('signedInAs', { username: session.user.username }) }}</p>
         <p>{{ t('adminPlaceholder') }}</p>
+        <section class="my-4" aria-labelledby="media-heading">
+          <h2 id="media-heading" class="h4">{{ t('mediaUploadTitle') }}</h2>
+          <MediaUploader :csrf-token="session.csrfToken" @uploaded="recordUpload" />
+          <div v-for="media in uploadedMedia" :key="media.mediaId" class="card my-3 p-3">
+            <strong>{{ media.originalName }}</strong>
+            <code class="d-block mb-2">{{ media.mediaId }}</code>
+            <img v-if="media.kind === 'image'" class="img-fluid" style="max-height: 320px; object-fit: contain"
+              :src="api(`admin/media/${media.mediaId}/preview`)" :alt="media.originalName" />
+            <video v-else controls preload="metadata" class="w-100" style="max-height: 320px"
+              :src="api(`admin/media/${media.mediaId}/preview`)">
+              {{ t('videoUnsupported') }}
+            </video>
+          </div>
+        </section>
         <button class="btn btn-outline-secondary" type="button" :disabled="busy" @click="signOut">
           {{ t('signOut') }}
         </button>

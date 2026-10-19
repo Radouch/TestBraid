@@ -73,3 +73,6 @@ jobs:
       - name: Protected JSON persistence HTTP integration
         run: composer run test:storage-http
         working-directory: backend
+      - name: Authenticated media upload and range HTTP integration
+        run: composer run test:media-http
+        working-directory: backend
