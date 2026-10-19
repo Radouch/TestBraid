@@ -145,6 +145,36 @@ The existing `php bin/create-author.php alice` CLI provisioner remains available
 
 The CI runners use disposable configuration paths: `composer run test:auth` and `composer run test:setup`. Neither test targets the public hosting domain.
 
+## 6A. Private JSON storage increment (Issue #5; not yet deployed)
+
+The `feature/poc-a-storage` branch adds authenticated endpoints to create/list/rename groups and to create/list/read/update **draft** tests. Publishing tests, browser test editing and media uploading are deliberately not implemented yet. **Do not overwrite a verified live installation with this branch solely to test storage without a backup.**
+
+- Private records live in `testbraid-backend/storage/groups/*.json` and `testbraid-backend/storage/tests/*.json` by default. The same repository abstraction reserves `storage/media/` for the subsequent upload increment.
+- The PHP web user must be able to create the private `storage/` directory and subdirectories, create lock files and temporary files, and atomically rename completed JSON files. `TESTBRAID_STORAGE_DIR` can relocate storage to another **private** path; never set it inside `www/`.
+- Deploy `backend/src/Http/`, `backend/src/Storage/`, and the updated `backend/public/index.php` together with the existing schema and authentication code. New admin endpoints inherit the session and CSRF protections. The frontend has **no** corresponding authoring screens yet.
+- Each record uses a server-generated UUID v4 filename. Uploaded data cannot choose filenames, overwrite server-managed timestamps/status, or publish tests. Malformed documents and missing group/media references are rejected.
+- A write obtains a per-kind filesystem lock, writes a complete temporary file in the same directory, and renames it into place. This protects an existing record from a partial replacement; it is **not** a multi-file transaction or simultaneous-editor conflict resolution.
+
+### Verify locally / before any host upgrade
+
+With Composer dependencies installed, from `backend/`:
+
+```sh
+composer run test:schemas
+composer run test:auth
+composer run test:setup
+composer run test:storage
+composer run test:storage-http
+```
+
+The storage HTTP test starts its **own loopback-only** PHP server, creates disposable author credentials and private storage under a temporary directory, and verifies authentication, CSRF, group/test CRUD, invalid requests and missing references. It never contacts the deployed domain. The separate storage-failure test checks that a simulated failed atomic rename leaves the original record intact and removes temporary files.
+
+### Back up and restore
+
+Before a deployment or restore, take a consistent private copy of `config/authors.json` and the entire `storage/` directory, retaining group/test/media relationships and permissions. To obtain a consistent snapshot across multiple files, **pause writes during backup**: atomic replacement is only per record. Never expose a backup under `www/`, and never include actual author credentials or storage JSON in Git. After restoring, verify the PHP user can read the private files and write lock/temp files. There is no automated migration or recovery UI yet.
+
+---
+ 
 ## 7. Test the web deployment (initial foundation smoke test passed)
 
 Visit:
