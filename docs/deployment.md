@@ -71,7 +71,7 @@ For a **subdirectory** deployment, build with a matching Vite base path (includi
 npm run build -- --base=/testbraid/
 ```
 
-Vue Router and the health-check URL use Vite's `BASE_URL`. The default root build uses `/`. For a subdirectory deployment, adjust the public PHP bootstrap's relative private path to the actual layout and place the Apache rewrite file inside the application directory.
+Vue Router and the health-check URL use Vite's `BASE_URL`. The default root build uses `/`. In the PHP backend, the default Slim base path is **empty** (domain-root URLs), deliberately independent of Apache's `SCRIPT_NAME` or internal rewrite target. For an actual subdirectory deployment, explicitly configure `TESTBRAID_BASE_PATH=/testbraid` for the PHP web process and deploy the matching Vite build. Also adjust the public bootstrap's relative private path to the actual layout and put the Apache rewrite file in the application directory. Do not set `TESTBRAID_BASE_PATH` for the current root-domain installation.
 
 Do not upload `frontend/node_modules/` or frontend source files to the public web root.
 
@@ -189,6 +189,7 @@ Security spot checks:
 | Home works, API returns 503 | Private entry point or Composer `vendor/autoload.php` missing / wrongly located |
 | Home works, API returns HTML | Apache rewrite sends `/api/health` to the Vue `index.html` instead of Slim |
 | API returns 500 | PHP error or missing/incompatible Composer dependencies; inspect private server logs |
+| `/api/health` returns 404 after adding authentication | A prior version incorrectly derived Slim's base path from rewritten `SCRIPT_NAME`; use the fixed backend from `feature/poc-a-auth`, confirm `TESTBRAID_BASE_PATH` is unset for root-domain installations, and retain the verified Apache `.htaccess` |
 | Direct `/admin` returns 404 | Missing/inactive `mod_rewrite` or disallowed `.htaccess` |
 | API `500` with original rewrite file | Use the verified `deploy/www/.htaccess` with `[END]` and without `Options -Indexes`; inspect Apache error logs if it persists |
 | Browser shows API unavailable | Inspect the browser Network tab and open `/api/health` directly |
@@ -198,7 +199,7 @@ The root Apache rewrite template has passed the owner's live smoke test; the med
 
 ## 9. Installation portability
 
-No hostname or absolute path is hardcoded in Vue or Slim. For other domains, copy the same artifacts and point the domain document root to their deployed public directory.
+No hostname or absolute path is hardcoded in Vue or Slim. The PHP base path defaults to domain root and can be overridden explicitly by `TESTBRAID_BASE_PATH` for subdirectory deployments. For other domains, copy the same artifacts and point the domain document root to their deployed public directory.
 
 By default `deploy/www/api/index.php` computes the sibling private backend location relative to itself. If a provider uses another layout, change the deployment template's default path **or** set `TESTBRAID_BACKEND_ENTRY` to the private `public/index.php` path. This customization is deployment configuration, not an application-code fork.
 
