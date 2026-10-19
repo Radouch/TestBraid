@@ -191,7 +191,7 @@ The CI runners use disposable configuration paths: `composer run test:auth` and 
 
 ## 6A. Private JSON storage increment (Issue #5; live create/read smoke test passed)
 
-The `feature/poc-a-storage` branch adds authenticated endpoints to create/list/rename groups and to create/list/read/update **draft** tests. Publishing tests, browser test editing and media uploading are deliberately not implemented yet. On 2026-10-19, the owner verified authenticated creation of a group and draft test and successful read-back on the live host; group rename and test update remain tested in CI but not yet manually confirmed on that host. For future upgrades, protect persistent `config/` and `storage/` data before replacing code.
+The `feature/poc-a-storage` branch adds authenticated endpoints to create/list/rename groups and to create/list/read/update **draft** tests. Publishing tests and browser test editing are deliberately not implemented yet in this storage branch; private media uploading is added by the following issue #6 branch. On 2026-10-19, the owner verified authenticated creation of a group and draft test and successful read-back on the live host; group rename and test update remain tested in CI but not yet manually confirmed on that host. For future upgrades, protect persistent `config/` and `storage/` data before replacing code.
 
 - Private records live in `testbraid-backend/storage/groups/*.json` and `testbraid-backend/storage/tests/*.json` by default. The same repository abstraction reserves `storage/media/` for the subsequent upload increment.
 - The PHP web user must be able to create the private `storage/` directory and subdirectories, create lock files and temporary files, and atomically rename completed JSON files. `TESTBRAID_STORAGE_DIR` can relocate storage to another **private** path; never set it inside `www/`.
@@ -238,6 +238,20 @@ Before a deployment or restore, take a consistent private copy of `config/author
 
 ---
  
+## 6B. Private media upload increment (Issue #6; host acceptance pending)
+
+The next stacked branch, `feature/poc-a-media`, adds `POST /api/admin/media` and authenticated `GET/HEAD /api/admin/media/{id}/preview`. FilePond appears on the logged-in `/admin` page; uploads are **not** yet attached to test questions. No public media publication or deletion has been implemented. See [media upload policy, formats and testing](media-uploads.md).
+
+- Rebuild the **frontend** with `cd frontend && npm install && npm run build` — unlike the storage increment, this release includes new Vue source and FilePond dependencies.
+- Stage deployment with `node scripts/prepare-deployment.mjs` at repository root; upload/merge `www/` **and** `testbraid-backend/` into their respective destinations. Preserve existing `config/`, `storage/` and `vendor/` and keep the private `.htaccess`.
+- The backend adds `src/Http/AdminMediaRoutes.php`, `src/Storage/PrivateMediaService.php`, `src/Storage/BoundedFileStream.php` and updates `public/index.php`. No new Composer package is needed, but PHP **fileinfo** is required by `composer.json`.
+- The application accepts JPEG/PNG/WebP to **10 MiB** and MP4/WebM to **64 MiB**. Real host `upload_max_filesize`, `post_max_size`, server limits and available disk space may be lower. Verify web-PHP values and adjust limits only after consulting the host.
+- Private media binaries live under `testbraid-backend/storage/media-files/`, alongside metadata in `storage/media/`. The PHP web process must be able to write them. Never upload them to `www/media/`.
+- Optional isolated regression run: `cd testbraid-backend && composer run test:media-http`. It uses a local loopback server and temporary files, **not** the deployed site.
+- On the host, upload and preview a small real PNG and browser-playable MP4 after signing in. Check video seeking, rejected executable/mismatched formats and anonymous access (401). **Do not mark Issue #6 accepted until host testing succeeds.**
+
+---
+
 ## 7. Test the web deployment (initial foundation smoke test passed)
 
 Visit:
