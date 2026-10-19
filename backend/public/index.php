@@ -24,7 +24,7 @@ $app = AppFactory::create();
 // Subdirectory deployments opt in using TESTBRAID_BASE_PATH (e.g. /testbraid).
 $configuredBase = getenv('TESTBRAID_BASE_PATH');
 $basePath = is_string($configuredBase) ? rtrim($configuredBase, '/') : '';
-if ($basePath !== '' && !preg_match('~^/(?:[A-Za-z0-9._~-]+)(?:/[A-Za-z0-9._~-]+)*$~D', $basePath)) {
+if ($basePath !== '' && !preg_match('~^/(?:[A-Za-z0-9._-]+)(?:/[A-Za-z0-9._-]+)*$~D', $basePath)) {
     throw new RuntimeException('Invalid TESTBRAID_BASE_PATH deployment setting.');
 }
 if ($basePath !== '') {
