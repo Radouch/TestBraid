@@ -1,0 +1,6 @@
+# Published media only: prevent directory listing and executable uploads.
+# This is defense in depth; the PHP uploader must also enforce file allowlists.
+Options -Indexes -ExecCGI
+<FilesMatch "(?i)\.(php[0-9]?|phtml|phar|cgi|pl|py)$">
+  Require all denied
+</FilesMatch>
