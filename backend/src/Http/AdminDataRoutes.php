@@ -184,6 +184,12 @@ final class AdminDataRoutes
         $publicResolved = is_string($publicSetting) && $publicSetting !== ''
             ? realpath($publicSetting)
             : false;
+        $servedPublicSetting = defined('TESTBRAID_PUBLIC_ROOT')
+            ? (string) constant('TESTBRAID_PUBLIC_ROOT')
+            : $publicSetting;
+        $servedPublicResolved = is_string($servedPublicSetting) && $servedPublicSetting !== ''
+            ? realpath($servedPublicSetting)
+            : false;
 
         $status = [
             'storageDirectoryExists' => is_dir($root),
@@ -192,6 +198,14 @@ final class AdminDataRoutes
             'groupsDirectoryWritable' => is_writable($groups),
             'storageIsSymbolicLink' => is_link($root),
             'documentRootResolved' => $publicResolved !== false,
+            'publicRootSource' => defined('TESTBRAID_PUBLIC_ROOT') ? 'bootstrap' : 'document-root-fallback',
+            'servedPublicRootResolved' => $servedPublicResolved !== false,
+            'storageUnderServedPublicRoot' => $rootResolved !== false && $servedPublicResolved !== false
+                ? $rootResolved === $servedPublicResolved
+                    || str_starts_with($rootResolved, $servedPublicResolved . DIRECTORY_SEPARATOR)
+                : null,
+            // This is informational: DOCUMENT_ROOT may be an ancestor of the
+            // actual served root when the host uses aliases or rewrites.
             'storageUnderDocumentRoot' => $rootResolved !== false && $publicResolved !== false
                 ? $rootResolved === $publicResolved
                     || str_starts_with($rootResolved, $publicResolved . DIRECTORY_SEPARATOR)
@@ -236,6 +250,10 @@ final class AdminDataRoutes
         $status['storageUnderDocumentRoot'] = $rootResolved !== false && $publicResolved !== false
             ? $rootResolved === $publicResolved
                 || str_starts_with($rootResolved, $publicResolved . DIRECTORY_SEPARATOR)
+            : null;
+        $status['storageUnderServedPublicRoot'] = $rootResolved !== false && $servedPublicResolved !== false
+            ? $rootResolved === $servedPublicResolved
+                || str_starts_with($rootResolved, $servedPublicResolved . DIRECTORY_SEPARATOR)
             : null;
 
         return $status;
