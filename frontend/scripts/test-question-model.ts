@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict'
 import {
-  addMatchingPair, assignMatch, blankBlock, createBlock, createChoice, createMatching,
+  addMatchingPair, assignMatch, createBlock, createChoice, createMatching,
   invalidMediaReference, move, publicationProblems, removeChoiceOption,
   removeMatchingPair, switchChoiceMode, toggleChoiceCorrect, uuidPattern,
-  type DraftTest,
+  type ContentBlock, type DraftTest,
 } from '../src/editor/model'
 import { validateDocument } from '../src/validation/schema'
 import { validatePublication } from '../src/validation/publication'
+
+function textBlock(text: string): ContentBlock { return { id: crypto.randomUUID(), type: 'text', text } }
 
 const groupId = '6f38752c-f042-4cac-8e3f-a00c9e35a231'
 const sampleTestId = '0cb8066a-57a9-48d2-bb07-55a9f087a52b'
@@ -15,9 +17,9 @@ const question = createChoice()
 assert.equal(question.options.length, 2)
 assert.ok(uuidPattern.test(question.id))
 assert.ok(new Set([question.id, ...question.options.map(x => x.id), ...question.prompt.map(x => x.id)]).size === 4)
-question.prompt[0] = { ...blankBlock(), text: 'What is correct?' }
-question.options[0]!.content[0] = { ...blankBlock(), text: 'Correct' }
-question.options[1]!.content[0] = { ...blankBlock(), text: 'Wrong' }
+question.prompt[0] = textBlock('What is correct?')
+question.options[0]!.content[0] = textBlock('Correct')
+question.options[1]!.content[0] = textBlock('Wrong')
 toggleChoiceCorrect(question, question.options[0]!.id, true)
 assert.deepEqual(question.correctOptionIds, [question.options[0]!.id])
 switchChoiceMode(question, 'multiple')
@@ -52,9 +54,9 @@ assert.equal(matching.matches[0]?.leftId, left1.id)
 assignMatch(matching, left2.id, right1.id)
 assert.equal(matching.matches.length, 2)
 for (const side of [matching.leftItems, matching.rightItems]) {
-  for (const item of side) item.content[0] = { ...blankBlock(), text: item.id }
+  for (const item of side) item.content[0] = textBlock(item.id)
 }
-matching.prompt[0] = { ...blankBlock(), text: 'Match the pairs' }
+matching.prompt[0] = textBlock('Match the pairs')
 addMatchingPair(matching)
 assert.equal(matching.leftItems.length, 3)
 assert.equal(matching.matches.length, 3)
