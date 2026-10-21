@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { publicationProblems } from '../editor/model'
@@ -94,7 +94,7 @@ async function copyLink(): Promise<void> {
     // URL rather than claiming that copying succeeded.
     showLinkFallback.value = true
     notice.value = t('publicationCopyManually')
-    await import('vue').then(({ nextTick }) => nextTick())
+    await nextTick()
     linkInput.value?.focus()
     linkInput.value?.select()
   }
