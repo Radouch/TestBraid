@@ -148,6 +148,29 @@ final class AdminDataRoutes
             })
         , 201));
 
+        $group->get('/tests/readiness', fn (Request $r, Response $p): Response =>
+            $this->handle($p, fn (): array => ['tests' => $this->publisher()->readiness()])
+        );
+
+        $group->post('/tests/{id}/duplicate', fn (Request $r, Response $p, array $args): Response =>
+            $this->handle($p, fn (): stdClass => $this->publisher()->exclusive(function () use ($args): stdClass {
+                $id = $this->id($args['id']);
+                $source = $this->store()->get('tests', $id);
+                if ($source === null) throw new ApiProblem(404, 'NOT_FOUND', 'Test not found.');
+                $this->checkGroup($source->groupId);
+                $copy = clone $source;
+                $copy->id = JsonFileRepository::uuid();
+                $copy->title = mb_substr($source->title, 0, 243) . ' (copy)';
+                $copy->status = 'draft';
+                $copy->publishedAt = null;
+                $copy->createdAt = self::now();
+                $copy->updatedAt = self::now();
+                $this->validate('test', $copy);
+                $this->store()->write('tests', $copy->id, $copy, true);
+                return $copy;
+            }), 201)
+        );
+
         $group->get('/tests/{id}', fn (Request $r, Response $p, array $args): Response =>
             $this->handle($p, function () use ($args): stdClass {
                 $id = $this->id($args['id']);
