@@ -7,6 +7,13 @@ export const i18n = createI18n({
   messages: {
     en: {
       home: 'Home',
+      publicCatalogHeading: 'Available tests',
+      publicCatalogIntroduction: 'Choose a lesson and a published test to practice. No account is required and results are not stored.',
+      publicCatalogLoading: 'Loading available lessons and tests…',
+      publicCatalogUnavailable: 'The public test list could not be loaded.',
+      publicCatalogRetry: 'Try again',
+      publicCatalogEmpty: 'No tests have been published yet.',
+      publicCatalogStart: 'Start test',
       languageControl: 'Interface language',
       author: 'Author area',
       title: 'TestBraid',
@@ -207,6 +214,13 @@ export const i18n = createI18n({
     },
     cs: {
       home: 'Úvod',
+      publicCatalogHeading: 'Dostupné testy',
+      publicCatalogIntroduction: 'Vyberte si lekci a publikovaný test k procvičení. Není potřeba přihlášení a výsledky se neukládají.',
+      publicCatalogLoading: 'Načítání lekcí a testů…',
+      publicCatalogUnavailable: 'Nepodařilo se načíst seznam veřejných testů.',
+      publicCatalogRetry: 'Zkusit znovu',
+      publicCatalogEmpty: 'Zatím nejsou publikované žádné testy.',
+      publicCatalogStart: 'Spustit test',
       languageControl: 'Jazyk rozhraní',
       author: 'Administrace',
       title: 'TestBraid',
