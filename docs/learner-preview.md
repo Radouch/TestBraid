@@ -32,6 +32,14 @@ The exact same Vue \`TestRunner.vue\` renders both a protected, saved author tes
 - Both modes support Czech and English UI switching. Question content is displayed as authored; its \`language\` metadata does not automatically translate authors' text.
 - A draft preview is not a promise of absolute publication readiness. PHP's publication validator remains the final authority.
 
+## Regression found during first live-host acceptance (2026-10-21)
+
+The owner found that the editor did not clearly communicate how to choose correct answers, and **every selected response was graded incorrect**. Root cause of the grading defect: `TestRunner` stores responses in `ref<Answers>`; Vue exposes `answers.value` as a **reactive Proxy**, but the answer-update functions called `structuredClone(answers)`. Browsers reject cloning the Proxy with `DataCloneError`; the handler fails and does not record the learner's selection. The scoring function then receives empty answer collections, so the result is zero regardless of which controls were clicked.
+
+**Fix in this PR:** Answer update helpers now create immutable plain-object copies via object/array spreads and leave unrelated question answers unchanged; no `structuredClone` on a reactive Proxy. Tests explicitly use Vue `reactive` values, emulate saved/reloaded question answer keys, verify correct multi-choice and matching scores, and verify incomplete answer keys are identified. In the author editor, the correct-answer key controls now appear **above** each answer's content, with clear Czech/English instructions, colored visual indicators and a count of marked correct choices. For matching, the authored pairing dropdown is explicitly labeled as the **correct answer**, not the learner response. In an incomplete draft preview, questions without a valid answer key display an explanatory warning instead of being labeled as an ordinary incorrect answer.
+
+**How to define answers:** For a single-choice question, select the radio circle next to the correct answer. For multiple choice, tick every correct answer's checkbox. For matching, use the correct-pair dropdown below each left item to select the intended right item. Save the test before opening preview; preview only loads the last saved JSON.
+
 ## Automated checks
 
 The new \`npm run test:learner\` checks exact choice sets, single choice replacement, duplicate/extra/partial selection rejection, complete matching bijection, duplicate-right rejection, unanswered behavior, empty tests, reset semantics and incomplete answer keys. GitHub Actions runs this alongside \`npm run typecheck\`, \`npm run build\`, editor and schema parity tests, full PHP/Opis security + publication regressions and deployment package audit.
