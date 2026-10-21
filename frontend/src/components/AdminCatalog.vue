@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { publicationProblems } from '../editor/model'
 import type { Question } from '../editor/model'
 
 interface Group {
@@ -113,15 +112,6 @@ async function refresh(): Promise<void> {
   if (selectedTestId.value && !tests.value.some((test) =>
     test.id === selectedTestId.value && test.status === 'draft')) {
     resetForm()
-  }
-}
-
-async function publicationChanged(): Promise<void> {
-  error.value = ''
-  try {
-    await refresh()
-  } catch (cause) {
-    showError(cause)
   }
 }
 
