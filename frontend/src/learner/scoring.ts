@@ -73,28 +73,31 @@ export function grade(questions: Question[], answers: Answers): Score {
 export function setChoiceAnswer(
   answers: Answers, question: ChoiceQuestion, optionId: string, checked: boolean,
 ): Answers {
-  const next = structuredClone(answers)
-  const previous = next.choices[question.id] ?? []
-  if (question.mode === 'single') {
-    next.choices[question.id] = checked ? [optionId] : []
-  } else {
-    next.choices[question.id] = checked
-      ? [...new Set([...previous, optionId])]
-      : previous.filter(id => id !== optionId)
+  // A Vue ref wraps objects in reactive Proxy instances. structuredClone(proxy)
+  // throws DataCloneError in browsers, dropping every answer change. Make an
+  // immutable plain-object update instead and preserve other question answers.
+  const previous = answers.choices[question.id] ?? []
+  const chosen = question.mode === 'single'
+    ? (checked ? [optionId] : [])
+    : (checked ? [...new Set([...previous, optionId])] : previous.filter(id => id !== optionId))
+  return {
+    choices: { ...answers.choices, [question.id]: chosen },
+    matches: answers.matches,
   }
-  return next
 }
 export function setMatchingAnswer(
   answers: Answers, question: MatchingQuestion, leftId: string, rightId: string,
 ): Answers {
-  const next = structuredClone(answers)
-  const mapping = next.matches[question.id] ?? {}
-  // Remove the previous owner of the selected right-hand item.
+  // Copy the edited question mapping into a plain object; never clone Vue's
+  // reactive Proxy. Reassigning one right-hand item clears its previous owner.
+  const mapping = { ...(answers.matches[question.id] ?? {}) }
   for (const [key, value] of Object.entries(mapping)) {
     if (key !== leftId && rightId && value === rightId) delete mapping[key]
   }
   if (rightId) mapping[leftId] = rightId
   else delete mapping[leftId]
-  next.matches[question.id] = mapping
-  return next
+  return {
+    choices: answers.choices,
+    matches: { ...answers.matches, [question.id]: mapping },
+  }
 }
