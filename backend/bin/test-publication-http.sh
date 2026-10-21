@@ -185,6 +185,12 @@ test -f "$TEMP/private-storage/media-files/$IMAGE_NAME"
 test -f "$TEMP/private-storage/media-files/$MOVIE_NAME"
 expect 404 "$HOST/api/admin/tests/$T1"
 expect 404 "$HOST/api/admin/tests/$T2"
+# The earlier incomplete publication fixture remains a separate draft in
+# the same lesson; the group may be deleted only once it is removed too.
+expect 409 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "GROUP_NOT_EMPTY"'
+expect 200 "$HOST/api/admin/tests/$INCOMPLETE_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.deleted == true'
 expect 200 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
 check '.deleted == true'
 
