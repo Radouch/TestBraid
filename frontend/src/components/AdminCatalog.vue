@@ -29,6 +29,8 @@ const groups = ref<Group[]>([])
 const tests = ref<TestRecord[]>([])
 const readiness = ref<Record<string, { ready: boolean; issues: Array<{path: string; code: string; message: string}> }>>({})
 const showDraftForm = ref(false)
+const dragLessonId = ref('')
+const dragTestId = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
@@ -306,6 +308,73 @@ async function copyPublicLink(test: TestRecord): Promise<void> {
   }
 }
 
+async function saveLessonOrder(ids: string[]): Promise<void> {
+  if (busy.value) return
+  busy.value = true
+  error.value = ''
+  try {
+    await request('PUT', 'groups/order', { ids })
+    await refresh()
+  } catch (cause) {
+    showError(cause)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function saveTestOrder(groupId: string, ids: string[]): Promise<void> {
+  if (busy.value) return
+  busy.value = true
+  error.value = ''
+  try {
+    await request('PUT', 'tests/order', { groupId, ids })
+    await refresh()
+  } catch (cause) {
+    showError(cause)
+  } finally {
+    busy.value = false
+  }
+}
+
+function moveLesson(id: string, direction: -1 | 1): void {
+  const ids = groups.value.map(group => group.id)
+  const index = ids.indexOf(id)
+  const next = index + direction
+  if (index < 0 || next < 0 || next >= ids.length) return
+  ;[ids[index], ids[next]] = [ids[next], ids[index]]
+  void saveLessonOrder(ids)
+}
+
+function dropLesson(targetId: string): void {
+  const ids = groups.value.map(group => group.id)
+  const source = ids.indexOf(dragLessonId.value)
+  const target = ids.indexOf(targetId)
+  dragLessonId.value = ''
+  if (source < 0 || target < 0 || source === target) return
+  const [id] = ids.splice(source, 1)
+  ids.splice(target, 0, id)
+  void saveLessonOrder(ids)
+}
+
+function moveTest(test: TestRecord, direction: -1 | 1): void {
+  const ids = tests.value.filter(t => t.groupId === test.groupId).map(t => t.id)
+  const index = ids.indexOf(test.id)
+  const next = index + direction
+  if (index < 0 || next < 0 || next >= ids.length) return
+  ;[ids[index], ids[next]] = [ids[next], ids[index]]
+  void saveTestOrder(test.groupId, ids)
+}
+
+function dropTest(target: TestRecord): void {
+  const source = tests.value.find(t => t.id === dragTestId.value)
+  dragTestId.value = ''
+  if (!source || source.groupId !== target.groupId || source.id === target.id) return
+  const ids = tests.value.filter(t => t.groupId === target.groupId).map(t => t.id)
+  ids.splice(ids.indexOf(source.id), 1)
+  ids.splice(ids.indexOf(target.id), 0, source.id)
+  void saveTestOrder(target.groupId, ids)
+}
+
 onMounted(() => void load())
 </script>
 
@@ -327,7 +396,9 @@ onMounted(() => void load())
                 {{ t('adminAllTests') }} <span class="text-secondary">({{ tests.length }})</span>
               </button>
             </li>
-            <li v-for="group in groups" :key="group.id" class="list-group-item">
+            <li v-for="group in groups" :key="group.id" class="list-group-item"
+              draggable="true" @dragstart="dragLessonId = group.id"
+              @dragover.prevent @drop.prevent="dropLesson(group.id)">
               <form v-if="renamingId === group.id" class="d-flex gap-2" @submit.prevent="renameGroup">
                 <label class="visually-hidden" :for="'rename-' + group.id">{{ t('catalogRenameGroup') }}</label>
                 <input :id="'rename-' + group.id" v-model="renameValue" class="form-control"
@@ -348,6 +419,10 @@ onMounted(() => void load())
                 <details class="dropdown">
                   <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminLessonActions')">⋮</summary>
                   <div class="dropdown-menu show position-absolute">
+                    <button class="dropdown-item" type="button" :disabled="busy || groups[0]?.id === group.id"
+                      @click="moveLesson(group.id, -1)">{{ t('adminMoveUp') }}</button>
+                    <button class="dropdown-item" type="button" :disabled="busy || groups[groups.length - 1]?.id === group.id"
+                      @click="moveLesson(group.id, 1)">{{ t('adminMoveDown') }}</button>
                     <button class="dropdown-item" type="button" @click="beginRename(group)">
                       {{ t('catalogRenameGroup') }}
                     </button>
@@ -381,7 +456,9 @@ onMounted(() => void load())
           <p v-if="filteredTests.length === 0" class="text-secondary">{{ t('catalogNoTests') }}</p>
           <ul v-else class="list-group list-group-flush">
             <li v-for="test in filteredTests" :key="test.id"
-              class="list-group-item d-flex justify-content-between align-items-start gap-2 px-0">
+              class="list-group-item d-flex justify-content-between align-items-start gap-2 px-0"
+              draggable="true" @dragstart="dragTestId = test.id"
+              @dragover.prevent @drop.prevent="dropTest(test)">
               <div class="flex-grow-1">
                 <RouterLink :to="{ name: 'test-questions', params: { id: test.id } }" class="fw-semibold">
                   {{ test.title || t('catalogUntitled') }}
@@ -406,6 +483,10 @@ onMounted(() => void load())
               <details class="dropdown">
                 <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminTestActions')">⋮</summary>
                 <div class="dropdown-menu dropdown-menu-end show position-absolute">
+                  <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId)[0]?.id === test.id"
+                    @click="moveTest(test, -1)">{{ t('adminMoveUp') }}</button>
+                  <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId).slice(-1)[0]?.id === test.id"
+                    @click="moveTest(test, 1)">{{ t('adminMoveDown') }}</button>
                   <RouterLink class="dropdown-item" :to="{ name: 'test-questions', params: { id: test.id } }">
                     {{ t('adminOpenEditor') }}
                   </RouterLink>
