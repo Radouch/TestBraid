@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader, { type UploadedMedia } from '../components/MediaUploader.vue'
 import AdminCatalog from '../components/AdminCatalog.vue'
+import { authorSession } from '../auth'
 
 interface Author {
   id: string
@@ -19,7 +20,7 @@ interface ApiError {
 }
 
 const { t } = useI18n()
-const session = ref<Session | null>(null)
+const session = authorSession
 const username = ref('')
 const password = ref('')
 const setupKey = ref('')
@@ -121,34 +122,17 @@ async function createFirstAuthor(): Promise<void> {
   }
 }
 
-async function signOut(): Promise<void> {
-  if (busy.value) return
-  busy.value = true
-  error.value = ''
-  try {
-    const data = await mutate('auth/logout')
-    if (data) {
-      session.value = data
-      uploadedMedia.value = []
-    }
-  } finally {
-    busy.value = false
-  }
-}
-
 onMounted(() => void readSession())
 </script>
 
 <template>
-  <section class="col-lg-6">
+  <section >
     <h1 class="h2">{{ t('author') }}</h1>
     <p v-if="loading" role="status">{{ t('loading') }}</p>
     <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
 
     <template v-if="!loading && session">
       <template v-if="session.authenticated && session.user">
-        <p>{{ t('signedInAs', { username: session.user.username }) }}</p>
-        <p>{{ t('adminPlaceholder') }}</p>
         <AdminCatalog :csrf-token="session.csrfToken" />
         <section class="my-4" aria-labelledby="media-heading">
           <h2 id="media-heading" class="h4">{{ t('mediaUploadTitle') }}</h2>
@@ -164,9 +148,7 @@ onMounted(() => void readSession())
             </video>
           </div>
         </section>
-        <button class="btn btn-outline-secondary" type="button" :disabled="busy" @click="signOut">
-          {{ t('signOut') }}
-        </button>
+
       </template>
       <form v-else-if="session.setupState === 'ready'" class="d-grid gap-3" @submit.prevent="createFirstAuthor">
         <p>{{ t('setupIntroduction') }}</p>
