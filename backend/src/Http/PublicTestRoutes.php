@@ -20,6 +20,12 @@ final class PublicTestRoutes
 
     public function register(App $app): void
     {
+        // Anonymous listing intentionally exposes only published test
+        // summaries under lessons that have at least one published test.
+        $app->get('/api/public/catalog', function (Request $request, Response $response): Response {
+            return JsonResponse::send($response, $this->publisher()->publicCatalog());
+        });
+
         $app->get('/api/public/tests/{id}', function (Request $request, Response $response, array $args): Response {
             try {
                 return JsonResponse::send($response, $this->publisher()->publicTest($args['id']));
