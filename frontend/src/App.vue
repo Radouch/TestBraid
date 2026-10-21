@@ -60,6 +60,7 @@ watch(() => route.path, () => void refreshAuthorSession())
         <nav class="d-flex gap-3" aria-label="Main navigation">
           <RouterLink to="/">{{ t('home') }}</RouterLink>
           <RouterLink v-if="authorSession?.authenticated" to="/admin">{{ t('author') }}</RouterLink>
+          <RouterLink v-if="authorSession?.authenticated" to="/admin/media">{{ t('mediaLibraryTitle') }}</RouterLink>
         </nav>
         <select class="form-select form-select-sm" style="width: auto" :value="locale"
           :aria-label="t('languageControl')" @change="selectLocale">
