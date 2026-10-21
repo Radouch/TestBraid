@@ -83,6 +83,28 @@ final class AdminDataRoutes
             })
         );
 
+        // Never cascade-delete lesson content: require the group to be empty.
+        // Serialize with test creation/updates to prevent orphaned group IDs.
+        $group->delete('/groups/{id}', fn (Request $r, Response $p, array $args): Response =>
+            $this->handle($p, fn (): array =>
+                $this->publisher()->exclusive(function () use ($args): array {
+                    $id = $this->id($args['id']);
+                    if ($this->store()->get('groups', $id) === null) {
+                        throw new ApiProblem(404, 'NOT_FOUND', 'Group not found.');
+                    }
+                    foreach ($this->store()->all('tests') as $test) {
+                        if ($test->groupId === $id) {
+                            throw new ApiProblem(409, 'GROUP_NOT_EMPTY', 'Move or delete all tests before removing this group.');
+                        }
+                    }
+                    if (!$this->store()->delete('groups', $id)) {
+                        throw new ApiProblem(404, 'NOT_FOUND', 'Group not found.');
+                    }
+                    return ['deleted' => true, 'id' => $id];
+                })
+            )
+        );
+
         $group->get('/tests', fn (Request $r, Response $p): Response => $this->handle($p, function () use ($r): array {
             $params = $r->getQueryParams();
             if (array_diff(array_keys($params), ['groupId']) !== []) {
@@ -102,7 +124,8 @@ final class AdminDataRoutes
             return ['tests' => $tests];
         }));
 
-        $group->post('/tests', fn (Request $r, Response $p): Response => $this->handle($p, function () use ($r): stdClass {
+        $group->post('/tests', fn (Request $r, Response $p): Response => $this->handle($p, fn (): stdClass =>
+            $this->publisher()->exclusive(function () use ($r): stdClass {
             $data = JsonRequest::fields($r, ['groupId', 'language', 'title', 'description'], ['questions']);
             $this->checkGroup($data->groupId);
             $test = (object) [
@@ -122,7 +145,8 @@ final class AdminDataRoutes
             $this->checkDraft($test);
             $this->store()->write('tests', $test->id, $test, true);
             return $test;
-        }, 201));
+            })
+        , 201));
 
         $group->get('/tests/{id}', fn (Request $r, Response $p, array $args): Response =>
             $this->handle($p, function () use ($args): stdClass {
@@ -133,6 +157,28 @@ final class AdminDataRoutes
                 }
                 return $test;
             })
+        );
+
+        // Deletion is explicit and limited to drafts. Published tests must
+        // first be withdrawn so that public media references are reconciled.
+        // Private original uploads are intentionally never deleted here.
+        $group->delete('/tests/{id}', fn (Request $r, Response $p, array $args): Response =>
+            $this->handle($p, fn (): array =>
+                $this->publisher()->exclusive(function () use ($args): array {
+                    $id = $this->id($args['id']);
+                    $test = $this->store()->get('tests', $id);
+                    if ($test === null) {
+                        throw new ApiProblem(404, 'NOT_FOUND', 'Test not found.');
+                    }
+                    if ($test->status !== 'draft') {
+                        throw new ApiProblem(409, 'TEST_PUBLISHED', 'Unpublish the test before deleting it.');
+                    }
+                    if (!$this->store()->delete('tests', $id)) {
+                        throw new ApiProblem(404, 'NOT_FOUND', 'Test not found.');
+                    }
+                    return ['deleted' => true, 'id' => $id];
+                })
+            )
         );
 
         $group->put('/tests/{id}', fn (Request $r, Response $p, array $args): Response =>

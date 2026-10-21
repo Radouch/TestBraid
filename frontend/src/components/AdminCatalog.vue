@@ -50,7 +50,7 @@ function api(path: string): string {
 }
 
 /** Shared typed admin request: only mutating operations carry CSRF tokens. */
-async function request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT', path: string, body?: unknown): Promise<T> {
+async function request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
   if (method !== 'GET') headers['X-CSRF-Token'] = props.csrfToken
   if (body !== undefined) headers['Content-Type'] = 'application/json'
@@ -97,6 +97,9 @@ async function refresh(): Promise<void> {
   tests.value = testResponse.tests
   if (!groups.value.some((group) => group.id === draftGroupId.value)) {
     draftGroupId.value = groups.value[0]?.id ?? ''
+  }
+  if (groupFilter.value && !groups.value.some((group) => group.id === groupFilter.value)) {
+    groupFilter.value = ''
   }
   if (selectedTestId.value && !tests.value.some((test) => test.id === selectedTestId.value)) {
     resetForm()
@@ -154,6 +157,49 @@ async function renameGroup(): Promise<void> {
     notice.value = t('catalogGroupRenamed')
   } catch (cause) {
     showError(cause)
+  } finally {
+    busy.value = false
+  }
+}
+
+
+async function deleteGroup(group: Group): Promise<void> {
+  if (busy.value || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
+  busy.value = true
+  error.value = ''
+  notice.value = ''
+  try {
+    await request<{ deleted: true }>('DELETE', 'groups/' + encodeURIComponent(group.id))
+    await refresh()
+    notice.value = t('catalogGroupDeleted')
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.includes('GROUP_NOT_EMPTY')) {
+      error.value = t('catalogGroupNotEmpty')
+    } else {
+      showError(cause)
+    }
+  } finally {
+    busy.value = false
+  }
+}
+
+async function deleteDraft(test: TestRecord): Promise<void> {
+  if (busy.value || test.status !== 'draft' ||
+    !window.confirm(t('catalogDeleteTestConfirm', { name: test.title }))) return
+  busy.value = true
+  error.value = ''
+  notice.value = ''
+  try {
+    await request<{ deleted: true }>('DELETE', 'tests/' + encodeURIComponent(test.id))
+    if (selectedTestId.value === test.id) resetForm()
+    await refresh()
+    notice.value = t('catalogTestDeleted')
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.includes('TEST_PUBLISHED')) {
+      error.value = t('catalogPublishedDeleteBlocked')
+    } else {
+      showError(cause)
+    }
   } finally {
     busy.value = false
   }
@@ -246,8 +292,12 @@ onMounted(() => void load())
             </form>
             <div v-else class="d-flex justify-content-between align-items-center gap-2">
               <span>{{ group.name }}</span>
-              <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="busy"
-                @click="beginRename(group)">{{ t('catalogRenameGroup') }}</button>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="busy"
+                  @click="beginRename(group)">{{ t('catalogRenameGroup') }}</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" :disabled="busy"
+                  @click="deleteGroup(group)">{{ t('catalogDelete') }}</button>
+              </div>
             </div>
           </li>
         </ul>
@@ -271,10 +321,17 @@ onMounted(() => void load())
                 {{ test.status === 'published' ? t('catalogPublished') : t('catalogDraft') }}
               </div>
             </div>
-            <button type="button" class="btn btn-outline-primary btn-sm"
-              :disabled="busy || test.status !== 'draft'" @click="editTest(test)">
-              {{ test.status === 'published' ? t('catalogPublishedLocked') : t('catalogEditMetadata') }}
-            </button>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-outline-primary btn-sm"
+                :disabled="busy || test.status !== 'draft'" @click="editTest(test)">
+                {{ test.status === 'published' ? t('catalogPublishedLocked') : t('catalogEditMetadata') }}
+              </button>
+              <button type="button" class="btn btn-outline-danger btn-sm"
+                :title="test.status === 'published' ? t('catalogPublishedDeleteBlocked') : undefined"
+                :disabled="busy || test.status !== 'draft'" @click="deleteDraft(test)">
+                {{ t('catalogDelete') }}
+              </button>
+            </div>
           </li>
         </ul>
       </section>
