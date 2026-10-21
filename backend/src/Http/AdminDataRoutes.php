@@ -160,7 +160,7 @@ final class AdminDataRoutes
                 $this->checkGroup($source->groupId);
                 $copy = clone $source;
                 $copy->id = JsonFileRepository::uuid();
-                $copy->title = mb_substr($source->title, 0, 243) . ' (copy)';
+                $copy->title = $source->title;
                 $copy->status = 'draft';
                 $copy->publishedAt = null;
                 $copy->createdAt = self::now();
