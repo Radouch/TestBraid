@@ -198,7 +198,7 @@ class PublicationService
     {
         $groups = [];
         foreach ($this->store->all('groups') as $group) {
-            $groups[$group->id] = ['id' => $group->id, 'name' => $group->name, 'tests' => []];
+            $groups[$group->id] = ['id' => $group->id, 'name' => $group->name, 'position' => $group->position ?? null, 'tests' => []];
         }
 
         foreach ($this->store->all('tests') as $test) {
@@ -211,6 +211,7 @@ class PublicationService
                 'id' => $test->id,
                 'title' => $test->title,
                 'language' => $test->language,
+                'position' => $test->position ?? null,
             ];
         }
 
@@ -220,15 +221,35 @@ class PublicationService
                 continue;
             }
             usort($group['tests'], static fn (array $a, array $b): int =>
-                strnatcasecmp($a['title'], $b['title']) ?: strcmp($a['id'], $b['id'])
+                self::comparePosition($a, $b, 'title')
             );
             $publishedGroups[] = $group;
         }
         usort($publishedGroups, static fn (array $a, array $b): int =>
-            strnatcasecmp($a['name'], $b['name']) ?: strcmp($a['id'], $b['id'])
+            self::comparePosition($a, $b, 'name')
         );
+        // Position affects display order but is not part of the public API.
+        foreach ($publishedGroups as &$group) {
+            unset($group['position']);
+            foreach ($group['tests'] as &$test) unset($test['position']);
+            unset($test);
+        }
+        unset($group);
 
         return ['groups' => $publishedGroups];
+    }
+
+    /** @param array<string, mixed> $a
+     *  @param array<string, mixed> $b
+     */
+    private static function comparePosition(array $a, array $b, string $field): int
+    {
+        $ap = $a['position'] ?? null;
+        $bp = $b['position'] ?? null;
+        if ($ap === null && $bp !== null) return -1;
+        if ($ap !== null && $bp === null) return 1;
+        if ($ap !== null && $bp !== null && $ap !== $bp) return $ap <=> $bp;
+        return strnatcasecmp($a[$field], $b[$field]) ?: strcmp($a['id'], $b['id']);
     }
 
     public function publicTest(string $id): array
