@@ -3,6 +3,7 @@ import HomeView from './views/HomeView.vue'
 import AdminView from './views/AdminView.vue'
 import TestView from './views/TestView.vue'
 import TestQuestionsView from './views/TestQuestionsView.vue'
+import TestPreviewView from './views/TestPreviewView.vue'
 
 export const router = createRouter({
   // Honor the Vite build base so deployment is not tied to a particular domain/path.
@@ -11,6 +12,7 @@ export const router = createRouter({
     { path: '/', name: 'home', component: HomeView },
     { path: '/admin', name: 'admin', component: AdminView },
     { path: '/admin/tests/:id/questions', name: 'test-questions', component: TestQuestionsView },
+    { path: '/admin/tests/:id/preview', name: 'test-preview', component: TestPreviewView },
     { path: '/tests/:id', name: 'test', component: TestView },
   ],
 })
