@@ -57,6 +57,8 @@ check() {
   fi
 }
 
+expect 401 "$HOST/api/admin/media"
+check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/media" -F "file=@$TEMP/blue.png"
 check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/media/11111111-1111-4111-8111-111111111111/preview"
@@ -91,6 +93,8 @@ expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
   -F "file=@$TEMP/blue.png;filename=blue.png;type=application/octet-stream"
 check '.kind == "image" and .mimeType == "image/png" and .originalName == "blue.png" and (.mediaId | test("^[0-9a-f-]{36}$"))'
 PNG_ID="$(jq -r '.mediaId' "$TEMP/body")"
+expect 200 "$HOST/api/admin/media"
+check --arg ID "$PNG_ID" '(.media | length) == 1 and .media[0].id == $ID and .media[0].usedIn == []'
 test -f "$TEMP/private-storage/media/$PNG_ID.json"
 test -f "$TEMP/private-storage/media-files/$PNG_ID.png"
 expect 200 "$HOST/api/admin/media/$PNG_ID"
@@ -119,10 +123,17 @@ expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
   -F "file=@$TEMP/clip.webm;type=application/octet-stream"
 check '.kind == "video" and .mimeType == "video/webm"'
 WEBM_ID="$(jq -r '.mediaId' "$TEMP/body")"
+expect 200 "$HOST/api/admin/media"
+check --arg PNG "$PNG_ID" --arg MP4 "$MP4_ID" --arg WEBM "$WEBM_ID" '
+  (.media | length) == 3
+  and ([.media[].id] | sort) == ([$PNG,$MP4,$WEBM] | sort)
+  and ([.media[].usedIn[]] | length) == 0'
 expect 200 "$HOST/api/admin/media/$WEBM_ID/preview"
 cmp "$TEMP/body" "$TEMP/clip.webm"
 
 expect 200 "$HOST/api/auth/logout" -X POST -H "X-CSRF-Token: $CSRF"
+expect 401 "$HOST/api/admin/media"
+check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/media/$PNG_ID/preview"
 check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/media/$MP4_ID"
