@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader, { type UploadedMedia } from '../components/MediaUploader.vue'
+import AdminCatalog from '../components/AdminCatalog.vue'
 
 interface Author {
   id: string
@@ -148,6 +149,7 @@ onMounted(() => void readSession())
       <template v-if="session.authenticated && session.user">
         <p>{{ t('signedInAs', { username: session.user.username }) }}</p>
         <p>{{ t('adminPlaceholder') }}</p>
+        <AdminCatalog :csrf-token="session.csrfToken" />
         <section class="my-4" aria-labelledby="media-heading">
           <h2 id="media-heading" class="h4">{{ t('mediaUploadTitle') }}</h2>
           <MediaUploader :csrf-token="session.csrfToken" @uploaded="recordUpload" />
