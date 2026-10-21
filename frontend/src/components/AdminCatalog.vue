@@ -375,10 +375,16 @@ onMounted(() => void load())
               @click="resetForm">{{ t('catalogNewDraft') }}</button>
           </div>
         </form>
-        <RouterLink v-if="selectedDraft" class="btn btn-outline-primary mt-3"
-          :to="{ name: 'test-questions', params: { id: selectedDraft.id } }">
-          {{ t('editorOpen') }}
-        </RouterLink>
+        <div v-if="selectedDraft" class="d-flex flex-wrap gap-2 mt-3">
+          <RouterLink class="btn btn-outline-primary"
+            :to="{ name: 'test-questions', params: { id: selectedDraft.id } }">
+            {{ t('editorOpen') }}
+          </RouterLink>
+          <RouterLink class="btn btn-outline-secondary"
+            :to="{ name: 'test-preview', params: { id: selectedDraft.id } }">
+            {{ t('runnerPreviewButton') }}
+          </RouterLink>
+        </div>
       </section>
     </template>
   </section>

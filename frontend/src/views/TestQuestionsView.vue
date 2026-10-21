@@ -155,6 +155,11 @@ onMounted(() => {
     <template v-if="test && !loading">
       <h2 class="h4">{{ test.title }}</h2>
       <p class="small text-secondary">{{ t('editorTestId') }}: {{ test.id }}</p>
+      <RouterLink class="btn btn-outline-secondary mb-3"
+        :to="{ name: 'test-preview', params: { id: test.id } }">
+        {{ t('runnerPreviewButton') }}
+      </RouterLink>
+      <p v-if="dirty" class="small text-warning-emphasis">{{ t('runnerSavedVersion') }}</p>
       <p v-if="test.status === 'published'" class="alert alert-warning">
         {{ t('editorPublishedLocked') }}
       </p>

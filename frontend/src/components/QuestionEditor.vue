@@ -81,7 +81,19 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
           <option value="multiple">{{ t('editorMultiple') }}</option>
         </select>
       </div>
-      <div v-for="(option, optionIndex) in choice.options" :key="option.id" class="border rounded p-2 mb-3">
+      <div class="alert alert-info py-2 small" role="note">
+        <strong>{{ t('editorCorrectInstruction') }}</strong>
+        <span class="d-block">{{ t('editorCorrectSelectionHelp') }}</span>
+      </div>
+      <p v-if="choice.correctOptionIds.length === 0" class="alert alert-warning py-2 small">
+        {{ t('editorNoCorrectSelected') }}
+      </p>
+      <p v-else class="small text-success fw-semibold" role="status">
+        {{ t('editorCorrectSelectedCount', { count: choice.correctOptionIds.length }) }}
+      </p>
+      <div v-for="(option, optionIndex) in choice.options" :key="option.id"
+        class="border rounded p-2 mb-3"
+        :class="choice.correctOptionIds.includes(option.id) ? 'border-success border-2' : ''">
         <div class="d-flex align-items-center flex-wrap gap-2">
           <h4 class="h6 mb-0">{{ t('editorOptionNumber', { index: optionIndex + 1 }) }}</h4>
           <div class="ms-auto d-flex gap-1">
@@ -94,17 +106,25 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
             </button>
           </div>
         </div>
-        <ContentBlocksEditor :model-value="option.content" :csrf-token="csrfToken"
-          :label="t('editorAnswerContent')"
-          @update:model-value="updateContent(option, $event)" />
-        <div class="form-check">
+        <!-- Make the answer key explicit BEFORE the potentially long/media-rich
+             answer content. It used to be hidden below the block editor. -->
+        <div class="form-check rounded py-2 px-2 ps-4 my-2"
+          :class="choice.correctOptionIds.includes(option.id) ? 'bg-success-subtle' : 'bg-body-tertiary'">
           <input :id="'correct-' + option.id" class="form-check-input"
             :type="choice.mode === 'single' ? 'radio' : 'checkbox'"
             :name="'correct-' + choice.id"
             :checked="choice.correctOptionIds.includes(option.id)"
             @change="toggleCorrect(option.id, ($event.target as HTMLInputElement).checked)" />
-          <label :for="'correct-' + option.id" class="form-check-label">{{ t('editorCorrectAnswer') }}</label>
+          <label :for="'correct-' + option.id" class="form-check-label fw-semibold">
+            {{ t('editorMarkCorrect') }}
+          </label>
+          <span v-if="choice.correctOptionIds.includes(option.id)" class="ms-2 text-success fw-semibold">
+            ✓ {{ t('editorMarkedCorrect') }}
+          </span>
         </div>
+        <ContentBlocksEditor :model-value="option.content" :csrf-token="csrfToken"
+          :label="t('editorAnswerContent')"
+          @update:model-value="updateContent(option, $event)" />
       </div>
       <button class="btn btn-outline-primary btn-sm align-self-start" type="button" @click="addOption">
         {{ t('editorAddOption') }}
@@ -131,7 +151,10 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
               @update:model-value="updateContent(matching!.rightItems[pairIndex]!, $event)" />
           </div>
         </div>
-        <label class="form-label" :for="'matching-' + left.id">{{ t('editorCorrectMatch') }}</label>
+        <label class="form-label fw-semibold" :for="'matching-' + left.id">
+          {{ t('editorCorrectMatch') }}
+        </label>
+        <p class="small text-secondary mb-1">{{ t('editorMatchingKeyHelp') }}</p>
         <select :id="'matching-' + left.id" class="form-select"
           :value="currentMatch(left.id)" @change="setMatch(left.id, ($event.target as HTMLSelectElement).value)">
           <option value="">{{ t('editorNoMatch') }}</option>
