@@ -109,18 +109,15 @@ export function addMatchingPair(question: MatchingQuestion): void {
   question.matches.push({ leftId: left.id, rightId: right.id })
 }
 export function removeMatchingPair(question: MatchingQuestion, leftId: string): void {
-  const rightId = question.matches.find((match) => match.leftId === leftId)?.rightId
-  question.leftItems = question.leftItems.filter((item) => item.id !== leftId)
-  if (rightId) {
-    question.rightItems = question.rightItems.filter((item) => item.id !== rightId)
-  } else {
-    // An incomplete draft is allowed, but preserve equal side lengths.
-    const last = question.rightItems.at(-1)
-    if (last) question.rightItems = question.rightItems.filter((item) => item.id !== last.id)
-  }
-  const rightIds = new Set(question.rightItems.map((item) => item.id))
+  const index = question.leftItems.findIndex((item) => item.id === leftId)
+  if (index < 0) return
+  // "Remove pair" removes the displayed row from both content columns,
+  // regardless of whether answers were reassigned to other right-hand items.
+  const rightId = question.rightItems[index]?.id
+  question.leftItems.splice(index, 1)
+  question.rightItems.splice(index, 1)
   question.matches = question.matches.filter((match) =>
-    match.leftId !== leftId && rightIds.has(match.rightId))
+    match.leftId !== leftId && match.rightId !== rightId)
 }
 export function assignMatch(question: MatchingQuestion, leftId: string, rightId: string): void {
   if (!question.leftItems.some((item) => item.id === leftId)
