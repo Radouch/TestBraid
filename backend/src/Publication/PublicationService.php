@@ -135,6 +135,54 @@ class PublicationService
         return $this->commitPublished($next);
     }
 
+    /**
+     * A deliberately small anonymous catalog: only groups containing at
+     * least one published test, and only safe learner-facing metadata.
+     *
+     * Never serialize full private test/group records here: draft titles,
+     * answer keys, private media IDs and unpublished lesson names must not
+     * escape through a list endpoint. Each test's detail route independently
+     * checks its current published status after a withdrawal.
+     *
+     * @return array{groups: list<array{id: string, name: string, tests: list<array{id: string, title: string, language: string}>}>}
+     */
+    public function publicCatalog(): array
+    {
+        $groups = [];
+        foreach ($this->store->all('groups') as $group) {
+            $groups[$group->id] = ['id' => $group->id, 'name' => $group->name, 'tests' => []];
+        }
+
+        foreach ($this->store->all('tests') as $test) {
+            if (($test->status ?? null) !== 'published'
+                || !is_string($test->groupId ?? null)
+                || !isset($groups[$test->groupId])) {
+                continue;
+            }
+            $groups[$test->groupId]['tests'][] = [
+                'id' => $test->id,
+                'title' => $test->title,
+                'language' => $test->language,
+            ];
+        }
+
+        $publishedGroups = [];
+        foreach ($groups as $group) {
+            if ($group['tests'] === []) {
+                continue;
+            }
+            usort($group['tests'], static fn (array $a, array $b): int =>
+                strnatcasecmp($a['title'], $b['title']) ?: strcmp($a['id'], $b['id'])
+            );
+            $publishedGroups[] = $group;
+        }
+        usort($publishedGroups, static fn (array $a, array $b): int =>
+            strnatcasecmp($a['name'], $b['name']) ?: strcmp($a['id'], $b['id'])
+        );
+
+        return ['groups' => $publishedGroups];
+    }
+
     public function publicTest(string $id): array
     {
         if (!JsonFileRepository::validId($id)) {
