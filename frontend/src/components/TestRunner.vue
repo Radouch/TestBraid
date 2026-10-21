@@ -80,11 +80,15 @@ function restart(): void {
                 :checked="(answers.choices[question.id] ?? []).includes(option.id)"
                 :disabled="submitted"
                 @change="choose(question, option.id, ($event.target as HTMLInputElement).checked)" />
-              <label class="flex-grow-1" :for="'runner-option-' + question.id + '-' + option.id">
-                <span class="fw-semibold">{{ t('runnerAnswer', { index: optionIndex + 1 }) }}</span>
+              <div class="flex-grow-1">
+                <label class="fw-semibold d-block" :for="'runner-option-' + question.id + '-' + option.id">
+                  {{ t('runnerAnswer', { index: optionIndex + 1 }) }}
+                </label>
+                <!-- Video controls must not be nested in a radio/checkbox label:
+                     playback and seeking may not change the selected answer. -->
                 <ContentBlocksViewer :blocks="option.content"
                   :private-preview="privatePreview" :media-urls="mediaUrls" />
-              </label>
+              </div>
             </div>
             <p v-if="submitted && question.correctOptionIds.includes(option.id)"
               class="text-success small mb-0">{{ t('runnerCorrectOption') }}</p>
