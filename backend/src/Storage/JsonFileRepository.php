@@ -177,6 +177,46 @@ class JsonFileRepository
         }
     }
 
+    /**
+     * Permanently remove a single private JSON record.
+     *
+     * Use the same per-kind write lock as write(), so an in-flight atomic
+     * rename cannot resurrect a deleted entity. Cross-entity reference
+     * checks belong to the caller under the publication lock.
+     */
+    public function delete(string $kind, string $id): bool
+    {
+        $path = $this->path($kind, $id);
+        $directory = dirname($path);
+        $lockPath = $directory . '/.write.lock';
+        if (is_link($lockPath)) {
+            throw new RuntimeException('Refusing a symbolic link for private storage lock.');
+        }
+        $lock = fopen($lockPath, 'c+b');
+        if ($lock === false) {
+            throw new RuntimeException('Cannot open private storage lock.');
+        }
+        try {
+            @chmod($lockPath, 0600);
+            if (!flock($lock, LOCK_EX)) {
+                throw new RuntimeException('Cannot lock private storage.');
+            }
+            if (is_link($path)) {
+                throw new RuntimeException('Refusing a symbolic link in private storage.');
+            }
+            if (!is_file($path)) {
+                return false;
+            }
+            if (!unlink($path)) {
+                throw new RuntimeException('Unable to delete private JSON record.');
+            }
+            return true;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
     protected function promote(string $temporary, string $destination): void
     {
         if (!rename($temporary, $destination)) {
