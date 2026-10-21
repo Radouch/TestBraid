@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { reactive } from 'vue'
 import type { ChoiceQuestion, MatchingQuestion, Question } from '../src/editor/model'
 import { freshAnswers, grade, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
 
@@ -49,6 +50,21 @@ assert.equal(grade(questions, answers).correct, 0)
 answers = setChoiceAnswer(answers, choice, 'b', false)
 assert.equal(grade(questions, answers).correct, 1)
 assert.deepEqual(initial, freshAnswers()) // updated responses never mutate the original
+
+// Regression: in the actual Vue runner, answers.value is a reactive Proxy.
+// structuredClone(answers.value) throws DataCloneError, so previously a
+// click left the answer blank and every preview response scored zero.
+const reactiveAnswers = reactive(freshAnswers())
+const fromProxy = setChoiceAnswer(reactiveAnswers, choice, 'a', true)
+assert.deepEqual(fromProxy.choices['q-choice'], ['a'])
+assert.equal(grade([choice], fromProxy).results[0]?.answered, true)
+assert.deepEqual(reactiveAnswers.choices, {})
+const secondProxy = setChoiceAnswer(reactive(fromProxy), choice, 'c', true)
+assert.equal(grade([choice], secondProxy).correct, 1)
+const matchingFromProxy = setMatchingAnswer(reactive(secondProxy), matching, 'left1', 'right2')
+const completeProxy = setMatchingAnswer(reactive(matchingFromProxy), matching, 'left2', 'right1')
+assert.equal(grade(questions, completeProxy).correct, 2)
+
 
 let backwards = setChoiceAnswer(initial, choice, 'c', true)
 backwards = setChoiceAnswer(backwards, choice, 'a', true)
