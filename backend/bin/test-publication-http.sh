@@ -120,6 +120,17 @@ test -f "$MEDIA_DIR/$IMAGE_NAME"
 test ! -f "$MEDIA_DIR/$MOVIE_NAME"
 expect 200 "$HOST/api/public/tests/$T1"
 check --arg id "$IMAGE_ID" '.test.status == "published" and .mediaUrls[$id] == ("/media/" + $id + ".png")'
+
+# The new public Vue learner route must be able to fetch the exact answer
+# key and media URL without sending an author cookie or a CSRF header.
+PUBLIC_CODE="$(curl -sS -o "$TEMP/anonymous-public.json" -w '%{http_code}' "$HOST/api/public/tests/$T1")"
+test "$PUBLIC_CODE" = "200"
+jq -e --arg image "$IMAGE_ID" '
+  .test.status == "published" and .test.questions[0].type == "choice"
+  and .test.questions[0].correctOptionIds == ["o1"]
+  and .test.questions[0].options[0].id == "o1"
+  and .mediaUrls[$image] == ("/media/" + $image + ".png")
+' "$TEMP/anonymous-public.json" >/dev/null
 expect 200 "$HOST/media/$IMAGE_NAME"
 cmp "$TEMP/body" "$TEMP/image.png"
 expect 404 "$HOST/media/$MOVIE_NAME"
@@ -141,6 +152,7 @@ expect 200 "$HOST/api/admin/tests/$T2/publish" -X POST -H "X-CSRF-Token: $CSRF"
 expect 200 "$HOST/api/admin/tests/$T1/unpublish" -X POST -H "X-CSRF-Token: $CSRF"
 check '.status == "draft" and .publishedAt == null'
 expect 404 "$HOST/api/public/tests/$T1"
+test "$(curl -sS -o /dev/null -w '%{http_code}' "$HOST/api/public/tests/$T1")" = "404"
 test -f "$MEDIA_DIR/$IMAGE_NAME"
 expect 200 "$HOST/media/$IMAGE_NAME"
 
