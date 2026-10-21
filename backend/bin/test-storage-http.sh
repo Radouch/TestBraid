@@ -166,7 +166,37 @@ check '.error.code == "MEDIA_MISSING"'
 expect 200 "$HOST/api/admin/tests/$TEST_ID"
 check '.questions[0].prompt[0].type == "text"'
 
+# Deletions must be protected by auth and CSRF and must never
+# silently cascade: a lesson with even one draft test cannot be deleted.
+expect 409 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "GROUP_NOT_EMPTY"'
+test -f "$TEMP/private-storage/groups/$GROUP.json"
+test -f "$TEMP/private-storage/tests/$TEST_ID.json"
+
+expect 403 "$HOST/api/admin/tests/$TEST_ID" -X DELETE
+check '.error.code == "INVALID_CSRF"'
+expect 400 "$HOST/api/admin/tests/not-a-uuid" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "INVALID_ID"'
+expect 404 "$HOST/api/admin/tests/11111111-1111-4111-8111-111111111111" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "NOT_FOUND"'
+
+expect 200 "$HOST/api/admin/tests/$TEST_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check --arg ID "$TEST_ID" '.deleted == true and .id == $ID'
+test ! -e "$TEMP/private-storage/tests/$TEST_ID.json"
+expect 404 "$HOST/api/admin/tests/$TEST_ID"
+check '.error.code == "NOT_FOUND"'
+expect 404 "$HOST/api/admin/tests/$TEST_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "NOT_FOUND"'
+
+expect 200 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+check --arg ID "$GROUP" '.deleted == true and .id == $ID'
+test ! -e "$TEMP/private-storage/groups/$GROUP.json"
+expect 404 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "NOT_FOUND"'
+expect 200 "$HOST/api/admin/groups"
+check '.groups == []'
+
 expect 200 "$HOST/api/auth/logout" -X POST -H "X-CSRF-Token: $CSRF"
-expect 401 "$HOST/api/admin/tests/$TEST_ID"
+expect 401 "$HOST/api/admin/tests/$TEST_ID" -X DELETE
 check '.error.code == "AUTH_REQUIRED"'
-echo "PASS: authenticated JSON CRUD, validation, private persistence and rollback on rejected requests"
+echo "PASS: authenticated JSON CRUD, guarded deletes, validation, private persistence and rollback"
