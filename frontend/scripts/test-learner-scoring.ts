@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
 import type { ChoiceQuestion, MatchingQuestion, Question } from '../src/editor/model'
-import { freshAnswers, grade, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
+import { freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
+import { toggleChoiceCorrect } from '../src/editor/model'
 
 const text = (id: string, value: string) => ({ id, type: 'text' as const, text: value })
 const choice: ChoiceQuestion = {
@@ -39,6 +40,24 @@ assert.deepEqual(grade(questions, initial), {
   ],
 })
 assert.equal(grade([], initial).total, 0)
+assert.equal(hasValidAnswerKey(choice), true)
+assert.equal(hasValidAnswerKey(matching), true)
+
+// Simulate the exact author data path: question is nested in Vue reactive
+// editor state, its answer key is updated via an input handler and saved JSON
+// is reloaded by the private preview/runner.
+const reactiveQuestion = reactive(structuredClone(choice))
+reactiveQuestion.correctOptionIds = []
+assert.equal(hasValidAnswerKey(reactiveQuestion), false)
+toggleChoiceCorrect(reactiveQuestion, 'a', true)
+toggleChoiceCorrect(reactiveQuestion, 'c', true)
+const persistedQuestion = JSON.parse(JSON.stringify(reactiveQuestion)) as ChoiceQuestion
+assert.deepEqual(persistedQuestion.correctOptionIds, ['a', 'c'])
+assert.equal(hasValidAnswerKey(persistedQuestion), true)
+assert.equal(grade([persistedQuestion], {
+  choices: { [persistedQuestion.id]: ['c', 'a'] }, matches: {},
+}).correct, 1)
+
 
 // Multiple choice: partial selection must score zero, extra choice scores
 // zero, order of selected set does not affect exact equality.
@@ -108,5 +127,9 @@ assert.equal(grade([matching], {
 // Draft with no valid answer key cannot award accidental points.
 const incomplete: ChoiceQuestion = { ...single, correctOptionIds: [] }
 assert.equal(grade([incomplete], singleAnswers).correct, 0)
+assert.equal(hasValidAnswerKey(incomplete), false)
+assert.equal(hasValidAnswerKey({
+  ...matching, matches: matching.matches.slice(0, 1),
+}), false)
 
 console.log('PASS: anonymous scorer exact-choice sets, complete matching bijection, unanswered and reset')
