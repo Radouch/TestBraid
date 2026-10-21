@@ -23,6 +23,9 @@ jobs:
       - name: Shared schema fixtures (Ajv)
         run: npm run test:schemas
         working-directory: frontend
+      - name: Question editor model and publication invariants
+        run: npm run test:editor
+        working-directory: frontend
       - name: Build
         run: npm run build
         working-directory: frontend

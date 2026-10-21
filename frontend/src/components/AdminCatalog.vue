@@ -375,6 +375,10 @@ onMounted(() => void load())
               @click="resetForm">{{ t('catalogNewDraft') }}</button>
           </div>
         </form>
+        <RouterLink v-if="selectedDraft" class="btn btn-outline-primary mt-3"
+          :to="{ name: 'test-questions', params: { id: selectedDraft.id } }">
+          {{ t('editorOpen') }}
+        </RouterLink>
       </section>
     </template>
   </section>

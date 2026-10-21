@@ -8,7 +8,8 @@
     "typecheck": "vue-tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "test:schemas": "tsx scripts/test-schema-fixtures.ts"
+    "test:schemas": "tsx scripts/test-schema-fixtures.ts",
+    "test:editor": "tsx scripts/test-question-model.ts"
   },
   "dependencies": {
     "bootstrap": "^5.3.0",
