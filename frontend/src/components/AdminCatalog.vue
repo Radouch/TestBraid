@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import TestPublicationActions from './TestPublicationActions.vue'
+import type { Question } from '../editor/model'
 
 interface Group {
   id: string
@@ -13,7 +15,7 @@ interface TestRecord {
   description: string
   language: string
   status: 'draft' | 'published'
-  questions: unknown[]
+  questions: Question[]
 }
 interface ErrorPayload {
   error?: { code?: string; message?: string }
@@ -101,8 +103,18 @@ async function refresh(): Promise<void> {
   if (groupFilter.value && !groups.value.some((group) => group.id === groupFilter.value)) {
     groupFilter.value = ''
   }
-  if (selectedTestId.value && !tests.value.some((test) => test.id === selectedTestId.value)) {
+  if (selectedTestId.value && !tests.value.some((test) =>
+    test.id === selectedTestId.value && test.status === 'draft')) {
     resetForm()
+  }
+}
+
+async function publicationChanged(): Promise<void> {
+  error.value = ''
+  try {
+    await refresh()
+  } catch (cause) {
+    showError(cause)
   }
 }
 
@@ -321,16 +333,24 @@ onMounted(() => void load())
                 {{ test.status === 'published' ? t('catalogPublished') : t('catalogDraft') }}
               </div>
             </div>
-            <div class="d-flex gap-2 flex-wrap">
-              <button type="button" class="btn btn-outline-primary btn-sm"
-                :disabled="busy || test.status !== 'draft'" @click="editTest(test)">
-                {{ test.status === 'published' ? t('catalogPublishedLocked') : t('catalogEditMetadata') }}
-              </button>
-              <button type="button" class="btn btn-outline-danger btn-sm"
-                :title="test.status === 'published' ? t('catalogPublishedDeleteBlocked') : undefined"
-                :disabled="busy || test.status !== 'draft'" @click="deleteDraft(test)">
-                {{ t('catalogDelete') }}
-              </button>
+            <div class="d-grid gap-2">
+              <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-outline-primary btn-sm"
+                  :disabled="busy || test.status !== 'draft'" @click="editTest(test)">
+                  {{ test.status === 'published' ? t('catalogPublishedLocked') : t('catalogEditMetadata') }}
+                </button>
+                <RouterLink :to="{ name: 'test-preview', params: { id: test.id } }"
+                  class="btn btn-outline-secondary btn-sm">
+                  {{ t('runnerPreviewButton') }}
+                </RouterLink>
+                <button type="button" class="btn btn-outline-danger btn-sm"
+                  :title="test.status === 'published' ? t('catalogPublishedDeleteBlocked') : undefined"
+                  :disabled="busy || test.status !== 'draft'" @click="deleteDraft(test)">
+                  {{ t('catalogDelete') }}
+                </button>
+              </div>
+              <TestPublicationActions :test="test" :csrf-token="csrfToken"
+                @changed="publicationChanged" />
             </div>
           </li>
         </ul>
