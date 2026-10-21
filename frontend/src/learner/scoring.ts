@@ -33,12 +33,34 @@ function sameSet(expected: string[], actual: string[]): boolean {
     && new Set(actual).size === actual.length
     && expected.every(id => actual.includes(id))
 }
+/**
+ * A saved draft may lack a complete correct answer key. Expose that state
+ * separately from a learner's incorrect response, especially in previews.
+ */
+export function hasValidAnswerKey(question: Question): boolean {
+  if (question.type === 'choice') {
+    const allowed = new Set(question.options.map(option => option.id))
+    const expected = question.correctOptionIds
+    return question.options.length >= 2
+      && expected.length >= 1
+      && (question.mode === 'multiple' || expected.length === 1)
+      && expected.every(id => allowed.has(id))
+      && new Set(expected).size === expected.length
+  }
+  const left = question.leftItems.map(item => item.id)
+  const right = new Set(question.rightItems.map(item => item.id))
+  const leftMatch = new Map(question.matches.map(pair => [pair.leftId, pair.rightId]))
+  return left.length >= 2
+    && left.length === right.size
+    && leftMatch.size === left.length
+    && question.matches.length === left.length
+    && new Set(question.matches.map(pair => pair.rightId)).size === right.size
+    && left.every(id => right.has(leftMatch.get(id) ?? ''))
+}
 function scoreChoice(question: ChoiceQuestion, selected: string[]): QuestionResult {
   const allowed = new Set(question.options.map(option => option.id))
   const expected = question.correctOptionIds
-  const validKey = expected.length >= 1
-    && (question.mode === 'multiple' || expected.length === 1)
-    && expected.every(id => allowed.has(id))
+  const validKey = hasValidAnswerKey(question)
   const answered = selected.length > 0
   const correct = validKey && answered
     && selected.every(id => allowed.has(id))
@@ -51,11 +73,7 @@ function scoreMatching(question: MatchingQuestion, selected: Record<string, stri
   const right = new Set(question.rightItems.map(item => item.id))
   const entries = Object.entries(selected).filter(([, id]) => id !== '')
   const answered = entries.length > 0
-  const validKey = left.length >= 2
-    && left.length === right.size
-    && expected.size === left.length
-    && new Set(question.matches.map(pair => pair.rightId)).size === right.size
-    && left.every(id => right.has(expected.get(id) ?? ''))
+  const validKey = hasValidAnswerKey(question)
   const correct = validKey && entries.length === left.length
     && entries.every(([leftId, rightId]) => left.includes(leftId) && right.has(rightId))
     && new Set(entries.map(([, id]) => id)).size === entries.length
