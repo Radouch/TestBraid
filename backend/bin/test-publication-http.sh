@@ -69,6 +69,13 @@ expect 403 "$HOST/api/admin/tests/11111111-1111-4111-8111-111111111111/publish" 
 expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" -d '{"name":"Published tests"}'
 GROUP="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"name":"Unpublished lesson"}'
+PRIVATE_GROUP="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/public/catalog"
+check '.groups == []'
+test "$(curl -sS -o "$TEMP/anon-catalog.json" -w '%{http_code}' "$HOST/api/public/catalog")" = "200"
+jq -e '.groups == []' "$TEMP/anon-catalog.json" >/dev/null
 expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" -F "file=@$TEMP/image.png"
 IMAGE_ID="$(jq -r '.mediaId' "$TEMP/body")"
 expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" -F "file=@$TEMP/movie.mp4"
@@ -94,6 +101,8 @@ check '.error.code == "NOT_PUBLISHABLE"'
 expect 200 "$HOST/api/admin/tests/$INCOMPLETE_ID"
 check '.status == "draft" and .publishedAt == null'
 expect 404 "$HOST/api/public/tests/$INCOMPLETE_ID"
+expect 200 "$HOST/api/public/catalog"
+check '.groups == []'
 
 # Choice questions may mix text, images and video. Only the referenced assets
 # become public; unrelated private uploads remain private.
@@ -114,12 +123,33 @@ expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" \
   -H 'Content-Type: application/json' --data-binary "@$TEMP/test1.json"
 T1="$(jq -r '.id' "$TEMP/body")"
 expect 404 "$HOST/api/public/tests/$T1"
+expect 200 "$HOST/api/public/catalog"
+check '.groups == []'
 expect 200 "$HOST/api/admin/tests/$T1/publish" -X POST -H "X-CSRF-Token: $CSRF"
 check '.status == "published" and .publishedAt != null'
 test -f "$MEDIA_DIR/$IMAGE_NAME"
 test ! -f "$MEDIA_DIR/$MOVIE_NAME"
 expect 200 "$HOST/api/public/tests/$T1"
 check --arg id "$IMAGE_ID" '.test.status == "published" and .mediaUrls[$id] == ("/media/" + $id + ".png")'
+# An anonymous catalog must include only published tests under the group
+# containing them. It must not leak private-only lessons, draft titles,
+# question content, answer keys, media IDs, author metadata or timestamps.
+test "$(curl -sS -o "$TEMP/anon-catalog.json" -w '%{http_code}' "$HOST/api/public/catalog")" = "200"
+jq -e --arg group "$GROUP" --arg id "$T1" --arg draft "$INCOMPLETE_ID" \
+  --arg media "$IMAGE_ID" '
+    (.groups | length) == 1
+    and .groups[0].id == $group
+    and .groups[0].name == "Published tests"
+    and (.groups[0].tests | length) == 1
+    and .groups[0].tests[0].id == $id
+    and .groups[0].tests[0].title == "Published example"
+    and .groups[0].tests[0].language == "en"
+    and ((.groups[0].tests[0] | keys | sort) == ["id", "language", "title"])
+    and (tostring | contains($draft) | not)
+    and (tostring | contains($media) | not)
+    and (tostring | contains("Unpublished lesson") | not)
+    and (tostring | contains("correctOptionIds") | not)
+  ' "$TEMP/anon-catalog.json" >/dev/null
 
 # The new public Vue learner route must be able to fetch the exact answer
 # key and media URL without sending an author cookie or a CSRF header.
@@ -149,10 +179,22 @@ expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" \
   -H 'Content-Type: application/json' --data-binary "@$TEMP/test2.json"
 T2="$(jq -r '.id' "$TEMP/body")"
 expect 200 "$HOST/api/admin/tests/$T2/publish" -X POST -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/public/catalog"
+check --arg id1 "$T1" --arg id2 "$T2" '
+  (.groups | length) == 1
+  and (.groups[0].tests | length) == 2
+  and ([.groups[0].tests[].id] | sort) == ([$id1, $id2] | sort)
+'
 expect 200 "$HOST/api/admin/tests/$T1/unpublish" -X POST -H "X-CSRF-Token: $CSRF"
 check '.status == "draft" and .publishedAt == null'
 expect 404 "$HOST/api/public/tests/$T1"
 test "$(curl -sS -o /dev/null -w '%{http_code}' "$HOST/api/public/tests/$T1")" = "404"
+expect 200 "$HOST/api/public/catalog"
+check --arg id "$T2" '
+  (.groups | length) == 1
+  and (.groups[0].tests | length) == 1
+  and .groups[0].tests[0].id == $id
+'
 test -f "$MEDIA_DIR/$IMAGE_NAME"
 expect 200 "$HOST/media/$IMAGE_NAME"
 
@@ -183,6 +225,8 @@ check '.test.title == "Now showing video"'
 expect 200 "$HOST/api/admin/tests/$T2/unpublish" -X POST -H "X-CSRF-Token: $CSRF"
 test ! -f "$MEDIA_DIR/$MOVIE_NAME"
 expect 404 "$HOST/api/public/tests/$T2"
+expect 200 "$HOST/api/public/catalog"
+check '.groups == []'
 expect 404 "$HOST/media/$MOVIE_NAME"
 expect 200 "$HOST/api/admin/tests/$T2"
 check '.status == "draft"'
@@ -207,4 +251,4 @@ expect 200 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
 check '.deleted == true'
 
 
-echo "PASS: atomic test status, public static media, shared references, live edit and withdrawal"
+echo "PASS: atomic publication, minimal anonymous lesson catalog, static media, shared references and withdrawal"
