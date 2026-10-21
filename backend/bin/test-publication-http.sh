@@ -185,6 +185,17 @@ check --arg id1 "$T1" --arg id2 "$T2" '
   and (.groups[0].tests | length) == 2
   and ([.groups[0].tests[].id] | sort) == ([$id1, $id2] | sort)
 '
+# Publish a separate group and ensure catalog lessons remain distinct.
+jq --arg group "$PRIVATE_GROUP" '.groupId=$group | .title="Second lesson test"' "$TEMP/test1.json" > "$TEMP/test3.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' --data-binary "@$TEMP/test3.json"
+T3="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/tests/$T3/publish" -X POST -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/public/catalog"
+check --arg other "$PRIVATE_GROUP" --arg test "$T3" '(.groups | length) == 2 and ([.groups[].id] | index($other)) != null and ([.groups[].tests[].id] | index($test)) != null'
+expect 200 "$HOST/api/admin/tests/$T3/unpublish" -X POST -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/public/catalog"
+check '.groups | length == 1'
+
 expect 200 "$HOST/api/admin/tests/$T1/unpublish" -X POST -H "X-CSRF-Token: $CSRF"
 check '.status == "draft" and .publishedAt == null'
 expect 404 "$HOST/api/public/tests/$T1"
