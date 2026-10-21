@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
 import type { ContentItem, DraftTest, Question } from '../editor/model'
 import {
-  freshAnswers, grade, setChoiceAnswer, setMatchingAnswer,
+  freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer,
   type Answers, type QuestionResult,
 } from '../learner/scoring'
 
@@ -133,7 +133,11 @@ function restart(): void {
           </div>
         </template>
 
-        <p v-if="submitted" class="mt-3 mb-0"
+        <p v-if="privatePreview && !hasValidAnswerKey(question)"
+          class="alert alert-warning py-2 mt-3 mb-0" role="status">
+          {{ t('runnerMissingAnswerKey') }}
+        </p>
+        <p v-if="submitted && (!privatePreview || hasValidAnswerKey(question))" class="mt-3 mb-0"
           :class="resultFor(question)?.correct ? 'text-success' : 'text-danger'"
           role="status">
           {{ t(resultFor(question)?.correct ? 'runnerQuestionCorrect'
