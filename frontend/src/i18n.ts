@@ -1,8 +1,9 @@
 import { createI18n } from 'vue-i18n'
+import { preferredUiLocale } from './ui-locale'
 
 export const i18n = createI18n({
   legacy: false,
-  locale: 'en',
+  locale: preferredUiLocale(),
   fallbackLocale: 'en',
   messages: {
     en: {
