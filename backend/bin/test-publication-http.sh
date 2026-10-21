@@ -125,6 +125,10 @@ cmp "$TEMP/body" "$TEMP/image.png"
 expect 404 "$HOST/media/$MOVIE_NAME"
 expect 409 "$HOST/api/admin/tests/$T1/publish" -X POST -H "X-CSRF-Token: $CSRF"
 check '.error.code == "ALREADY_PUBLISHED"'
+expect 409 "$HOST/api/admin/tests/$T1" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "TEST_PUBLISHED"'
+test -f "$MEDIA_DIR/$IMAGE_NAME"
+expect 200 "$HOST/api/public/tests/$T1"
 
 # A second published test shares an asset. Withdrawing the first must NOT
 # delete its image. A published edit immediately promotes the new video.
@@ -170,5 +174,19 @@ expect 404 "$HOST/api/public/tests/$T2"
 expect 404 "$HOST/media/$MOVIE_NAME"
 expect 200 "$HOST/api/admin/tests/$T2"
 check '.status == "draft"'
+
+# Explicit deletion of a withdrawn/draft test never destroys a private media
+# original, even if its media are no longer publicly referenced.
+expect 200 "$HOST/api/admin/tests/$T1" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.deleted == true'
+expect 200 "$HOST/api/admin/tests/$T2" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.deleted == true'
+test -f "$TEMP/private-storage/media-files/$IMAGE_NAME"
+test -f "$TEMP/private-storage/media-files/$MOVIE_NAME"
+expect 404 "$HOST/api/admin/tests/$T1"
+expect 404 "$HOST/api/admin/tests/$T2"
+expect 200 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.deleted == true'
+
 
 echo "PASS: atomic test status, public static media, shared references, live edit and withdrawal"
