@@ -138,6 +138,25 @@ async function save(): Promise<void> {
     busy.value = false
   }
 }
+async function unpublishAndEdit(): Promise<void> {
+  if (!test.value || test.value.status !== 'published' || busy.value) return
+  if (!window.confirm(t('publicationConfirmUnpublish', { title: test.value.title }))) return
+  busy.value = true
+  error.value = ''
+  try {
+    const response = await fetch(api('admin/tests/' + encodeURIComponent(test.value.id) + '/unpublish'), {
+      method: 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { 'X-CSRF-Token': csrfToken.value },
+    })
+    if (!response.ok) throw new Error(t('publicationOperationFailed'))
+    await load()
+    success.value = t('publicationUnpublished')
+  } catch {
+    error.value = t('publicationOperationFailed')
+  } finally {
+    busy.value = false
+  }
+}
 onMounted(() => {
   window.addEventListener('beforeunload', beforeUnload)
   void load()
@@ -160,9 +179,12 @@ onMounted(() => {
         {{ t('runnerPreviewButton') }}
       </RouterLink>
       <p v-if="dirty" class="small text-warning-emphasis">{{ t('runnerSavedVersion') }}</p>
-      <p v-if="test.status === 'published'" class="alert alert-warning">
-        {{ t('editorPublishedLocked') }}
-      </p>
+      <div v-if="test.status === 'published'" class="alert alert-warning d-flex flex-wrap gap-3 justify-content-between align-items-center">
+        <span>{{ t('adminPublishedReadonly') }}</span>
+        <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="unpublishAndEdit">
+          {{ t('adminUnpublishEdit') }}
+        </button>
+      </div>
       <template v-else>
         <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
           <button type="button" class="btn btn-outline-primary" :disabled="busy"

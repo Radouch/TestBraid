@@ -136,6 +136,54 @@ class PublicationService
     }
 
     /**
+     * Author-only publication readiness, using the same semantic checks as
+     * publication and checking the private media bytes before reporting ready.
+     * This endpoint never changes publication state or exposes private paths.
+     *
+     * @return array<string, array{ready: bool, issues: list<array{path: string, code: string, message: string}>}>
+     */
+    public function readiness(): array
+    {
+        $results = [];
+        foreach ($this->store->all('tests') as $test) {
+            if ($test->status === 'published') {
+                $results[$test->id] = ['ready' => true, 'issues' => []];
+                continue;
+            }
+            $issues = [];
+            if (!$this->schemas->validate('test', $test)['valid']) {
+                $issues[] = ['path' => '/', 'code' => 'INVALID_SCHEMA', 'message' => 'The test document is invalid.'];
+            } else {
+                $issues = $this->rules->validate(
+                    $test,
+                    fn (string $id): bool => JsonFileRepository::validId($id)
+                        && $this->store->get('groups', $id) !== null,
+                    function (string $id, string $kind): bool {
+                        if (!JsonFileRepository::validId($id)) return false;
+                        $meta = $this->store->get('media', $id);
+                        return $meta !== null && $meta->kind === $kind;
+                    }
+                );
+                foreach ($this->references($test) as $id => $kind) {
+                    $meta = JsonFileRepository::validId($id) ? $this->store->get('media', $id) : null;
+                    if ($meta === null || $meta->kind !== $kind) continue;
+                    try {
+                        $this->media->previewSource($meta);
+                    } catch (ApiProblem) {
+                        $issues[] = [
+                            'path' => '/media',
+                            'code' => 'MEDIA_MISSING',
+                            'message' => 'A referenced media file is missing or unreadable.',
+                        ];
+                    }
+                }
+            }
+            $results[$test->id] = ['ready' => $issues === [], 'issues' => $issues];
+        }
+        return $results;
+    }
+
+    /**
      * A deliberately small anonymous catalog: only groups containing at
      * least one published test, and only safe learner-facing metadata.
      *
