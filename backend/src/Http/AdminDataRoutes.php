@@ -44,7 +44,7 @@ final class AdminDataRoutes
         );
 
         $group->get('/groups', fn (Request $r, Response $p): Response => $this->handle($p, function (): array {
-            return ['groups' => $this->store()->all('groups')];
+            return ['groups' => $this->orderRecords($this->store()->all('groups'), 'name')];
         }));
 
         $group->post('/groups', fn (Request $r, Response $p): Response => $this->handle($p, function () use ($r): stdClass {
@@ -53,6 +53,7 @@ final class AdminDataRoutes
                 'schemaVersion' => 1,
                 'id' => JsonFileRepository::uuid(),
                 'name' => $data->name,
+                'position' => $this->nextPosition('groups'),
                 'createdAt' => self::now(),
                 'updatedAt' => self::now(),
             ];
@@ -121,7 +122,7 @@ final class AdminDataRoutes
             if ($filter !== null) {
                 $tests = array_values(array_filter($tests, static fn (stdClass $test): bool => $test->groupId === $filter));
             }
-            return ['tests' => $tests];
+            return ['tests' => $this->orderTests($tests)];
         }));
 
         $group->post('/tests', fn (Request $r, Response $p): Response => $this->handle($p, fn (): stdClass =>
@@ -136,6 +137,7 @@ final class AdminDataRoutes
                 'title' => $data->title,
                 'description' => $data->description,
                 'status' => 'draft',
+                'position' => $this->nextPosition('tests', $data->groupId),
                 'createdAt' => self::now(),
                 'updatedAt' => self::now(),
                 'publishedAt' => null,
@@ -147,6 +149,44 @@ final class AdminDataRoutes
             return $test;
             })
         , 201));
+
+        $group->put('/groups/order', fn (Request $r, Response $p): Response =>
+            $this->handle($p, fn (): array => $this->publisher()->exclusive(function () use ($r): array {
+                $data = JsonRequest::fields($r, ['ids']);
+                $groups = $this->store()->all('groups');
+                $this->assertOrderIds($data->ids, $groups);
+                $byId = [];
+                foreach ($groups as $record) $byId[$record->id] = $record;
+                foreach ($data->ids as $position => $id) {
+                    $record = $byId[$id];
+                    $record->position = $position;
+                    $record->updatedAt = self::now();
+                    $this->validate('group', $record);
+                    $this->store()->write('groups', $id, $record, false);
+                }
+                return ['groups' => $this->orderRecords($this->store()->all('groups'), 'name')];
+            }))
+        );
+
+        $group->put('/tests/order', fn (Request $r, Response $p): Response =>
+            $this->handle($p, fn (): array => $this->publisher()->exclusive(function () use ($r): array {
+                $data = JsonRequest::fields($r, ['groupId', 'ids']);
+                $this->checkGroup($data->groupId);
+                $tests = array_values(array_filter($this->store()->all('tests'),
+                    static fn (stdClass $test): bool => $test->groupId === $data->groupId));
+                $this->assertOrderIds($data->ids, $tests);
+                $byId = [];
+                foreach ($tests as $record) $byId[$record->id] = $record;
+                foreach ($data->ids as $position => $id) {
+                    $record = $byId[$id];
+                    $record->position = $position;
+                    $record->updatedAt = self::now();
+                    $this->validate('test', $record);
+                    $this->store()->write('tests', $id, $record, false);
+                }
+                return ['tests' => $this->orderTests($this->store()->all('tests'))];
+            }))
+        );
 
         $group->get('/tests/readiness', fn (Request $r, Response $p): Response =>
             $this->handle($p, fn (): array => ['tests' => $this->publisher()->readiness()])
@@ -162,6 +202,7 @@ final class AdminDataRoutes
                 $copy->id = JsonFileRepository::uuid();
                 $copy->title = $source->title;
                 $copy->status = 'draft';
+                $copy->position = $this->nextPosition('tests', $copy->groupId);
                 $copy->publishedAt = null;
                 $copy->createdAt = self::now();
                 $copy->updatedAt = self::now();
@@ -228,6 +269,11 @@ final class AdminDataRoutes
                     'publishedAt' => $previous->publishedAt,
                     'questions' => $data->questions,
                 ];
+                if ($previous->groupId !== $data->groupId) {
+                    $test->position = $this->nextPosition('tests', $data->groupId);
+                } elseif (isset($previous->position)) {
+                    $test->position = $previous->position;
+                }
                 $this->validate('test', $test);
                 $this->checkDraft($test);
                 if ($previous->status === 'published') {
@@ -434,6 +480,75 @@ final class AdminDataRoutes
                 throw new ApiProblem(422, 'MEDIA_MISSING', 'Referenced media does not exist or has a different type.');
             }
         }
+    }
+
+    /** @param list<stdClass> $records */
+    private function assertOrderIds(mixed $ids, array $records): void
+    {
+        if (!is_array($ids) || count($ids) !== count($records)) {
+            throw new ApiProblem(422, 'INVALID_ORDER', 'Order must contain every record exactly once.');
+        }
+        $existing = [];
+        foreach ($records as $record) $existing[$record->id] = true;
+        $seen = [];
+        foreach ($ids as $id) {
+            if (!is_string($id) || !isset($existing[$id]) || isset($seen[$id])) {
+                throw new ApiProblem(422, 'INVALID_ORDER', 'Unknown or repeated record ID in order.');
+            }
+            $seen[$id] = true;
+        }
+    }
+
+    private function nextPosition(string $kind, ?string $groupId = null): int
+    {
+        $maximum = -1;
+        $count = 0;
+        foreach ($this->store()->all($kind) as $item) {
+            if ($groupId !== null && ($item->groupId ?? null) !== $groupId) continue;
+            $count++;
+            if (isset($item->position)) $maximum = max($maximum, $item->position);
+        }
+        return max($maximum + 1, $count);
+    }
+
+    /**
+     * Old documents without a position retain a deterministic alphabetical
+     * order before newly added positioned documents until explicitly reordered.
+     * @param list<stdClass> $records
+     * @return list<stdClass>
+     */
+    private function orderRecords(array $records, string $field): array
+    {
+        usort($records, static function (stdClass $a, stdClass $b) use ($field): int {
+            $aPos = $a->position ?? null;
+            $bPos = $b->position ?? null;
+            if ($aPos === null && $bPos !== null) return -1;
+            if ($aPos !== null && $bPos === null) return 1;
+            if ($aPos !== null && $bPos !== null && $aPos !== $bPos) return $aPos <=> $bPos;
+            return strnatcasecmp($a->$field, $b->$field) ?: strcmp($a->id, $b->id);
+        });
+        return $records;
+    }
+
+    /** @param list<stdClass> $tests
+     *  @return list<stdClass>
+     */
+    private function orderTests(array $tests): array
+    {
+        $groups = $this->orderRecords($this->store()->all('groups'), 'name');
+        $rank = [];
+        foreach ($groups as $index => $group) $rank[$group->id] = $index;
+        usort($tests, static function (stdClass $a, stdClass $b) use ($rank): int {
+            $groupOrder = ($rank[$a->groupId] ?? PHP_INT_MAX) <=> ($rank[$b->groupId] ?? PHP_INT_MAX);
+            if ($groupOrder !== 0) return $groupOrder;
+            $aPos = $a->position ?? null;
+            $bPos = $b->position ?? null;
+            if ($aPos === null && $bPos !== null) return -1;
+            if ($aPos !== null && $bPos === null) return 1;
+            if ($aPos !== null && $bPos !== null && $aPos !== $bPos) return $aPos <=> $bPos;
+            return strnatcasecmp($a->title, $b->title) ?: strcmp($a->id, $b->id);
+        });
+        return $tests;
     }
 
     private function id(string $value): string

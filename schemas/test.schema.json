@@ -80,6 +80,10 @@
           }
         ]
       }
+    },
+    "position": {
+      "type": "integer",
+      "minimum": 0
     }
   },
   "additionalProperties": false
