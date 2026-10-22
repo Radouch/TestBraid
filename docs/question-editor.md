@@ -1,38 +1,89 @@
-# PoC-B 02 — Question authoring increment
+# Question editor
 
-**Status:** Implemented in [draft PR #25](https://github.com/Radouch/TestBraid/pull/25); automated frontend/PHP tests pass. Real-host acceptance **not yet performed**. PR #24 (safe deletion) remains separate and does not block this feature.
+## Authoring and saving
 
-## Architecture
+Authors create a draft in the lesson/test catalog and select **Edit questions**
+(`/admin/tests/<uuid>/questions`). The editor loads the canonical JSON through the
+existing authenticated API. Changes remain local until **Save questions** sends a
+CSRF-protected `PUT /api/admin/tests/{id}`. Preview shows the last saved version.
+The toolbar keeps Save and Preview available while scrolling on desktop; on small
+screens it stays in normal document flow to avoid covering the editor.
 
-This branch starts from the merged `main` containing PoC-B 01's author catalog, **not** from the unmerged `feature/poc-b-safe-deletion`. It changes only frontend files and CI: no new PHP endpoint, schema, Composer dependency or database is required. Later merging PR #24 may require trivial reconciliation within `frontend/src/components/AdminCatalog.vue`; neither PR should be merged until accepted.
+Each question has a collapsible card showing its number, type, a local completeness
+hint and, when collapsed, a text summary. The first question and newly added or
+duplicated questions start expanded. Question actions include moving, duplicating
+and removing. Duplicating regenerates question/item/block IDs and remaps answer-key
+references; media references retain the existing private files. It does not copy or
+publish media. A question's collapse state is presentation state and is not saved.
 
-Authors first **create a draft** in the group/test catalog. Select that saved draft and choose **Edit questions** to open `/admin/tests/<uuid>/questions`. The editor obtains an authenticated session and loads the canonical JSON test using `GET /api/admin/tests/{id}`. A published test is view-locked and must be unpublished separately before question editing.
+Choice answers use a compact radio/checkbox next to the answer label and a visible
+**Correct** badge. Single/multiple choice switching and scoring semantics are
+unchanged. Answer movement and deletion are available in the answer's action menu.
+Menus close after selection, outside click or Escape and support keyboard access.
 
-The editor keeps question data locally until **Save questions** is selected. Saving transmits a full validated-on-server test document through the existing CSRF-protected `PUT /api/admin/tests/{id}`. Metadata fields are re-read from the server on save rather than overwritten from an earlier page load. A best-effort `updatedAt` preflight helps detect prior writes in another tab, but it is **not transaction-safe conflict resolution**; concurrent edit protection is excluded from the initial PoC.
+## Composing content
 
-## Question formats
+The same application-owned editor composes question prompts, choice answers and
+both sides of matching pairs. There are no nested "Answer content / Block 1" frames.
+Text is edited directly in an automatically growing textarea. Every content list
+supports arbitrary repeated text/image/video blocks, including media-only content.
 
-- **Choice:** Single or multiple answer mode, editable prompt and answer content, add/remove/reorder options, tick correct options. Switching to single mode retains only one correct selection.
-- **Matching:** Two editable columns, add/remove pair rows and assign one-to-one correspondences by dropdown. Assigning a right item already used by another left item removes the prior match; the author can resolve incomplete assignments before publication. No drag-and-drop.
-- **Content blocks:** A question prompt or option/item supports a mix of text, private JPEG/PNG/WebP image and MP4/WebM video blocks. Authors may reorder blocks, paste the UUID of a previously uploaded media file, or upload through the existing FilePond component. Images and videos preview through the author-only endpoint; no draft media is published by this editor.
-- **Draft semantics:** Empty text prompts, incomplete answers and missing matching assignments may remain in a saved draft. Image/video placeholders must have valid UUIDs and resolvable corresponding private media **before** saving because the backend validates media references even in drafts.
-- **Publication guidance:** The editor displays a non-authoritative list of incomplete areas. It does **not** itself publish tests yet; only the server's publication validator is authoritative. Browser publication controls and public learner runner are later increments.
+- **Add content** appends a text, image or video block to that content list.
+- The **+** separator before each block inserts content at that position.
+- Up/down controls move whole blocks; the block action menu removes a block.
+- **Add answer** creates a distinct answer option, rather than a content block.
 
-`ContentBlocksEditor.vue` and `ContentBlocksViewer.vue` are reusable for the subsequent anonymous learner page; public viewing must receive only the `mediaUrls` returned by the published-test API.
+Selecting Image or Video opens a modal with existing files of the selected kind
+and the FilePond-backed `MediaUploader`. The uploader accepts only that kind in
+this context; the standalone media library still accepts both. A new media block
+is inserted only after selection or successful upload. Canceling leaves the draft
+unchanged. A failed library request does not prevent uploading a file. Existing
+media can be replaced using the same dialog. UUIDs remain in the canonical data
+but are not exposed as author input fields. Existing incomplete media blocks can
+still be filled or removed. Removing a block does not delete its private original.
 
-## Automated tests
+Pending media operations target stable block IDs, including an insertion anchor,
+rather than mutable array indices. Closing the modal or unmounting the editor
+aborts an outstanding library request. Wrong-kind uploads are not attached.
+Private image/video previews use only the existing author-only API endpoints.
 
-`npm run typecheck` and `npm run build` check Vue TS/template correctness and Vite build. `npm run test:editor` checks the canonical object shapes, stable UUID generation, correct-answer option state, one-to-one matching reassignment, removing row pairs, media UUID guard, move operations, JSON Schema validation and publication-rule compatibility. Existing `npm run test:schemas` and the complete PHP regression suite continue in CI.
+## Compatibility and boundaries
 
-## Later real-host acceptance
+The editor still uses `schemaVersion: 1`. No schema, backend endpoint, publication
+or learner rendering change is required. Text can remain empty in saved drafts;
+any media block must reference a valid private file before saving. Readiness badges
+and the test-level summary are advisory; server publication validation remains the
+authority. The existing `updatedAt` save preflight is best effort, not transaction-safe
+concurrency control. Unsaved-change navigation warnings remain active.
 
-Once ready for testing:
+Matching keeps the existing pair rows and explicit right-item assignment. A new
+matching interaction, learner presentation, unified metadata editor (#42), and
+published read-only questions (#36) are separate work. A published test must still
+be unpublished before editing.
 
-1. Back up private `testbraid-backend/storage/` before any author editing, especially if valuable test data have already been created.
-2. Build and upload only the `www/` tree from `feature/poc-b-question-editor`; this branch does **not** change the PHP backend. Do not delete existing `www/media/` files or live backend storage when deploying.
-3. Sign in, create or select a **disposable draft**, open **Edit questions**, add one choice and one matching question. Fill text, mark correct choices, create matching pairs, attach a test image/video, save, refresh and verify content persists.
-4. Confirm unanswered draft content can be saved but a missing media ID is rejected. Check unsaved-change warning, duplicate assignment behavior and correct order after moving blocks/questions.
-5. Confirm the editor refuses to save a published test, and check the Czech and English interface.
-6. Exercise editing an existing draft that already has questions to verify no old questions or media references disappear when saving.
+## Validation
 
-Do not mark the issue accepted until these browser checks pass. Avoid testing edits against real published material or non-disposable files.
+- `npm run build`: Vue/TypeScript checks and production build.
+- `npm run test:editor`: schema compatibility, answer keys, matching invariants,
+  mixed media, ordering and duplication with fresh IDs/remapped references.
+- `npm run test:schemas`, `npm run test:learner`, `npm run test:navigation`:
+  existing regression suites.
+- In environments where the tsx CLI cannot create its IPC socket, the equivalent
+  invocation is `node --import tsx scripts/<test-script>.ts` from `frontend/`.
+
+Before accepting a deployment, use a disposable draft to check:
+
+1. Compose text → video → text → image in one answer; insert at the start and
+   between blocks, move/remove blocks and distinguish Add content from Add answer.
+2. Select and replace existing image/video files; cancel a new media insertion and
+   confirm nothing changes. Upload each kind and check error/retry behavior.
+3. Set correct answers in both modes, collapse/expand, reorder and duplicate
+   questions. Edit the copy and confirm the original is independent.
+4. Save, reload and preview existing and newly composed content; confirm IDs,
+   media references, order and answer keys persist. Verify the unsaved-change guard.
+5. Check Czech/English labels, keyboard navigation, Escape/outside-click dismissal,
+   desktop/mobile layout and a published test's edit lock.
+
+Only frontend build output is needed for this UI increment. Real-host upload and
+acceptance are separate from local validation; do not overwrite private storage or
+existing published media when deploying.

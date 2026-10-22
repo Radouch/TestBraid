@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {
-  addMatchingPair, assignMatch, createBlock, createChoice, createMatching,
+  addMatchingPair, assignMatch, createBlock, createChoice, createMatching, duplicateQuestion,
   invalidMediaReference, move, publicationProblems, removeChoiceOption,
   removeMatchingPair, switchChoiceMode, toggleChoiceCorrect, uuidPattern,
   type ContentBlock, type DraftTest,
@@ -66,11 +66,48 @@ assert.equal(matching.rightItems.length, 2)
 assert.equal(matching.matches.length, 2)
 assert.deepEqual(publicationProblems([matching]), [])
 
+// Copies must keep content/media and answer keys while sharing no structural IDs.
+const originalChoice = createChoice()
+originalChoice.options[0]!.content = [textBlock('Before'), image, textBlock('After')]
+originalChoice.correctOptionIds = [originalChoice.options[0]!.id]
+const copiedChoice = duplicateQuestion(originalChoice)
+assert.equal(copiedChoice.type, 'choice')
+if (copiedChoice.type !== 'choice') throw new Error('Unexpected duplicate type')
+assert.notEqual(copiedChoice.id, originalChoice.id)
+assert.deepEqual(copiedChoice.correctOptionIds, [copiedChoice.options[0]!.id])
+assert.deepEqual(copiedChoice.options[0]!.content.map(block => block.type), ['text', 'image', 'text'])
+const copiedImage = copiedChoice.options[0]!.content[1]!
+assert.ok(copiedImage.type === 'image' && image.type === 'image' && copiedImage.mediaId === image.mediaId)
+assert.notEqual(copiedImage.id, image.id)
+copiedChoice.options[0]!.content.splice(0, 1)
+assert.equal(originalChoice.options[0]!.content.length, 3)
+const copiedMatching = duplicateQuestion(matching)
+if (copiedMatching.type !== 'matching') throw new Error('Unexpected duplicate type')
+assert.deepEqual(copiedMatching.matches.map(match => [
+  copiedMatching.leftItems.findIndex(item => item.id === match.leftId),
+  copiedMatching.rightItems.findIndex(item => item.id === match.rightId),
+]), matching.matches.map(match => [
+  matching.leftItems.findIndex(item => item.id === match.leftId),
+  matching.rightItems.findIndex(item => item.id === match.rightId),
+]))
+const structuralIds = (value: unknown): string[] => {
+  if (!value || typeof value !== 'object') return []
+  if (Array.isArray(value)) return value.flatMap(structuralIds)
+  return Object.entries(value).flatMap(([key, entry]) => key === 'id' ? [String(entry)] : structuralIds(entry))
+}
+for (const [source, copy] of [[originalChoice, copiedChoice], [matching, copiedMatching]]) {
+  const sourceIds = new Set(structuralIds(source))
+  const copyIds = structuralIds(copy)
+  assert.equal(new Set(copyIds).size, copyIds.length)
+  assert.ok(copyIds.every(id => uuidPattern.test(id) && !sourceIds.has(id)))
+}
+assert.deepEqual(publicationProblems([copiedMatching]), [])
+
 const draft: DraftTest = {
   schemaVersion: 1, id: sampleTestId, groupId, status: 'draft',
   createdAt: '2026-10-21T06:00:00Z', updatedAt: '2026-10-21T06:00:00Z',
   publishedAt: null, title: 'Mixed question draft', description: '', language: 'cs',
-  questions: [matching],
+  questions: [matching, copiedMatching],
 }
 assert.equal(validateDocument('test', draft).valid, true)
 assert.equal(validatePublication(draft, {
