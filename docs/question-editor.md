@@ -71,13 +71,13 @@ missing one side offers **Add missing left/right item**. No content or media is
 silently discarded and no missing answer key is invented on load.
 
 The runner shuffles right-item IDs once per new attempt (including private preview)
-and shares that order between the inventory, dropdowns and feedback labels. Answer
-changes, submission and locale changes retain the order; Try again clears responses
+and retains that order in the remaining right-item pool. Learners choose content
+cards, with completed pairs shown above the free items and editable until submission
+(see `docs/learner-matching.md`). Answer changes, submission and locale changes retain the order; Try again clears responses
 and samples a fresh permutation. Fisher–Yates permits any order, including the
 original or a previous order by chance. Canonical arrays and ID-based scoring are
-unchanged. Learner matching interaction/visual feedback beyond this ordering change,
-unified metadata editing (#42) and published read-only questions (#36) remain
-separate work. A published test must still be unpublished before editing.
+unchanged. Unified metadata editing (#42) and published read-only questions (#36)
+remain separate work. A published test must still be unpublished before editing.
 
 ## Validation
 
@@ -105,8 +105,8 @@ Before accepting a deployment, use a disposable draft to check:
    remain clean until edited, and save/remove by the original IDs. Open a draft
    with missing matches or unequal item counts; all content must remain visible
    and only explicit confirmation/completion should add missing assignments.
-6. Run a matching preview and public test: inventory, select numbering and result
-   labels must agree and remain stable through answering/submission/language changes.
+6. Run a matching preview and public test: free-item order must remain stable through pairing/unpairing/language changes;
+   completed pairs and feedback must show the actual associated content.
    Try again must clear responses and draw a new permutation (a repeat is allowed).
 7. Check Czech/English labels, keyboard navigation, Escape/outside-click dismissal,
    desktop/mobile layout and a published test's edit lock.

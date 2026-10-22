@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { reactive } from 'vue'
 import type { ChoiceQuestion, MatchingQuestion, Question } from '../src/editor/model'
 import { freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
+import { matchingPresentation } from '../src/learner/matching'
 import { createMatchingOrder } from '../src/learner/presentation'
 import { toggleChoiceCorrect } from '../src/editor/model'
 
@@ -161,3 +162,46 @@ assert.equal(permutations.size, 6) // all Fisher–Yates permutations, including
 assert.deepEqual(createMatchingOrder([{ ...matching, rightItems: [] }]), { [matching.id]: [] })
 assert.deepEqual(createMatchingOrder([{ ...matching, rightItems: matching.rightItems.slice(0, 1) }]), { [matching.id]: ['right1'] })
 console.log('PASS: per-attempt right-item permutations preserve IDs, all permutations and scoring')
+
+// The card presentation is based only on learner choices. Before submission,
+// it must not depend on the correct answer key or mutate canonical content.
+const beforeCards = JSON.stringify(matching)
+const rightOrder = ['right2', 'right1']
+let cardAnswers = freshAnswers()
+let cards = matchingPresentation(matching, {}, rightOrder)
+assert.equal(cards.pairs.length, 0)
+assert.deepEqual(cards.left.map(item => item.id), ['left1', 'left2'])
+assert.deepEqual(cards.right.map(item => item.id), rightOrder)
+cardAnswers = setMatchingAnswer(cardAnswers, matching, 'left2', 'right2') // deliberately wrong
+cards = matchingPresentation(matching, cardAnswers.matches[matching.id]!, rightOrder)
+assert.deepEqual(cards.pairs.map(pair => [pair.left.id, pair.right.id]), [['left2', 'right2']])
+assert.deepEqual(cards.left.map(item => item.id), ['left1'])
+assert.deepEqual(cards.right.map(item => item.id), ['right1'])
+const withDifferentKey = { ...matching, matches: [] }
+assert.deepEqual(matchingPresentation(withDifferentKey, cardAnswers.matches[matching.id]!, rightOrder), cards)
+cardAnswers = setMatchingAnswer(cardAnswers, matching, 'left1', 'right1')
+assert.deepEqual(matchingPresentation(matching, cardAnswers.matches[matching.id]!, rightOrder).pairs
+  .map(pair => pair.left.id), ['left2', 'left1']) // chronological, not authored left order
+// Unpair only this response: both items reappear in their stable pool order.
+cardAnswers = setMatchingAnswer(cardAnswers, matching, 'left2', '')
+cards = matchingPresentation(matching, cardAnswers.matches[matching.id]!, rightOrder)
+assert.deepEqual(cards.pairs.map(pair => pair.left.id), ['left1'])
+assert.deepEqual(cards.left.map(item => item.id), ['left2'])
+assert.deepEqual(cards.right.map(item => item.id), ['right2'])
+cardAnswers = setMatchingAnswer(cardAnswers, matching, 'left1', '')
+cardAnswers = setMatchingAnswer(cardAnswers, matching, 'left1', 'right2')
+cardAnswers = setMatchingAnswer(cardAnswers, matching, 'left2', 'right1')
+assert.equal(grade([matching], cardAnswers).correct, 1)
+assert.deepEqual(matchingPresentation(matching, freshAnswers().matches[matching.id] ?? {}, rightOrder).right
+  .map(item => item.id), rightOrder)
+assert.equal(JSON.stringify(matching), beforeCards)
+assert.deepEqual(rightOrder, ['right2', 'right1'])
+// Defensive projection of stale/duplicate responses never hides an available item.
+const stale = matchingPresentation(matching, { gone: 'right1', left1: 'missing', left2: 'right1' }, rightOrder)
+assert.deepEqual(stale.pairs.map(pair => pair.left.id), ['left2'])
+assert.deepEqual(stale.left.map(item => item.id), ['left1'])
+assert.deepEqual(stale.right.map(item => item.id), ['right2'])
+assert.equal(matchingPresentation(matching, { left1: 'right1', left2: 'right1' }, rightOrder).pairs.length, 1)
+assert.deepEqual(matchingPresentation(matching, {}, ['unknown', 'right1', 'right1']).right
+  .map(item => item.id), ['right1', 'right2'])
+console.log('PASS: learner card pairs/free pools, chronology, unpair/reassignment, answer-key independence and immutability')

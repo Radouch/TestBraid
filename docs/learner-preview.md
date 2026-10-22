@@ -25,7 +25,7 @@ The exact same Vue \`TestRunner.vue\` renders both a protected, saved author tes
 ### Answer and feedback behavior
 
 - Single choice: one selected option. Multiple choice: an arbitrary set; full point only when that set exactly equals the correct option IDs (no extra, missing or duplicate answers).
-- Matching: associate each left item with one distinct right item from the displayed inventory. Right-hand items are shuffled once per attempt; the inventory, selects and feedback use the same order. A fully correct, complete bijection is worth one point; partial or wrong pairs earn zero.
+- Matching: select a left content card and assign a free right counterpart. Completed pairs appear together above the remaining free items and can be unpaired/reassigned before submission. Right-hand items are shuffled once per attempt; free items retain that order. A fully correct, complete bijection is worth one point; partial or wrong pairs earn zero.
 - No partial credit, no negative scores. Each wholly correct question earns one point. Unanswered questions are explicitly distinguished from answered/incorrect ones.
 - **Check answers** shows the numeric total and correct choices / the correct right-hand counterpart for each left item. **Try again** clears all local response state.
 - Learner answers are held only in Vue in-memory state; no account, persistence or answer-post request. Existing server access logs may of course record normal page/media fetches, not answer values.
@@ -36,17 +36,21 @@ The exact same Vue \`TestRunner.vue\` renders both a protected, saved author tes
 
 The owner found that the editor did not clearly communicate how to choose correct answers, and **every selected response was graded incorrect**. Root cause of the grading defect: `TestRunner` stores responses in `ref<Answers>`; Vue exposes `answers.value` as a **reactive Proxy**, but the answer-update functions called `structuredClone(answers)`. Browsers reject cloning the Proxy with `DataCloneError`; the handler fails and does not record the learner's selection. The scoring function then receives empty answer collections, so the result is zero regardless of which controls were clicked.
 
-**Fix in this PR:** Answer update helpers now create immutable plain-object copies via object/array spreads and leave unrelated question answers unchanged; no `structuredClone` on a reactive Proxy. Tests explicitly use Vue `reactive` values, emulate saved/reloaded question answer keys, verify correct multi-choice and matching scores, and verify incomplete answer keys are identified. In the author editor, the correct-answer key controls now appear **above** each answer's content, with clear Czech/English instructions, colored visual indicators and a count of marked correct choices. Matching authoring now uses direct correct-pair rows (see `docs/question-editor.md`); the learner still assigns pairs in selects. In an incomplete draft preview, questions without a valid answer key display an explanatory warning instead of being labeled as an ordinary incorrect answer.
+**Fix in this PR:** Answer update helpers now create immutable plain-object copies via object/array spreads and leave unrelated question answers unchanged; no `structuredClone` on a reactive Proxy. Tests explicitly use Vue `reactive` values, emulate saved/reloaded question answer keys, verify correct multi-choice and matching scores, and verify incomplete answer keys are identified. In the author editor, the correct-answer key controls now appear **above** each answer's content, with clear Czech/English instructions, colored visual indicators and a count of marked correct choices. Matching authoring now uses direct correct-pair rows (see `docs/question-editor.md`); the learner uses the paired-card interface documented in `docs/learner-matching.md`. In an incomplete draft preview, questions without a valid answer key display an explanatory warning instead of being labeled as an ordinary incorrect answer.
 
 **How to define answers:** For a single-choice question, select the radio circle next to the correct answer. For multiple choice, tick every correct answer's checkbox. For matching, place the two correct counterparts in one pair row; no separate answer-key dropdown is needed. Older incomplete assignments require explicit confirmation. Save the test before opening preview; preview only loads the last saved JSON.
 
+
+See `docs/learner-matching.md` for the editable pair summary, remaining pools,
+keyboard/mobile behavior and per-pair result feedback.
 
 ## Matching item order
 
 `learner/presentation.ts` samples right-item ID permutations using Fisher–Yates.
 `TestRunner.vue` retains one permutation for the whole attempt, in both public mode
-and private preview. Selecting answers, checking them and changing the UI language
-do not reshuffle or renumber feedback. **Try again** clears the answers and samples
+and private preview. Selecting, pairing/unpairing, checking answers and changing the UI language
+do not reshuffle the remaining candidates. Result feedback displays actual content
+for chosen and correct counterparts. **Try again** clears the answers and samples
 a new permutation; loading another test also starts a fresh attempt. A repeated or
 original ordering is a legitimate random outcome. No canonical content arrays,
 answer keys or media references are mutated, and scoring continues to use IDs.

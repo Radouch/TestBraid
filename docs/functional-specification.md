@@ -51,7 +51,11 @@ Task types must be extendable without restructuring the whole editor, runner or 
 
 **Low-priority future extension:** Permit extra unmatched items (distractors). This does not need to work initially, but should not be made unnecessarily difficult by the data model.
 
-How learners connect the pairs (drag-and-drop, dropdowns, selection, lines, etc.) is still open.
+**Learner interaction agreed on 2026-10-22:** Select a left item, then its right-hand
+counterpart. Completed pairs appear together in a summary above the remaining
+free items. Unpairing restores both items and allows reassignment until the test
+is submitted. After evaluation, show correctness and the correct counterpart for
+wrong or unanswered items. Drag-and-drop is not required.
 
 ## 5. Test organization
 
