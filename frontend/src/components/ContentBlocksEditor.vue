@@ -115,9 +115,10 @@ function closePicker(): void {
 async function remove(index: number): Promise<void> {
   update(props.modelValue.filter((_, i) => i !== index))
   await nextTick()
-  const controls = root.value?.querySelectorAll<HTMLTextAreaElement | HTMLElement>('textarea, .block-tools summary')
-  controls?.[Math.min(index, controls.length - 1)]?.focus()
-  if (!props.modelValue.length) root.value?.querySelector<HTMLElement>('.append-content summary')?.focus()
+  const blocks = root.value?.querySelectorAll<HTMLElement>('.content-block')
+  const nextBlock = blocks?.[Math.min(index, blocks.length - 1)]
+  nextBlock?.querySelector<HTMLElement>('textarea, .block-content button, .block-tools button:not(:disabled)')?.focus()
+  if (!nextBlock) root.value?.querySelector<HTMLElement>('.append-content summary')?.focus()
 }
 function preview(mediaId: string): string {
   return import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(mediaId) + '/preview'
@@ -156,18 +157,15 @@ onUnmounted(() => libraryRequest?.abort())
             </button>
           </template>
         </div>
-        <div class="block-tools">
-          <button v-if="modelValue.length > 1" type="button" class="btn btn-sm" :disabled="index === 0"
+        <div class="block-tools" role="group" :aria-label="t('editorBlockActions', { index: index + 1 })">
+          <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="index === 0"
             :aria-label="t('editorMoveBlockUp', { index: index + 1 })" :title="t('editorMoveUp')"
             @click="update(move(modelValue, index, -1))">↑</button>
-          <button v-if="modelValue.length > 1" type="button" class="btn btn-sm" :disabled="index === modelValue.length - 1"
+          <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="index === modelValue.length - 1"
             :aria-label="t('editorMoveBlockDown', { index: index + 1 })" :title="t('editorMoveDown')"
             @click="update(move(modelValue, index, 1))">↓</button>
-          <EditorMenu :label="t('editorBlockActions', { index: index + 1 })">
-            <button v-if="block.type !== 'text'" type="button" class="btn btn-sm"
-              @click="openPicker(block.type, { blockId: block.id })">{{ t('editorReplaceMedia') }}</button>
-            <button type="button" class="btn btn-sm text-danger" @click="remove(index)">{{ t('editorRemoveBlock') }}</button>
-          </EditorMenu>
+          <button type="button" class="btn btn-outline-danger btn-sm" :aria-label="t('editorRemoveBlock')"
+            @click="remove(index)">{{ t('editorRemove') }}</button>
         </div>
       </div>
     </div>
@@ -205,14 +203,13 @@ onUnmounted(() => libraryRequest?.abort())
 </template>
 
 <style scoped>
-.content-composer { min-width: 0; }
+.content-composer { min-width: 0; container-type: inline-size; }
 .block-row { display: flex; align-items: flex-start; gap: .5rem; }
 .block-content { flex: 1; min-width: 0; }
 .block-text { min-height: 2.5rem; max-height: 24rem; overflow-y: auto; resize: vertical; }
-.block-tools { display: flex; flex-direction: column; color: var(--bs-secondary-color); }
-.block-tools > button { color: inherit; padding: .1rem .4rem; min-width: 2rem; }
-.block-tools > button:hover { background: var(--bs-tertiary-bg); }
-.block-insertion { display: flex; align-items: center; gap: .4rem; margin: .15rem 2.5rem .15rem 0; }
+.block-tools { display: flex; flex-shrink: 0; align-items: center; gap: .25rem; }
+.block-tools > button { min-width: 2.25rem; min-height: 2rem; }
+.block-insertion { display: flex; align-items: center; gap: .4rem; margin: .15rem 0; }
 .block-insertion::before, .block-insertion::after { content: ''; height: 1px; background: var(--bs-border-color); flex: 1; opacity: .5; }
 .block-insertion :deep(summary) { padding: 0 .35rem; line-height: 1.25rem; }
 .content-block:first-of-type .block-insertion { margin-top: -.25rem; }
@@ -221,4 +218,11 @@ video.media-preview { width: 100%; background: var(--bs-tertiary-bg); }
 .append-content { width: fit-content; }
 .media-dialog { width: min(92vw, 780px); max-height: 85vh; }
 .media-dialog::backdrop { background: rgb(0 0 0 / .35); }
+/* Keep a short text block as short as its content. On narrow screens the same
+   horizontal controls move above it rather than squeezing the editable area. */
+@container (max-width: 32rem) {
+  .block-row { flex-direction: column; gap: .25rem; }
+  .block-content { width: 100%; }
+  .block-tools { order: -1; align-self: flex-end; }
+}
 </style>

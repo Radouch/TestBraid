@@ -30,7 +30,9 @@ supports arbitrary repeated text/image/video blocks, including media-only conten
 
 - **Add content** appends a text, image or video block to that content list.
 - The **+** separator before each block inserts content at that position.
-- Up/down controls move whole blocks; the block action menu removes a block.
+- A horizontal row of outlined up/down and **Remove** buttons moves or removes
+  whole blocks directly. On narrow screens the row sits above the full-width
+  content; it never becomes a vertical rail that sets a short text block's height.
 - **Add answer** creates a distinct answer option, rather than a content block.
 
 Selecting Image or Video opens a modal with existing files of the selected kind
