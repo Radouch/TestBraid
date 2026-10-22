@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -420,7 +421,7 @@ onMounted(() => void load())
                 <input :id="'rename-' + group.id" v-model="renameValue" class="form-control"
                   maxlength="250" required />
                 <button class="btn btn-primary btn-sm" type="submit" :disabled="busy || !renameValue.trim()">
-                  {{ t('catalogSave') }}
+                  <AppIcon name="floppy" />{{ t('catalogSave') }}
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" type="button" @click="renamingId = ''">
                   {{ t('catalogCancel') }}
@@ -433,19 +434,19 @@ onMounted(() => void load())
                   {{ group.name }} <span class="text-secondary">({{ tests.filter(test => test.groupId === group.id).length }})</span>
                 </button>
                 <details class="dropdown">
-                  <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminLessonActions')">⋮</summary>
+                  <summary class="btn btn-outline-secondary btn-sm icon-button" :aria-label="t('adminLessonActions')" :title="t('adminLessonActions')"><AppIcon name="three-dots-vertical" /></summary>
                   <div class="dropdown-menu show position-absolute" @click="closeActionMenu">
                     <button class="dropdown-item" type="button" :disabled="busy || groups[0]?.id === group.id"
-                      @click="moveLesson(group.id, -1)">{{ t('adminMoveUp') }}</button>
+                      @click="moveLesson(group.id, -1)"><AppIcon name="arrow-up" />{{ t('adminMoveUp') }}</button>
                     <button class="dropdown-item" type="button" :disabled="busy || groups[groups.length - 1]?.id === group.id"
-                      @click="moveLesson(group.id, 1)">{{ t('adminMoveDown') }}</button>
+                      @click="moveLesson(group.id, 1)"><AppIcon name="arrow-down" />{{ t('adminMoveDown') }}</button>
                     <button class="dropdown-item" type="button" @click="beginRename(group)">
-                      {{ t('catalogRenameGroup') }}
+                      <AppIcon name="pencil-square" />{{ t('catalogRenameGroup') }}
                     </button>
                     <button class="dropdown-item text-danger" type="button"
                       :disabled="busy || lessonHasTests(group.id)"
                       :title="lessonHasTests(group.id) ? t('catalogGroupNotEmpty') : undefined"
-                      @click="deleteGroup(group)">{{ t('catalogDelete') }}</button>
+                      @click="deleteGroup(group)"><AppIcon name="trash3" />{{ t('catalogDelete') }}</button>
                   </div>
                 </details>
               </div>
@@ -456,7 +457,7 @@ onMounted(() => void load())
             <input id="catalog-new-group" v-model="groupName" class="form-control flex-grow-1"
               :placeholder="t('catalogNewGroup')" maxlength="250" required />
             <button class="btn btn-outline-primary btn-sm" type="submit" :disabled="busy || !groupName.trim()">
-              {{ t('catalogAddGroup') }}
+              <AppIcon name="folder-plus" />{{ t('catalogAddGroup') }}
             </button>
           </form>
         </div>
@@ -468,7 +469,7 @@ onMounted(() => void load())
             <h3 id="tests-heading" class="h5 mb-0">{{ t('adminTests') }}</h3>
             <button type="button" class="btn btn-primary btn-sm" :disabled="busy || groups.length === 0"
               @click="resetForm(); draftGroupId = groupFilter || (groups[0]?.id ?? '')">
-              {{ t('adminNewTest') }}
+              <AppIcon name="file-earmark-plus" />{{ t('adminNewTest') }}
             </button>
           </div>
           <div v-if="fallbackLink" class="mb-3">
@@ -504,37 +505,37 @@ onMounted(() => void load())
                 </details>
               </div>
               <details class="dropdown">
-                <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminTestActions')">⋮</summary>
+                <summary class="btn btn-outline-secondary btn-sm icon-button" :aria-label="t('adminTestActions')" :title="t('adminTestActions')"><AppIcon name="three-dots-vertical" /></summary>
                 <div class="dropdown-menu dropdown-menu-end show position-absolute" @click="closeActionMenu">
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId)[0]?.id === test.id"
-                    @click="moveTest(test, -1)">{{ t('adminMoveUp') }}</button>
+                    @click="moveTest(test, -1)"><AppIcon name="arrow-up" />{{ t('adminMoveUp') }}</button>
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId).slice(-1)[0]?.id === test.id"
-                    @click="moveTest(test, 1)">{{ t('adminMoveDown') }}</button>
+                    @click="moveTest(test, 1)"><AppIcon name="arrow-down" />{{ t('adminMoveDown') }}</button>
                   <RouterLink class="dropdown-item" :to="{ name: 'test-questions', params: { id: test.id } }">
-                    {{ t('adminOpenEditor') }}
+                    <AppIcon name="pencil-square" />{{ t('adminOpenEditor') }}
                   </RouterLink>
                   <button v-if="test.status === 'draft'" class="dropdown-item" type="button"
-                    @click="editTest(test)">{{ t('catalogEditMetadata') }}</button>
+                    @click="editTest(test)"><AppIcon name="pencil-square" />{{ t('catalogEditMetadata') }}</button>
                   <RouterLink class="dropdown-item" :to="{ name: 'test-preview', params: { id: test.id } }">
-                    {{ t('runnerPreviewButton') }}
+                    <AppIcon name="eye" />{{ t('runnerPreviewButton') }}
                   </RouterLink>
                   <button v-if="test.status === 'draft' && readiness[test.id]?.ready" type="button"
                     class="dropdown-item" :disabled="busy" @click="changePublication(test, 'publish')">
-                    {{ t('publicationPublish') }}
+                    <AppIcon name="upload" />{{ t('publicationPublish') }}
                   </button>
                   <template v-if="test.status === 'published'">
                     <RouterLink class="dropdown-item" target="_blank" rel="noopener"
-                      :to="{ name: 'test', params: { id: test.id } }">{{ t('publicationOpenPublic') }}</RouterLink>
+                      :to="{ name: 'test', params: { id: test.id } }"><AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}</RouterLink>
                     <button type="button" class="dropdown-item" @click="copyPublicLink(test)">
-                      {{ t('publicationCopyLink') }}
+                      <AppIcon name="link-45deg" />{{ t('publicationCopyLink') }}
                     </button>
                     <button type="button" class="dropdown-item" :disabled="busy"
-                      @click="changePublication(test, 'unpublish')">{{ t('publicationUnpublish') }}</button>
+                      @click="changePublication(test, 'unpublish')"><AppIcon name="arrow-counterclockwise" />{{ t('publicationUnpublish') }}</button>
                   </template>
                   <button class="dropdown-item" type="button" :disabled="busy"
-                    @click="duplicateTest(test)">{{ t('adminDuplicate') }}</button>
+                    @click="duplicateTest(test)"><AppIcon name="copy" />{{ t('adminDuplicate') }}</button>
                   <button v-if="test.status === 'draft'" class="dropdown-item text-danger" type="button"
-                    :disabled="busy" @click="deleteDraft(test)">{{ t('catalogDelete') }}</button>
+                    :disabled="busy" @click="deleteDraft(test)"><AppIcon name="trash3" />{{ t('catalogDelete') }}</button>
                 </div>
               </details>
             </li>
@@ -544,7 +545,7 @@ onMounted(() => void load())
         <section v-if="showDraftForm" aria-labelledby="draft-heading" class="card p-3 mt-3">
           <div class="d-flex justify-content-between align-items-center gap-2">
             <h3 id="draft-heading" class="h5">{{ selectedDraft ? t('catalogEditDraft') : t('catalogCreateDraft') }}</h3>
-            <button type="button" class="btn-close" :aria-label="t('catalogCancel')" @click="showDraftForm = false" />
+            <button type="button" class="btn btn-outline-secondary icon-button" :aria-label="t('catalogCancel')" :title="t('catalogCancel')" @click="showDraftForm = false"><AppIcon name="x-lg" /></button>
           </div>
           <form class="d-grid gap-3" @submit.prevent="saveDraft">
             <div>
@@ -568,10 +569,10 @@ onMounted(() => void load())
             </div>
             <div class="d-flex flex-wrap gap-2">
               <button type="submit" class="btn btn-primary" :disabled="busy || !draftTitle.trim()">
-                {{ t('catalogSaveDraft') }}
+                <AppIcon name="floppy" />{{ t('catalogSaveDraft') }}
               </button>
               <RouterLink v-if="selectedDraft" class="btn btn-outline-secondary"
-                :to="{ name: 'test-questions', params: { id: selectedDraft.id } }">{{ t('editorOpen') }}</RouterLink>
+                :to="{ name: 'test-questions', params: { id: selectedDraft.id } }"><AppIcon name="pencil-square" />{{ t('editorOpen') }}</RouterLink>
             </div>
           </form>
         </section>
@@ -579,3 +580,12 @@ onMounted(() => void load())
     </div>
   </section>
 </template>
+
+<style scoped>
+/* Native disclosures do not use Bootstrap's Popper positioning. Keep the
+   wider labelled icon menus inside the catalog at phone widths. */
+.dropdown-menu { right: 0; left: auto; min-width: min(15rem, calc(100vw - 2rem)); max-width: calc(100vw - 2rem); }
+.dropdown-item { display: flex; align-items: center; gap: .5rem; white-space: normal; }
+.dropdown-item > .app-icon { margin: 0; }
+.dropdown-item.text-danger:disabled { color: var(--bs-dropdown-link-disabled-color) !important; }
+</style>

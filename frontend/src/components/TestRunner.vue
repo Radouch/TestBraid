@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
@@ -109,9 +110,9 @@ watch(() => props.test, restart, { immediate: true })
       </section>
 
       <div v-if="test.questions.length > 0" class="d-flex gap-2 flex-wrap align-items-center">
-        <button v-if="!submitted" class="btn btn-primary" type="submit">{{ t('runnerSubmit') }}</button>
+        <button v-if="!submitted" class="btn btn-primary" type="submit"><AppIcon name="check2-circle" />{{ t('runnerSubmit') }}</button>
         <button v-else type="button" class="btn btn-outline-primary" @click="restart">
-          {{ t('runnerTryAgain') }}
+          <AppIcon name="arrow-counterclockwise" />{{ t('runnerTryAgain') }}
         </button>
       </div>
     </form>

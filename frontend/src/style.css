@@ -1,0 +1,7 @@
+/* Keep labelled actions readable while standalone icons have a generous target. */
+.btn > .app-icon, .dropdown-item > .app-icon { margin-inline-end: .35em; }
+.btn.icon-button { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; min-height: 2.5rem; padding: .45rem; }
+.btn.icon-button > .app-icon { margin: 0; width: 1.25rem; height: 1.25rem; }
+.dropdown > summary.icon-button { list-style: none; }
+.dropdown > summary.icon-button::-webkit-details-marker { display: none; }
+.dropdown-item { min-height: 2.5rem; }

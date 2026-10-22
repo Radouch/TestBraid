@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksEditor from './ContentBlocksEditor.vue'
@@ -67,14 +68,14 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
         <span v-if="!expanded" class="question-summary d-block text-secondary small mt-2">{{ summary }}</span>
       </button>
       <EditorMenu :label="t('editorQuestionActions', { index: index + 1 })">
-        <button type="button" class="btn btn-sm" :disabled="index === 0" @click="emit('move', -1)">{{ t('editorMoveUp') }}</button>
-        <button type="button" class="btn btn-sm" :disabled="index === total - 1" @click="emit('move', 1)">{{ t('editorMoveDown') }}</button>
-        <button type="button" class="btn btn-sm" @click="emit('duplicate')">{{ t('editorDuplicateQuestion') }}</button>
-        <button type="button" class="btn btn-sm text-danger" @click="emit('remove')">{{ t('editorRemoveQuestion') }}</button>
+        <button type="button" class="btn btn-sm" :disabled="index === 0" @click="emit('move', -1)"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
+        <button type="button" class="btn btn-sm" :disabled="index === total - 1" @click="emit('move', 1)"><AppIcon name="arrow-down" />{{ t('editorMoveDown') }}</button>
+        <button type="button" class="btn btn-sm" @click="emit('duplicate')"><AppIcon name="copy" />{{ t('editorDuplicateQuestion') }}</button>
+        <button type="button" class="btn btn-sm text-danger" @click="emit('remove')"><AppIcon name="trash3" />{{ t('editorRemoveQuestion') }}</button>
       </EditorMenu>
-      <button type="button" class="btn btn-sm" :aria-label="expanded ? t('editorCollapseQuestion') : t('editorExpandQuestion')"
+      <button type="button" class="btn btn-sm icon-button" :title="expanded ? t('editorCollapseQuestion') : t('editorExpandQuestion')" :aria-label="expanded ? t('editorCollapseQuestion') : t('editorExpandQuestion')"
         :aria-expanded="expanded" :aria-controls="'question-body-' + question.id" @click="expanded = !expanded">
-        <span aria-hidden="true">{{ expanded ? '⌃' : '⌄' }}</span>
+        <AppIcon :name="expanded ? 'chevron-up' : 'chevron-down'" />
       </button>
     </div>
 
@@ -83,7 +84,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
       <template v-if="choice">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 mb-2">
           <h4 class="h6 mb-0">{{ t('editorAnswers') }}</h4>
-          <div class="d-flex flex-wrap align-items-center gap-2">
+          <div class="choice-mode-control d-flex flex-wrap align-items-center gap-2">
             <label class="small text-secondary" :for="'mode-' + question.id">{{ t('editorChoiceMode') }}</label>
             <select :id="'mode-' + question.id" class="form-select form-select-sm choice-mode"
               :value="choice.mode" @change="changeMode(($event.target as HTMLSelectElement).value)">
@@ -102,17 +103,17 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
               :checked="choice.correctOptionIds.includes(option.id)" :aria-label="t('editorMarkOptionCorrect', { index: optionIndex + 1 })"
               @change="toggleCorrect(option.id, ($event.target as HTMLInputElement).checked)" />
             <label :for="'correct-' + option.id" class="fw-semibold">{{ t('editorOptionNumber', { index: optionIndex + 1 }) }}</label>
-            <span v-if="choice.correctOptionIds.includes(option.id)" class="badge bg-success-subtle text-success-emphasis">✓ {{ t('editorCorrectBadge') }}</span>
+            <span v-if="choice.correctOptionIds.includes(option.id)" class="badge bg-success-subtle text-success-emphasis"><AppIcon name="check-lg" /> {{ t('editorCorrectBadge') }}</span>
             <EditorMenu class="ms-auto" :label="t('editorAnswerActions', { index: optionIndex + 1 })">
-              <button type="button" class="btn btn-sm" :disabled="optionIndex === 0" @click="orderOption(optionIndex, -1)">{{ t('editorMoveUp') }}</button>
-              <button type="button" class="btn btn-sm" :disabled="optionIndex === choice.options.length - 1" @click="orderOption(optionIndex, 1)">{{ t('editorMoveDown') }}</button>
-              <button type="button" class="btn btn-sm text-danger" @click="removeOption(option.id)">{{ t('editorRemoveOption') }}</button>
+              <button type="button" class="btn btn-sm" :disabled="optionIndex === 0" @click="orderOption(optionIndex, -1)"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
+              <button type="button" class="btn btn-sm" :disabled="optionIndex === choice.options.length - 1" @click="orderOption(optionIndex, 1)"><AppIcon name="arrow-down" />{{ t('editorMoveDown') }}</button>
+              <button type="button" class="btn btn-sm text-danger" @click="removeOption(option.id)"><AppIcon name="trash3" />{{ t('editorRemoveOption') }}</button>
             </EditorMenu>
           </div>
           <ContentBlocksEditor :model-value="option.content" :csrf-token="csrfToken"
             :label="t('editorOptionNumber', { index: optionIndex + 1 })" hide-label @update:model-value="updateContent(option, $event)" />
         </div>
-        <button class="btn btn-outline-primary btn-sm mt-2" type="button" @click="addOption">+ {{ t('editorAddOption') }}</button>
+        <button class="btn btn-outline-primary btn-sm mt-2" type="button" @click="addOption"><AppIcon name="plus-lg" />{{ t('editorAddOption') }}</button>
       </template>
 
       <template v-if="matching">
@@ -126,7 +127,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
           :aria-label="t('editorPairNumber', { index: pairIndex + 1 })">
           <div class="pair-header d-flex align-items-center justify-content-between gap-2 px-2 py-2 border-bottom">
             <h5 class="h6 mb-0">{{ t('editorPairNumber', { index: pairIndex + 1 }) }}</h5>
-            <button type="button" class="btn btn-outline-danger btn-sm" @click="removePair(pair)">{{ t('editorRemovePair') }}</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" @click="removePair(pair)"><AppIcon name="trash3" />{{ t('editorRemovePair') }}</button>
           </div>
           <div class="row g-3 p-2">
             <div class="col-md-6">
@@ -135,7 +136,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
                 :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorLeftItem')" hide-label
                 @update:model-value="updateContent(pair.left!, $event)" />
               <button v-else type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">
-                + {{ t('editorCompleteLeft') }}
+                <AppIcon name="plus-lg" />{{ t('editorCompleteLeft') }}
               </button>
             </div>
             <div class="col-md-6">
@@ -144,17 +145,17 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
                 :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorRightItem')" hide-label
                 @update:model-value="updateContent(pair.right!, $event)" />
               <button v-else type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">
-                + {{ t('editorCompleteRight') }}
+                <AppIcon name="plus-lg" />{{ t('editorCompleteRight') }}
               </button>
             </div>
           </div>
           <div v-if="!pair.confirmed && pair.left && pair.right"
             class="d-flex flex-wrap align-items-center justify-content-between gap-2 border-top p-2 bg-warning-subtle">
             <span class="small">{{ t('editorUnconfirmedPair') }}</span>
-            <button type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">{{ t('editorConfirmPair') }}</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)"><AppIcon name="check-lg" />{{ t('editorConfirmPair') }}</button>
           </div>
         </section>
-        <button class="btn btn-outline-primary btn-sm" type="button" @click="addPair">+ {{ t('editorAddPair') }}</button>
+        <button class="btn btn-outline-primary btn-sm" type="button" @click="addPair"><AppIcon name="plus-lg" />{{ t('editorAddPair') }}</button>
         <p class="small text-secondary mt-2 mb-0">{{ t('editorMatchingShuffle') }}</p>
       </template>
     </div>
@@ -167,6 +168,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
 .question-toggle:focus-visible { box-shadow: 0 0 0 .2rem rgb(13 110 253 / .25); }
 .question-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65ch; }
 .choice-mode { width: auto; max-width: 100%; }
+.choice-mode-control { min-width: 0; max-width: 100%; }
 .answer-editor { border: 1px solid var(--bs-border-color); border-left-width: 3px; }
 .pair-header { background: var(--bs-tertiary-bg); }
 .answer-correct { border-left-color: var(--bs-primary); background: rgb(13 110 253 / .025); }

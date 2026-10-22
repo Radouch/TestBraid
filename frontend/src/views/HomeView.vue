@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -51,7 +52,7 @@ onMounted(() => void loadCatalog())
     <div v-else-if="error" class="alert alert-warning" role="alert">
       <p class="mb-2">{{ error }}</p>
       <button type="button" class="btn btn-outline-primary btn-sm" @click="loadCatalog">
-        {{ t('publicCatalogRetry') }}
+        <AppIcon name="arrow-counterclockwise" />{{ t('publicCatalogRetry') }}
       </button>
     </div>
     <p v-else-if="groups.length === 0" class="text-secondary" role="status">
@@ -74,7 +75,7 @@ onMounted(() => void loadCatalog())
               </div>
               <RouterLink class="btn btn-outline-primary btn-sm"
                 :to="{ name: 'test', params: { id: test.id } }">
-                {{ t('publicCatalogStart') }}
+                <AppIcon name="play-btn" />{{ t('publicCatalogStart') }}
               </RouterLink>
             </li>
           </ul>

@@ -3,6 +3,7 @@ import { computed, nextTick, onUnmounted, ref, type ObjectDirective } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader, { type UploadedMedia } from './MediaUploader.vue'
 import EditorMenu from './EditorMenu.vue'
+import AppIcon from './AppIcon.vue'
 import { createBlock, move, uuidPattern, type BlockKind, type ContentBlock } from '../editor/model'
 
 const props = withDefaults(defineProps<{
@@ -132,9 +133,9 @@ onUnmounted(() => libraryRequest?.abort())
     <div v-for="(block, index) in modelValue" :key="block.id" class="content-block">
       <div class="block-insertion">
         <EditorMenu :label="t('editorInsertContent', { index: index + 1 })" align="start">
-          <template #trigger><span aria-hidden="true">+</span></template>
+          <template #trigger><AppIcon name="plus-lg" /></template>
           <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind"
-            type="button" class="btn btn-sm" @click="insert(kind, index)">{{ t('editorKind_' + kind) }}</button>
+            type="button" class="btn btn-sm" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
         </EditorMenu>
       </div>
       <div class="block-row">
@@ -153,33 +154,34 @@ onUnmounted(() => libraryRequest?.abort())
             <p v-else class="text-warning-emphasis small mb-2">{{ t('editorChooseMedia') }}</p>
             <button type="button" class="btn btn-link btn-sm px-0"
               @click="openPicker(block.type, { blockId: block.id })">
+              <AppIcon :name="uuidPattern.test(block.mediaId) ? 'pencil-square' : block.type === 'image' ? 'image' : 'play-btn'" />
               {{ uuidPattern.test(block.mediaId) ? t('editorReplaceMedia') : t('mediaChooseFromLibrary') }}
             </button>
           </template>
         </div>
         <div class="block-tools" role="group" :aria-label="t('editorBlockActions', { index: index + 1 })">
-          <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="index === 0"
+          <button type="button" class="btn btn-outline-secondary btn-sm icon-button" :disabled="index === 0"
             :aria-label="t('editorMoveBlockUp', { index: index + 1 })" :title="t('editorMoveUp')"
-            @click="update(move(modelValue, index, -1))">↑</button>
-          <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="index === modelValue.length - 1"
+            @click="update(move(modelValue, index, -1))"><AppIcon name="arrow-up" /></button>
+          <button type="button" class="btn btn-outline-secondary btn-sm icon-button" :disabled="index === modelValue.length - 1"
             :aria-label="t('editorMoveBlockDown', { index: index + 1 })" :title="t('editorMoveDown')"
-            @click="update(move(modelValue, index, 1))">↓</button>
+            @click="update(move(modelValue, index, 1))"><AppIcon name="arrow-down" /></button>
           <button type="button" class="btn btn-outline-danger btn-sm" :aria-label="t('editorRemoveBlock')"
-            @click="remove(index)">{{ t('editorRemove') }}</button>
+            @click="remove(index)"><AppIcon name="trash3" />{{ t('editorRemove') }}</button>
         </div>
       </div>
     </div>
     <EditorMenu class="append-content mt-1" :label="t('editorAddContent')" align="start">
-      <template #trigger><span class="text-primary">+ {{ t('editorAddContent') }}</span></template>
+      <template #trigger><span class="text-primary"><AppIcon name="plus-lg" /> {{ t('editorAddContent') }}</span></template>
       <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind"
-        type="button" class="btn btn-sm" @click="insert(kind, modelValue.length)">{{ t('editorKind_' + kind) }}</button>
+        type="button" class="btn btn-sm" @click="insert(kind, modelValue.length)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
     </EditorMenu>
 
     <dialog ref="pickerDialog" class="media-dialog border rounded shadow p-3 p-md-4"
       :aria-label="t('editorSelectMedia_' + pickerKind)" @close="closePicker">
       <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
         <h2 class="h5 mb-0">{{ t('editorSelectMedia_' + pickerKind) }}</h2>
-        <button class="btn-close" type="button" :aria-label="t('catalogCancel')" @click="pickerDialog?.close()" />
+        <button class="btn btn-outline-secondary icon-button" type="button" :aria-label="t('catalogCancel')" :title="t('catalogCancel')" @click="pickerDialog?.close()"><AppIcon name="x-lg" /></button>
       </div>
       <p v-if="pickerError" class="text-danger" role="alert">{{ pickerError }}</p>
       <p v-if="pickerLoading" role="status">{{ t('loading') }}</p>
@@ -208,10 +210,10 @@ onUnmounted(() => libraryRequest?.abort())
 .block-content { flex: 1; min-width: 0; }
 .block-text { min-height: 2.5rem; max-height: 24rem; overflow-y: auto; resize: vertical; }
 .block-tools { display: flex; flex-shrink: 0; align-items: center; gap: .25rem; }
-.block-tools > button { min-width: 2.25rem; min-height: 2rem; }
+.block-tools > button { min-width: 2.5rem; min-height: 2.5rem; }
 .block-insertion { display: flex; align-items: center; gap: .4rem; margin: .15rem 0; }
 .block-insertion::before, .block-insertion::after { content: ''; height: 1px; background: var(--bs-border-color); flex: 1; opacity: .5; }
-.block-insertion :deep(summary) { padding: 0 .35rem; line-height: 1.25rem; }
+.block-insertion :deep(summary) { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; min-height: 2rem; padding: .25rem; }
 .content-block:first-of-type .block-insertion { margin-top: -.25rem; }
 .media-preview { display: block; max-width: 100%; max-height: 240px; border-radius: .25rem; }
 video.media-preview { width: 100%; background: var(--bs-tertiary-bg); }
