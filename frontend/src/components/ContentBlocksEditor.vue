@@ -220,7 +220,7 @@ video.media-preview { width: 100%; background: var(--bs-tertiary-bg); }
 .media-dialog::backdrop { background: rgb(0 0 0 / .35); }
 /* Keep a short text block as short as its content. On narrow screens the same
    horizontal controls move above it rather than squeezing the editable area. */
-@container (max-width: 32rem) {
+@container (max-width: 24rem) {
   .block-row { flex-direction: column; gap: .25rem; }
   .block-content { width: 100%; }
   .block-tools { order: -1; align-self: flex-end; }

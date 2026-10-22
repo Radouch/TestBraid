@@ -5,6 +5,7 @@ import {
   removeMatchingPair, switchChoiceMode, toggleChoiceCorrect, uuidPattern,
   type ContentBlock, type DraftTest,
 } from '../src/editor/model'
+import { matchingRows, confirmMatchingRow } from '../src/editor/matching'
 import { validateDocument } from '../src/validation/schema'
 import { validatePublication } from '../src/validation/publication'
 
@@ -102,6 +103,64 @@ for (const [source, copy] of [[originalChoice, copiedChoice], [matching, copiedM
   assert.ok(copyIds.every(id => uuidPattern.test(id) && !sourceIds.has(id)))
 }
 assert.deepEqual(publicationProblems([copiedMatching]), [])
+
+// Legacy crossed assignments must be rendered and removed by saved IDs rather
+// than array position. Projection must never mutate the loaded draft.
+const savedMatching = JSON.stringify(matching)
+const crossedRows = matchingRows(matching)
+assert.equal(JSON.stringify(matching), savedMatching)
+assert.deepEqual(crossedRows.map(row => [row.left!.id, row.right!.id]),
+  matching.leftItems.map(left => [left.id, matching.matches.find(match => match.leftId === left.id)!.rightId]))
+assert.ok(crossedRows.every(row => row.confirmed))
+const removable = JSON.parse(savedMatching) as typeof matching
+const rowToRemove = matchingRows(removable)[0]!
+const surviving = matchingRows(removable)[1]!
+removeMatchingPair(removable, rowToRemove.left!.id)
+assert.deepEqual(removable.leftItems.map(item => item.id), [surviving.left!.id])
+assert.deepEqual(removable.rightItems.map(item => item.id), [surviving.right!.id])
+assert.deepEqual(removable.matches, [{ leftId: surviving.left!.id, rightId: surviving.right!.id }])
+
+// Incomplete old drafts retain all items and their missing key on open. Only
+// explicit confirmation may create an assignment or a missing counterpart.
+const legacy = createMatching()
+legacy.matches = []
+const legacyBefore = JSON.stringify(legacy)
+const pending = matchingRows(legacy)
+assert.equal(JSON.stringify(legacy), legacyBefore)
+assert.ok(pending.every(row => !row.confirmed))
+assert.deepEqual(pending.map(row => row.right!.id), legacy.rightItems.map(item => item.id))
+confirmMatchingRow(legacy, pending[0]!)
+assert.equal(legacy.matches.length, 1)
+assert.equal(matchingRows(legacy)[1]!.confirmed, false)
+confirmMatchingRow(legacy, matchingRows(legacy)[1]!)
+assert.ok(matchingRows(legacy).every(row => row.confirmed))
+legacy.rightItems.push({ id: crypto.randomUUID(), content: [textBlock('Orphan image caption'), image] })
+const orphan = matchingRows(legacy).at(-1)!
+assert.equal(orphan.left, null)
+const oldRightIds = legacy.rightItems.map(item => item.id)
+confirmMatchingRow(legacy, orphan)
+assert.deepEqual(legacy.rightItems.map(item => item.id), oldRightIds)
+assert.equal(legacy.leftItems.length, 3)
+assert.equal(legacy.matches.at(-1)!.rightId, orphan.right!.id)
+assert.ok(matchingRows(legacy).every(row => row.confirmed))
+const removedOrphan = createMatching()
+removedOrphan.leftItems = []
+removedOrphan.matches = []
+const extraRow = matchingRows(removedOrphan)[0]!
+removeMatchingPair(removedOrphan, null, extraRow.right!.id)
+assert.equal(removedOrphan.rightItems.length, 1)
+
+// A duplicate/ambiguous key is not silently presented as a confirmed pair.
+const ambiguous = createMatching()
+ambiguous.matches = [
+  { leftId: ambiguous.leftItems[0]!.id, rightId: ambiguous.rightItems[0]!.id },
+  { leftId: ambiguous.leftItems[1]!.id, rightId: ambiguous.rightItems[0]!.id },
+]
+const ambiguousBefore = JSON.stringify(ambiguous)
+assert.ok(matchingRows(ambiguous).every(row => !row.confirmed))
+assert.equal(JSON.stringify(ambiguous), ambiguousBefore)
+for (const row of matchingRows(ambiguous)) confirmMatchingRow(ambiguous, row)
+assert.ok(matchingRows(ambiguous).every(row => row.confirmed))
 
 const draft: DraftTest = {
   schemaVersion: 1, id: sampleTestId, groupId, status: 'draft',

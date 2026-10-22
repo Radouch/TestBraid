@@ -84,7 +84,7 @@ How learners connect the pairs (drag-and-drop, dropdowns, selection, lines, etc.
 - Partial-credit scoring for questions with multiple correct options and partially correct pair assignments.
 - How unanswered questions are treated.
 - Whether answers can be changed, or tests retried, after evaluation.
-- Whether manually authored tasks or answer options should be shuffled.
+- Whether manually authored questions or choice-answer options should be shuffled. **Agreed on 2026-10-22:** Right-hand matching items are shuffled for each new attempt; the order remains stable during that attempt.
 
 **Technical direction:** Evaluation can run in the learner's browser. That exposes the answer key to the client, which is acceptable for **self-assessment** but not appropriate for a secure exam system.
 

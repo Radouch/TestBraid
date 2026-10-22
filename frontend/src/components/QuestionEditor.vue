@@ -3,8 +3,9 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksEditor from './ContentBlocksEditor.vue'
 import EditorMenu from './EditorMenu.vue'
+import { matchingRows, confirmMatchingRow, type MatchingRow } from '../editor/matching'
 import {
-  blankItem, addMatchingPair, removeMatchingPair, assignMatch,
+  blankItem, addMatchingPair, removeMatchingPair,
   move, removeChoiceOption, switchChoiceMode, toggleChoiceCorrect, publicationProblems, invalidMediaReference,
   type ContentItem, type Question, type ChoiceQuestion, type MatchingQuestion,
 } from '../editor/model'
@@ -15,6 +16,7 @@ const { t } = useI18n()
 const choice = computed<ChoiceQuestion | null>(() => props.question.type === 'choice' ? props.question : null)
 const matching = computed<MatchingQuestion | null>(() => props.question.type === 'matching' ? props.question : null)
 
+const pairs = computed(() => matching.value ? matchingRows(matching.value) : [])
 const expanded = ref(props.initiallyExpanded)
 const complete = computed(() => !publicationProblems([props.question]).length && !invalidMediaReference([props.question]))
 const summary = computed(() => props.question.prompt
@@ -39,19 +41,11 @@ function orderOption(index: number, direction: -1 | 1): void {
 function addPair(): void {
   if (matching.value) addMatchingPair(matching.value)
 }
-function removePair(leftId: string): void {
-  if (matching.value) removeMatchingPair(matching.value, leftId)
+function removePair(row: MatchingRow): void {
+  if (matching.value) removeMatchingPair(matching.value, row.left?.id ?? null, row.right?.id ?? null)
 }
-function currentMatch(leftId: string): string {
-  return matching.value?.matches.find((item) => item.leftId === leftId)?.rightId ?? ''
-}
-function setMatch(leftId: string, rightId: string): void {
-  if (!matching.value) return
-  if (!rightId) {
-    matching.value.matches = matching.value.matches.filter((item) => item.leftId !== leftId)
-  } else {
-    assignMatch(matching.value, leftId, rightId)
-  }
+function confirmPair(row: MatchingRow): void {
+  if (matching.value) confirmMatchingRow(matching.value, row)
 }
 function updateContent(item: ContentItem, content: ContentItem['content']): void {
   item.content = content
@@ -122,33 +116,46 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
       </template>
 
       <template v-if="matching">
-        <p class="text-secondary small mt-4">{{ t('editorMatchingHelp') }}</p>
-        <div v-for="(left, pairIndex) in matching.leftItems" :key="left.id" class="matching-pair border-top pt-3 mt-3">
-          <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-            <h4 class="h6 mb-0">{{ t('editorPairNumber', { index: pairIndex + 1 }) }}</h4>
-            <EditorMenu :label="t('editorPairNumber', { index: pairIndex + 1 })">
-              <button type="button" class="btn btn-sm text-danger" @click="removePair(left.id)">{{ t('editorRemovePair') }}</button>
-            </EditorMenu>
-          </div>
-          <div class="row g-3 mb-2">
-            <div class="col-md-6">
-              <ContentBlocksEditor :model-value="left.content" :csrf-token="csrfToken" :label="t('editorLeftItem')"
-                @update:model-value="updateContent(left, $event)" />
-            </div>
-            <div v-if="matching.rightItems[pairIndex]" class="col-md-6">
-              <ContentBlocksEditor :model-value="matching.rightItems[pairIndex]!.content"
-                :csrf-token="csrfToken" :label="t('editorRightItem')"
-                @update:model-value="updateContent(matching!.rightItems[pairIndex]!, $event)" />
-            </div>
-          </div>
-          <label class="form-label small fw-semibold" :for="'matching-' + left.id">{{ t('editorCorrectMatch') }}</label>
-          <select :id="'matching-' + left.id" class="form-select form-select-sm"
-            :value="currentMatch(left.id)" @change="setMatch(left.id, ($event.target as HTMLSelectElement).value)">
-            <option value="">{{ t('editorNoMatch') }}</option>
-            <option v-for="(right, rightIndex) in matching.rightItems" :key="right.id" :value="right.id">{{ t('editorRightNumber', { index: rightIndex + 1 }) }}</option>
-          </select>
+        <h4 class="h6 mt-4 mb-1">{{ t('editorCorrectPairs') }}</h4>
+        <p class="text-secondary small mb-3">{{ t('editorDirectPairsHelp') }}</p>
+        <div class="row mb-2 small fw-semibold text-secondary d-none d-md-flex" aria-hidden="true">
+          <div class="col-md-6">{{ t('editorLeftItem') }}</div>
+          <div class="col-md-6">{{ t('editorRightItem') }}</div>
         </div>
-        <button class="btn btn-outline-primary btn-sm mt-3" type="button" @click="addPair">+ {{ t('editorAddPair') }}</button>
+        <section v-for="(pair, pairIndex) in pairs" :key="pair.id" class="matching-pair border rounded mb-3"
+          :aria-label="t('editorPairNumber', { index: pairIndex + 1 })">
+          <div class="pair-header d-flex align-items-center justify-content-between gap-2 px-2 py-2 border-bottom">
+            <h5 class="h6 mb-0">{{ t('editorPairNumber', { index: pairIndex + 1 }) }}</h5>
+            <button type="button" class="btn btn-outline-danger btn-sm" @click="removePair(pair)">{{ t('editorRemovePair') }}</button>
+          </div>
+          <div class="row g-3 p-2">
+            <div class="col-md-6">
+              <p class="small text-secondary mb-1 d-md-none">{{ t('editorLeftItem') }}</p>
+              <ContentBlocksEditor v-if="pair.left" :model-value="pair.left.content" :csrf-token="csrfToken"
+                :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorLeftItem')" hide-label
+                @update:model-value="updateContent(pair.left!, $event)" />
+              <button v-else type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">
+                + {{ t('editorCompleteLeft') }}
+              </button>
+            </div>
+            <div class="col-md-6">
+              <p class="small text-secondary mb-1 d-md-none">{{ t('editorRightItem') }}</p>
+              <ContentBlocksEditor v-if="pair.right" :model-value="pair.right.content" :csrf-token="csrfToken"
+                :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorRightItem')" hide-label
+                @update:model-value="updateContent(pair.right!, $event)" />
+              <button v-else type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">
+                + {{ t('editorCompleteRight') }}
+              </button>
+            </div>
+          </div>
+          <div v-if="!pair.confirmed && pair.left && pair.right"
+            class="d-flex flex-wrap align-items-center justify-content-between gap-2 border-top p-2 bg-warning-subtle">
+            <span class="small">{{ t('editorUnconfirmedPair') }}</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">{{ t('editorConfirmPair') }}</button>
+          </div>
+        </section>
+        <button class="btn btn-outline-primary btn-sm" type="button" @click="addPair">+ {{ t('editorAddPair') }}</button>
+        <p class="small text-secondary mt-2 mb-0">{{ t('editorMatchingShuffle') }}</p>
       </template>
     </div>
   </section>
@@ -161,5 +168,6 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
 .question-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65ch; }
 .choice-mode { width: auto; max-width: 100%; }
 .answer-editor { border: 1px solid var(--bs-border-color); border-left-width: 3px; }
+.pair-header { background: var(--bs-tertiary-bg); }
 .answer-correct { border-left-color: var(--bs-primary); background: rgb(13 110 253 / .025); }
 </style>

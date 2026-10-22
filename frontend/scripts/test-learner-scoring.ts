@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { reactive } from 'vue'
 import type { ChoiceQuestion, MatchingQuestion, Question } from '../src/editor/model'
 import { freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
+import { createMatchingOrder } from '../src/learner/presentation'
 import { toggleChoiceCorrect } from '../src/editor/model'
 
 const text = (id: string, value: string) => ({ id, type: 'text' as const, text: value })
@@ -133,3 +134,30 @@ assert.equal(hasValidAnswerKey({
 }), false)
 
 console.log('PASS: anonymous scorer exact-choice sets, complete matching bijection, unanswered and reset')
+
+// Order is presentation-only; every sampled permutation preserves stable IDs,
+// leaves the canonical arrays/key untouched and therefore preserves grading.
+const originalMatching = JSON.stringify(matching)
+const reversed = createMatchingOrder([choice, matching], () => 0)
+assert.equal(reversed[choice.id], undefined)
+assert.deepEqual(reversed[matching.id], ['right2', 'right1'])
+assert.deepEqual(createMatchingOrder([matching], () => 0.999)[matching.id], ['right1', 'right2'])
+assert.notEqual(createMatchingOrder([matching])[matching.id], matching.rightItems)
+assert.equal(JSON.stringify(matching), originalMatching)
+assert.equal(grade([{ ...matching, rightItems: [...matching.rightItems].reverse() }], {
+  choices: {}, matches: { [matching.id]: { left1: 'right2', left2: 'right1' } },
+}).correct, 1)
+const three = { ...matching, rightItems: [...matching.rightItems, { id: 'right3', content: [] }] }
+const permutations = new Set<string>()
+for (const first of [0, 0.34, 0.67]) {
+  for (const second of [0, 0.5]) {
+    const draws = [first, second]
+    const order = createMatchingOrder([three], () => draws.shift()!)[three.id]!
+    assert.deepEqual([...order].sort(), ['right1', 'right2', 'right3'])
+    permutations.add(order.join(','))
+  }
+}
+assert.equal(permutations.size, 6) // all Fisher–Yates permutations, including identity
+assert.deepEqual(createMatchingOrder([{ ...matching, rightItems: [] }]), { [matching.id]: [] })
+assert.deepEqual(createMatchingOrder([{ ...matching, rightItems: matching.rightItems.slice(0, 1) }]), { [matching.id]: ['right1'] })
+console.log('PASS: per-attempt right-item permutations preserve IDs, all permutations and scoring')

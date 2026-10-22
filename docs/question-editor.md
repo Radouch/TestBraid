@@ -58,18 +58,36 @@ and the test-level summary are advisory; server publication validation remains t
 authority. The existing `updatedAt` save preflight is best effort, not transaction-safe
 concurrency control. Unsaved-change navigation warnings remain active.
 
-Matching keeps the existing pair rows and explicit right-item assignment. A new
-matching interaction, learner presentation, unified metadata editor (#42), and
-published read-only questions (#36) are separate work. A published test must still
-be unpublished before editing.
+Matching now uses direct **correct pair** rows: each row contains the associated
+left and right content, with no answer-key dropdown. Adding a pair creates both
+items and their assignment. Removing a pair removes those exact IDs, even if an
+older draft stored a crossed mapping or a different right-item order. The row
+stacks left above right in narrow layouts, keeping the pair together.
+
+Opening existing questions is read-only with respect to their data: rows are
+projected from saved match IDs. Unassigned legacy items remain visible in suggested,
+**unconfirmed** rows; **Confirm pair** explicitly creates their assignment. A row
+missing one side offers **Add missing left/right item**. No content or media is
+silently discarded and no missing answer key is invented on load.
+
+The runner shuffles right-item IDs once per new attempt (including private preview)
+and shares that order between the inventory, dropdowns and feedback labels. Answer
+changes, submission and locale changes retain the order; Try again clears responses
+and samples a fresh permutation. Fisher–Yates permits any order, including the
+original or a previous order by chance. Canonical arrays and ID-based scoring are
+unchanged. Learner matching interaction/visual feedback beyond this ordering change,
+unified metadata editing (#42) and published read-only questions (#36) remain
+separate work. A published test must still be unpublished before editing.
 
 ## Validation
 
 - `npm run build`: Vue/TypeScript checks and production build.
 - `npm run test:editor`: schema compatibility, answer keys, matching invariants,
-  mixed media, ordering and duplication with fresh IDs/remapped references.
+  mixed media, ordering, duplication with fresh IDs/remapped references, crossed-pair
+  projection/removal and deliberate legacy-pair confirmation.
 - `npm run test:schemas`, `npm run test:learner`, `npm run test:navigation`:
-  existing regression suites.
+  existing regression suites, including deterministic coverage of all three-item
+  shuffle permutations and ID-based scoring after reordering.
 - In environments where the tsx CLI cannot create its IPC socket, the equivalent
   invocation is `node --import tsx scripts/<test-script>.ts` from `frontend/`.
 
@@ -83,7 +101,14 @@ Before accepting a deployment, use a disposable draft to check:
    questions. Edit the copy and confirm the original is independent.
 4. Save, reload and preview existing and newly composed content; confirm IDs,
    media references, order and answer keys persist. Verify the unsaved-change guard.
-5. Check Czech/English labels, keyboard navigation, Escape/outside-click dismissal,
+5. Open an older crossed matching key: the editor must show actual correct pairs,
+   remain clean until edited, and save/remove by the original IDs. Open a draft
+   with missing matches or unequal item counts; all content must remain visible
+   and only explicit confirmation/completion should add missing assignments.
+6. Run a matching preview and public test: inventory, select numbering and result
+   labels must agree and remain stable through answering/submission/language changes.
+   Try again must clear responses and draw a new permutation (a repeat is allowed).
+7. Check Czech/English labels, keyboard navigation, Escape/outside-click dismissal,
    desktop/mobile layout and a published test's edit lock.
 
 Only frontend build output is needed for this UI increment. Real-host upload and
