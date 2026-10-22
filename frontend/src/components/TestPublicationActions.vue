@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -106,17 +107,17 @@ async function copyLink(): Promise<void> {
     <div class="d-flex flex-wrap gap-1">
       <button v-if="test.status === 'draft'" type="button" class="btn btn-outline-success btn-sm"
         :disabled="busy" @click="transition('publish')">
-        {{ t('publicationPublish') }}
+        <AppIcon name="upload" />{{ t('publicationPublish') }}
       </button>
       <template v-else>
         <RouterLink class="btn btn-outline-primary btn-sm"
           :to="{ name: 'test', params: { id: test.id } }" target="_blank" rel="noopener">
-          {{ t('publicationOpenPublic') }}
+          <AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}
         </RouterLink>
         <button type="button" class="btn btn-outline-secondary btn-sm" :disabled="busy"
-          @click="copyLink">{{ t('publicationCopyLink') }}</button>
+          @click="copyLink"><AppIcon name="link-45deg" />{{ t('publicationCopyLink') }}</button>
         <button type="button" class="btn btn-outline-warning btn-sm" :disabled="busy"
-          @click="transition('unpublish')">{{ t('publicationUnpublish') }}</button>
+          @click="transition('unpublish')"><AppIcon name="arrow-counterclockwise" />{{ t('publicationUnpublish') }}</button>
       </template>
     </div>
     <p v-if="test.status === 'draft' && problems.length > 0" class="small text-secondary mb-0">

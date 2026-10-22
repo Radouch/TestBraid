@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
@@ -104,7 +105,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
         role="group" :aria-label="t('runnerPairNumber', { index: pairIndex + 1 })">
         <div v-if="!submitted || validKey" class="pair-toolbar d-flex justify-content-center mb-2">
           <button v-if="!submitted" type="button" class="btn btn-outline-primary btn-sm unpair-button"
-            :aria-label="t('runnerUnpairNumber', { index: pairIndex + 1 })" @click="unpair(pair.left.id)">{{ t('runnerUnpair') }}</button>
+            :aria-label="t('runnerUnpairNumber', { index: pairIndex + 1 })" @click="unpair(pair.left.id)"><AppIcon name="x-lg" />{{ t('runnerUnpair') }}</button>
           <span v-else class="fw-semibold small pair-status"
             :class="expected.get(pair.left.id) === pair.right.id ? 'text-success' : 'text-danger'">
             {{ expected.get(pair.left.id) === pair.right.id ? t('runnerPairCorrect') : t('runnerPairIncorrect') }}
@@ -114,7 +115,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
           <div class="matching-item paired-content">
             <ContentBlocksViewer :blocks="pair.left.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
-          <span class="pair-link text-secondary" aria-hidden="true">↔</span>
+          <span class="pair-link text-secondary" aria-hidden="true"><AppIcon name="arrow-left-right" /></span>
           <div class="matching-item paired-content">
             <ContentBlocksViewer :blocks="pair.right.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
@@ -144,7 +145,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
                 <button type="button" data-select class="btn btn-sm" :class="activeLeft === item.id ? 'btn-primary' : 'btn-outline-primary'"
                   :aria-pressed="activeLeft === item.id" :aria-controls="'right-pool-' + question.id"
                   :aria-label="t('runnerSelectLeftNumber', { index: question.leftItems.findIndex(left => left.id === item.id) + 1 })"
-                  @click="selectLeft(item.id)">{{ activeLeft === item.id ? t('runnerItemSelected') : t('runnerSelectItem') }}</button>
+                  @click="selectLeft(item.id)"><AppIcon :name="activeLeft === item.id ? 'check-lg' : 'plus-lg'" />{{ activeLeft === item.id ? t('runnerItemSelected') : t('runnerSelectItem') }}</button>
               </div>
             </div>
           </div>
@@ -153,7 +154,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
             <div v-if="activeItem" class="mobile-source d-md-none border rounded bg-primary-subtle p-2 mb-3">
               <p class="small fw-semibold mb-2">{{ t('runnerSelectedSource') }}</p>
               <ContentBlocksViewer :blocks="activeItem.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
-              <button type="button" class="btn btn-link btn-sm px-0" @click="changeSelection">{{ t('runnerChangeSource') }}</button>
+              <button type="button" class="btn btn-link btn-sm px-0" @click="changeSelection"><AppIcon name="arrow-counterclockwise" />{{ t('runnerChangeSource') }}</button>
             </div>
             <div v-for="item in state.right" :key="item.id" class="matching-item selection-card rounded p-2 mb-2"
               :class="{ 'candidate-ready': activeItem }" @click="cardClick($event, () => assign(item.id))">
@@ -161,7 +162,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
               <div class="text-end mt-2">
                 <button type="button" data-assign class="btn btn-outline-primary btn-sm" :disabled="!activeItem"
                   :aria-label="t('runnerAssignRightNumber', { index: rightOrder.indexOf(item.id) + 1 })"
-                  @click="assign(item.id)">{{ t('runnerAssign') }}</button>
+                  @click="assign(item.id)"><AppIcon name="link-45deg" />{{ t('runnerAssign') }}</button>
               </div>
             </div>
             <p v-if="!state.right.length" class="small text-secondary">{{ t('runnerNoFreeCounterparts') }}</p>
@@ -179,7 +180,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
           <div class="matching-item paired-content">
             <ContentBlocksViewer :blocks="item.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
-          <span v-if="validKey" class="pair-link text-secondary" aria-hidden="true">↔</span>
+          <span v-if="validKey" class="pair-link text-secondary" aria-hidden="true"><AppIcon name="arrow-left-right" /></span>
           <div v-if="validKey && correctItem(item.id)" class="matching-item paired-content">
             <p class="small fw-semibold text-success mb-2">{{ t('runnerCorrectCounterpart') }}</p>
             <ContentBlocksViewer :blocks="correctItem(item.id)!.content" :private-preview="privatePreview" :media-urls="mediaUrls" />

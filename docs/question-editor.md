@@ -35,6 +35,10 @@ supports arbitrary repeated text/image/video blocks, including media-only conten
   content; it never becomes a vertical rail that sets a short text block's height.
 - **Add answer** creates a distinct answer option, rather than a content block.
 
+Actions use bundled Bootstrap Icons with translated text or accessible names.
+Standalone block arrows and menu toggles have 40 px targets; see
+[`ui-icons.md`](ui-icons.md) for the shared icon vocabulary and sizing.
+
 Selecting Image or Video opens a modal with existing files of the selected kind
 and the FilePond-backed `MediaUploader`. The uploader accepts only that kind in
 this context; the standalone media library still accepts both. A new media block

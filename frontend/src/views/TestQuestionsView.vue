@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '../components/AppIcon.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -188,25 +189,25 @@ onMounted(() => {
       <h2 class="h4">{{ test.title }}</h2>
       <RouterLink v-if="test.status === 'published'" class="btn btn-outline-secondary mb-3"
         :to="{ name: 'test-preview', params: { id: test.id } }">
-        {{ t('runnerPreviewButton') }}
+        <AppIcon name="eye" />{{ t('runnerPreviewButton') }}
       </RouterLink>
       <div v-if="test.status === 'published'" class="alert alert-warning d-flex flex-wrap gap-3 justify-content-between align-items-center">
         <span>{{ t('adminPublishedReadonly') }}</span>
         <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="unpublishAndEdit">
-          {{ t('adminUnpublishEdit') }}
+          <AppIcon name="pencil-square" />{{ t('adminUnpublishEdit') }}
         </button>
       </div>
       <template v-else>
         <div class="editor-toolbar border rounded bg-body p-2 mb-3">
           <div class="d-flex flex-wrap gap-2 align-items-center">
             <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy"
-              @click="addChoice">{{ t('editorAddChoice') }}</button>
+              @click="addChoice"><AppIcon name="list-check" />{{ t('editorAddChoice') }}</button>
             <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy"
-              @click="addMatching">{{ t('editorAddMatching') }}</button>
+              @click="addMatching"><AppIcon name="arrow-left-right" />{{ t('editorAddMatching') }}</button>
             <div class="d-flex gap-2 ms-sm-auto">
-              <RouterLink class="btn btn-outline-secondary btn-sm" :to="{ name: 'test-preview', params: { id: test.id } }">{{ t('runnerPreviewButton') }}</RouterLink>
+              <RouterLink class="btn btn-outline-secondary btn-sm" :to="{ name: 'test-preview', params: { id: test.id } }"><AppIcon name="eye" />{{ t('runnerPreviewButton') }}</RouterLink>
               <button type="button" class="btn btn-primary btn-sm" :disabled="busy || !dirty"
-                @click="save">{{ busy ? t('editorSaving') : t('editorSave') }}</button>
+                @click="save"><AppIcon name="floppy" />{{ busy ? t('editorSaving') : t('editorSave') }}</button>
             </div>
           </div>
           <p v-if="dirty" class="small text-warning-emphasis mt-2 mb-0" role="status">{{ t('editorUnsaved') }} {{ t('runnerSavedVersion') }}</p>
@@ -226,7 +227,7 @@ onMounted(() => {
         </div>
         <div class="d-flex justify-content-end my-3">
           <button type="button" class="btn btn-primary" :disabled="busy || !dirty"
-            @click="save">{{ busy ? t('editorSaving') : t('editorSave') }}</button>
+            @click="save"><AppIcon name="floppy" />{{ busy ? t('editorSaving') : t('editorSave') }}</button>
         </div>
       </template>
     </template>
