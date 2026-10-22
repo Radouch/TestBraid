@@ -5,6 +5,7 @@ import MediaLibraryView from './views/MediaLibraryView.vue'
 import TestView from './views/TestView.vue'
 import TestQuestionsView from './views/TestQuestionsView.vue'
 import TestPreviewView from './views/TestPreviewView.vue'
+import { retainExplicitLanguage } from './navigation'
 
 export const router = createRouter({
   // Honor the Vite build base so deployment is not tied to a particular domain/path.
@@ -18,3 +19,6 @@ export const router = createRouter({
     { path: '/tests/:id', name: 'test', component: TestView },
   ],
 })
+
+// Preserve an explicit ?lang=cs|en across RouterLink navigation, without saving it.
+router.beforeEach(retainExplicitLanguage)
