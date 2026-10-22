@@ -14,13 +14,18 @@ export interface UploadedMedia {
   sizeBytes: number
 }
 
-const props = defineProps<{ csrfToken: string }>()
+const props = defineProps<{ csrfToken: string; kind?: 'image' | 'video' }>()
 const emit = defineEmits<{ uploaded: [media: UploadedMedia] }>()
 const { t } = useI18n()
 const uploadError = ref('')
 const FilePond = vueFilePond(FilePondPluginFileValidateType, FilePondPluginFileValidateSize)
 
-const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']
+// Restrict an editor attachment to its intended block kind. The standalone
+// media library leaves kind unset and continues to accept both kinds.
+const acceptedTypes = computed(() => props.kind === 'image'
+  ? ['image/jpeg', 'image/png', 'image/webp']
+  : props.kind === 'video' ? ['video/mp4', 'video/webm']
+    : ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
 
 function uploaded(response: string): string {
   let parsed: unknown

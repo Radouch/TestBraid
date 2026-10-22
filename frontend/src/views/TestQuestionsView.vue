@@ -4,7 +4,7 @@ import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import QuestionEditor from '../components/QuestionEditor.vue'
 import {
-  createChoice, createMatching, invalidMediaReference, move, publicationProblems,
+  createChoice, createMatching, duplicateQuestion, invalidMediaReference, move, publicationProblems,
   type DraftTest, type Question,
 } from '../editor/model'
 
@@ -18,6 +18,7 @@ const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
 const success = ref('')
+const expandedQuestionId = ref('')
 const dirty = computed(() => JSON.stringify(questions.value) !== originalQuestions.value)
 const problems = computed(() => publicationProblems(questions.value))
 const publicId = computed(() => String(route.params.id ?? ''))
@@ -69,11 +70,23 @@ async function load(): Promise<void> {
 }
 
 function addChoice(): void {
-  questions.value.push(createChoice())
+  const question = createChoice()
+  expandedQuestionId.value = question.id
+  questions.value.push(question)
   success.value = ''
 }
 function addMatching(): void {
-  questions.value.push(createMatching())
+  const question = createMatching()
+  expandedQuestionId.value = question.id
+  questions.value.push(question)
+  success.value = ''
+}
+function copyQuestion(index: number): void {
+  const source = questions.value[index]
+  if (!source) return
+  const copy = duplicateQuestion(source)
+  expandedQuestionId.value = copy.id
+  questions.value.splice(index + 1, 0, copy)
   success.value = ''
 }
 function moveQuestion(index: number, direction: -1 | 1): void {
@@ -164,7 +177,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="container-fluid py-3">
+  <section class="container-fluid py-3 questions-page">
     <RouterLink :to="{ name: 'admin' }" class="d-inline-block mb-3">{{ t('editorBack') }}</RouterLink>
     <h1 class="h3">{{ t('editorHeading') }}</h1>
     <p v-if="loading" role="status">{{ t('loading') }}</p>
@@ -173,12 +186,10 @@ onMounted(() => {
 
     <template v-if="test && !loading">
       <h2 class="h4">{{ test.title }}</h2>
-      <p class="small text-secondary">{{ t('editorTestId') }}: {{ test.id }}</p>
-      <RouterLink class="btn btn-outline-secondary mb-3"
+      <RouterLink v-if="test.status === 'published'" class="btn btn-outline-secondary mb-3"
         :to="{ name: 'test-preview', params: { id: test.id } }">
         {{ t('runnerPreviewButton') }}
       </RouterLink>
-      <p v-if="dirty" class="small text-warning-emphasis">{{ t('runnerSavedVersion') }}</p>
       <div v-if="test.status === 'published'" class="alert alert-warning d-flex flex-wrap gap-3 justify-content-between align-items-center">
         <span>{{ t('adminPublishedReadonly') }}</span>
         <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="unpublishAndEdit">
@@ -186,19 +197,25 @@ onMounted(() => {
         </button>
       </div>
       <template v-else>
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-          <button type="button" class="btn btn-outline-primary" :disabled="busy"
-            @click="addChoice">{{ t('editorAddChoice') }}</button>
-          <button type="button" class="btn btn-outline-primary" :disabled="busy"
-            @click="addMatching">{{ t('editorAddMatching') }}</button>
-          <button type="button" class="btn btn-primary ms-auto" :disabled="busy || !dirty"
-            @click="save">{{ busy ? t('editorSaving') : t('editorSave') }}</button>
+        <div class="editor-toolbar border rounded bg-body p-2 mb-3">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy"
+              @click="addChoice">{{ t('editorAddChoice') }}</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy"
+              @click="addMatching">{{ t('editorAddMatching') }}</button>
+            <div class="d-flex gap-2 ms-sm-auto">
+              <RouterLink class="btn btn-outline-secondary btn-sm" :to="{ name: 'test-preview', params: { id: test.id } }">{{ t('runnerPreviewButton') }}</RouterLink>
+              <button type="button" class="btn btn-primary btn-sm" :disabled="busy || !dirty"
+                @click="save">{{ busy ? t('editorSaving') : t('editorSave') }}</button>
+            </div>
+          </div>
+          <p v-if="dirty" class="small text-warning-emphasis mt-2 mb-0" role="status">{{ t('editorUnsaved') }} {{ t('runnerSavedVersion') }}</p>
         </div>
-        <p v-if="dirty" class="text-warning-emphasis" role="status">{{ t('editorUnsaved') }}</p>
         <p v-if="questions.length === 0" class="text-secondary">{{ t('editorNoQuestions') }}</p>
         <QuestionEditor v-for="(question, index) in questions" :key="question.id"
-          :question="question" :index="index" :csrf-token="csrfToken"
-          @remove="removeQuestion(index)" @move="moveQuestion(index, $event)" />
+          :question="question" :index="index" :csrf-token="csrfToken" :total="questions.length"
+          :initially-expanded="index === 0 || question.id === expandedQuestionId"
+          @remove="removeQuestion(index)" @move="moveQuestion(index, $event)" @duplicate="copyQuestion(index)" />
         <div class="card p-3 mt-3">
           <p class="fw-semibold mb-1">{{ t('editorReadiness') }}</p>
           <p v-if="problems.length === 0" class="text-success mb-1">{{ t('editorLooksComplete') }}</p>
@@ -215,3 +232,11 @@ onMounted(() => {
     </template>
   </section>
 </template>
+
+<style scoped>
+.questions-page { max-width: 1100px; }
+.editor-toolbar { position: sticky; top: .5rem; z-index: 25; box-shadow: 0 .2rem .5rem rgb(0 0 0 / .06); }
+@media (max-width: 575px) {
+  .editor-toolbar { position: static; }
+}
+</style>

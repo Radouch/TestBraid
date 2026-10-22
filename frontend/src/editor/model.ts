@@ -81,6 +81,32 @@ export function createBlock(type: BlockKind): ContentBlock {
     ? blankBlock()
     : { id: id(), type, mediaId: '' }
 }
+/** Duplicate content with fresh structural IDs, retaining references to the same
+ * private media. Remap answer-key references by ID, including reassigned pairs. */
+export function duplicateQuestion(question: Question): Question {
+  const copy = JSON.parse(JSON.stringify(question)) as Question
+  const freshContent = (blocks: ContentBlock[]): ContentBlock[] => blocks.map(block => ({ ...block, id: id() }))
+  copy.id = id()
+  copy.prompt = freshContent(copy.prompt)
+  const replacements = new Map<string, string>()
+  const copyItems = (items: ContentItem[]): ContentItem[] => items.map(item => {
+    const nextId = id()
+    replacements.set(item.id, nextId)
+    return { id: nextId, content: freshContent(item.content) }
+  })
+  if (copy.type === 'choice') {
+    copy.options = copyItems(copy.options)
+    copy.correctOptionIds = copy.correctOptionIds.map(oldId => replacements.get(oldId) ?? oldId)
+  } else {
+    copy.leftItems = copyItems(copy.leftItems)
+    copy.rightItems = copyItems(copy.rightItems)
+    copy.matches = copy.matches.map(match => ({
+      leftId: replacements.get(match.leftId) ?? match.leftId,
+      rightId: replacements.get(match.rightId) ?? match.rightId,
+    }))
+  }
+  return copy
+}
 export function switchChoiceMode(question: ChoiceQuestion, mode: 'single' | 'multiple'): void {
   question.mode = mode
   if (mode === 'single' && question.correctOptionIds.length > 1) {
