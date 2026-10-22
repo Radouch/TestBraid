@@ -102,6 +102,14 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
       <div v-for="(pair, pairIndex) in state.pairs" :key="pair.left.id" class="learner-pair border rounded p-2 mb-2"
         :class="submitted && validKey ? (expected.get(pair.left.id) === pair.right.id ? 'pair-correct' : 'pair-incorrect') : ''"
         role="group" :aria-label="t('runnerPairNumber', { index: pairIndex + 1 })">
+        <div v-if="!submitted || validKey" class="pair-toolbar d-flex justify-content-center mb-2">
+          <button v-if="!submitted" type="button" class="btn btn-outline-primary btn-sm unpair-button"
+            :aria-label="t('runnerUnpairNumber', { index: pairIndex + 1 })" @click="unpair(pair.left.id)">{{ t('runnerUnpair') }}</button>
+          <span v-else class="fw-semibold small pair-status"
+            :class="expected.get(pair.left.id) === pair.right.id ? 'text-success' : 'text-danger'">
+            {{ expected.get(pair.left.id) === pair.right.id ? t('runnerPairCorrect') : t('runnerPairIncorrect') }}
+          </span>
+        </div>
         <div class="paired-row">
           <div class="matching-item paired-content">
             <ContentBlocksViewer :blocks="pair.left.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
@@ -110,12 +118,6 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
           <div class="matching-item paired-content">
             <ContentBlocksViewer :blocks="pair.right.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
-          <button v-if="!submitted" type="button" class="btn btn-outline-primary btn-sm unpair-button"
-            :aria-label="t('runnerUnpairNumber', { index: pairIndex + 1 })" @click="unpair(pair.left.id)">{{ t('runnerUnpair') }}</button>
-          <span v-else-if="validKey" class="fw-semibold small pair-status"
-            :class="expected.get(pair.left.id) === pair.right.id ? 'text-success' : 'text-danger'">
-            {{ expected.get(pair.left.id) === pair.right.id ? t('runnerPairCorrect') : t('runnerPairIncorrect') }}
-          </span>
         </div>
         <div v-if="submitted && validKey && expected.get(pair.left.id) !== pair.right.id"
           class="pair-correction border-top mt-2 pt-2">
@@ -153,7 +155,6 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
               <ContentBlocksViewer :blocks="activeItem.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
               <button type="button" class="btn btn-link btn-sm px-0" @click="changeSelection">{{ t('runnerChangeSource') }}</button>
             </div>
-            <p class="small text-secondary candidate-help">{{ activeItem ? t('runnerChooseCard') : t('runnerSelectSourceFirst') }}</p>
             <div v-for="item in state.right" :key="item.id" class="matching-item selection-card rounded p-2 mb-2"
               :class="{ 'candidate-ready': activeItem }" @click="cardClick($event, () => assign(item.id))">
               <ContentBlocksViewer :blocks="item.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
@@ -191,14 +192,14 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
 
 <style scoped>
 .matching-runner { overflow-anchor: none; }
-.paired-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: .75rem; align-items: center; }
-.unanswered-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.paired-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: .75rem; align-items: start; }
+.paired-content { padding: .5rem; border: 2px solid var(--bs-border-color); border-radius: var(--bs-border-radius); background: var(--bs-body-bg); }
+.pair-link { align-self: center; min-width: 2rem; font-size: 1.5rem; text-align: center; }
 .matching-item { min-width: 0; overflow-wrap: anywhere; }
 .matching-item :deep(img), .matching-item :deep(video) { max-height: 180px !important; object-fit: contain; }
 .paired-content :deep(img), .paired-content :deep(video), .mobile-source :deep(img), .mobile-source :deep(video) { max-height: 140px !important; }
 .pair-correction :deep(img), .pair-correction :deep(video) { max-height: 180px !important; }
 .correct-counterpart-content { max-width: 32rem; }
-.candidate-help { min-height: 1.5em; }
 .selection-card { border: 2px solid var(--bs-border-color); }
 .left-pool .selection-card, .candidate-ready { cursor: pointer; }
 .item-active { border-color: var(--bs-primary); background: rgb(13 110 253 / .04); }
@@ -206,7 +207,6 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
 .pair-incorrect { border-color: var(--bs-danger) !important; }
 .pair-unanswered { border-color: var(--bs-warning) !important; }
 .working-area, .right-pool { scroll-margin-top: 1rem; }
-.unpair-button, .pair-status { justify-self: end; }
 @media (max-width: 767.98px) {
   .paired-row { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
   .pair-link { justify-self: center; transform: rotate(90deg); }

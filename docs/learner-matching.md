@@ -9,7 +9,8 @@ The author editor and canonical v1 JSON are unchanged by this increment.
 2. Play/read the free right items and use **Assign**, or their card background,
    to associate one with the selected source. Playback controls, links and other
    interactive content never select or assign an answer.
-3. The whole pair appears in **Your pairs** above the working area. Both items
+3. The whole pair appears in **Your pairs** above the working area as two distinct
+   bordered cards with a link symbol between them and **Unpair** above them. Both items
    disappear from the free pools. Completed pairs remain in the order made;
    remaining items keep their authored left order and attempt-local right order.
 4. **Unpair** returns both items to the pools and preselects the source for another
@@ -27,6 +28,8 @@ The selected source exposes `aria-pressed`, the paired summary uses named groups
 and an announcement describes pair addition/removal. When the triggering item
 moves, focus returns to the next useful working control without native focus
 scrolling. Buttons are outside media players rather than wrapping them.
+The free-pool headings have no extra counterpart-only hint, so the first cards
+start at the same height when the columns sit side by side.
 
 Pair changes measure the working area's position before/after Vue updates and
 adjust scrolling immediately, avoiding Bootstrap's global smooth-scroll animation
