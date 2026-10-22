@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
+import { createMatchingOrder } from '../learner/presentation'
 import type { ContentItem, DraftTest, Question } from '../editor/model'
 import {
   freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer,
@@ -16,6 +17,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const answers = ref<Answers>(freshAnswers())
 const submitted = ref(false)
+const matchingOrder = ref<Record<string, string[]>>({})
 const result = computed(() => grade(props.test.questions, answers.value))
 const resultsById = computed(() =>
   new Map(result.value.results.map(item => [item.questionId, item])))
@@ -31,9 +33,17 @@ function rightName(item: ContentItem, index: number): string {
   return text ? t('runnerRightItem', { index: index + 1 }) + ': ' + text.slice(0, 100)
     : t('runnerRightItem', { index: index + 1 })
 }
+function displayedRightItems(question: Extract<Question, { type: 'matching' }>): ContentItem[] {
+  const byId = new Map(question.rightItems.map(item => [item.id, item]))
+  return (matchingOrder.value[question.id] ?? []).flatMap(id => {
+    const item = byId.get(id)
+    return item ? [item] : []
+  })
+}
 function rightLabel(question: Extract<Question, { type: 'matching' }>, rightId: string): string {
-  const index = question.rightItems.findIndex(item => item.id === rightId)
-  return index === -1 ? t('runnerNotAnswered') : rightName(question.rightItems[index]!, index)
+  const items = displayedRightItems(question)
+  const index = items.findIndex(item => item.id === rightId)
+  return index === -1 ? t('runnerNotAnswered') : rightName(items[index]!, index)
 }
 function choose(question: Extract<Question, { type: 'choice' }>, id: string, checked: boolean): void {
   if (!submitted.value) answers.value = setChoiceAnswer(answers.value, question, id, checked)
@@ -44,7 +54,11 @@ function match(question: Extract<Question, { type: 'matching' }>, leftId: string
 function restart(): void {
   answers.value = freshAnswers()
   submitted.value = false
+  matchingOrder.value = createMatchingOrder(props.test.questions)
 }
+// Initialize once per loaded test; answer changes and translations must never
+// reshuffle an ongoing attempt or renumber its result feedback.
+watch(() => props.test, restart, { immediate: true })
 </script>
 
 <template>
@@ -97,11 +111,10 @@ function restart(): void {
 
         <template v-else>
           <p class="small text-secondary mt-3">{{ t('runnerMatchingInstruction') }}</p>
-          <!-- Keep right-hand choices as a separate list: row position never
-               reveals the authored correct mapping. -->
+          <!-- The list, selects and result labels share one attempt-local order. -->
           <div class="border rounded p-2 mb-3">
             <h3 class="h6">{{ t('runnerRightColumn') }}</h3>
-            <div v-for="(item, rightIndex) in question.rightItems" :key="item.id"
+            <div v-for="(item, rightIndex) in displayedRightItems(question)" :key="item.id"
               class="border-top py-2">
               <strong>{{ t('runnerRightItem', { index: rightIndex + 1 }) }}</strong>
               <ContentBlocksViewer :blocks="item.content"
@@ -120,7 +133,7 @@ function restart(): void {
               :value="answers.matches[question.id]?.[item.id] ?? ''" :disabled="submitted"
               @change="match(question, item.id, ($event.target as HTMLSelectElement).value)">
               <option value="">{{ t('runnerNotAnswered') }}</option>
-              <option v-for="(right, rightIndex) in question.rightItems" :key="right.id"
+              <option v-for="(right, rightIndex) in displayedRightItems(question)" :key="right.id"
                 :value="right.id"
                 :disabled="Object.entries(answers.matches[question.id] ?? {}).some(([key, selected]) => key !== item.id && selected === right.id)">
                 {{ rightName(right, rightIndex) }}

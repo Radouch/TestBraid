@@ -134,16 +134,16 @@ export function addMatchingPair(question: MatchingQuestion): void {
   question.rightItems.push(right)
   question.matches.push({ leftId: left.id, rightId: right.id })
 }
-export function removeMatchingPair(question: MatchingQuestion, leftId: string): void {
-  const index = question.leftItems.findIndex((item) => item.id === leftId)
-  if (index < 0) return
-  // "Remove pair" removes the displayed row from both content columns,
-  // regardless of whether answers were reassigned to other right-hand items.
-  const rightId = question.rightItems[index]?.id
-  question.leftItems.splice(index, 1)
-  question.rightItems.splice(index, 1)
-  question.matches = question.matches.filter((match) =>
-    match.leftId !== leftId && match.rightId !== rightId)
+/** Remove the displayed pair by stable IDs, including crossed saved matches.
+ * The optional right ID also supports explicitly unconfirmed legacy rows. */
+export function removeMatchingPair(question: MatchingQuestion, leftId: string | null, rightId?: string | null): void {
+  const counterpart = rightId === undefined
+    ? question.matches.find(match => match.leftId === leftId)?.rightId ?? null
+    : rightId
+  question.leftItems = question.leftItems.filter(item => item.id !== leftId)
+  question.rightItems = question.rightItems.filter(item => item.id !== counterpart)
+  question.matches = question.matches.filter(match =>
+    match.leftId !== leftId && match.rightId !== counterpart)
 }
 export function assignMatch(question: MatchingQuestion, leftId: string, rightId: string): void {
   if (!question.leftItems.some((item) => item.id === leftId)
