@@ -29,6 +29,7 @@ const groups = ref<Group[]>([])
 const tests = ref<TestRecord[]>([])
 const readiness = ref<Record<string, { ready: boolean; issues: Array<{path: string; code: string; message: string}> }>>({})
 const showDraftForm = ref(false)
+const fallbackLink = ref('')
 const dragLessonId = ref('')
 const dragTestId = ref('')
 const loading = ref(true)
@@ -140,12 +141,25 @@ async function createGroup(): Promise<void> {
     groupName.value = ''
     await refresh()
     draftGroupId.value = group.id
+    groupFilter.value = group.id
     notice.value = t('catalogGroupCreated')
   } catch (cause) {
     showError(cause)
   } finally {
     busy.value = false
   }
+}
+
+function lessonHasTests(groupId: string): boolean {
+  return tests.value.some(test => test.groupId === groupId)
+}
+
+/** Let each menu action complete, then close its native <details> popup. */
+function closeActionMenu(event: MouseEvent): void {
+  const container = event.currentTarget
+  if (!(container instanceof HTMLElement)) return
+  const details = container.closest('details')
+  if (details) details.open = false
 }
 
 function beginRename(group: Group): void {
@@ -175,7 +189,7 @@ async function renameGroup(): Promise<void> {
 
 
 async function deleteGroup(group: Group): Promise<void> {
-  if (busy.value || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
+  if (busy.value || lessonHasTests(group.id) || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
   busy.value = true
   error.value = ''
   notice.value = ''
@@ -304,7 +318,9 @@ async function copyPublicLink(test: TestRecord): Promise<void> {
     await navigator.clipboard.writeText(new URL(href, window.location.href).href)
     notice.value = t('publicationCopied')
   } catch {
-    error.value = t('publicationCopyManually')
+    const href = router.resolve({ name: 'test', params: { id: test.id } }).href
+    fallbackLink.value = new URL(href, window.location.href).href
+    notice.value = t('publicationCopyManually')
   }
 }
 
@@ -418,7 +434,7 @@ onMounted(() => void load())
                 </button>
                 <details class="dropdown">
                   <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminLessonActions')">⋮</summary>
-                  <div class="dropdown-menu show position-absolute">
+                  <div class="dropdown-menu show position-absolute" @click="closeActionMenu">
                     <button class="dropdown-item" type="button" :disabled="busy || groups[0]?.id === group.id"
                       @click="moveLesson(group.id, -1)">{{ t('adminMoveUp') }}</button>
                     <button class="dropdown-item" type="button" :disabled="busy || groups[groups.length - 1]?.id === group.id"
@@ -426,7 +442,9 @@ onMounted(() => void load())
                     <button class="dropdown-item" type="button" @click="beginRename(group)">
                       {{ t('catalogRenameGroup') }}
                     </button>
-                    <button class="dropdown-item text-danger" type="button" :disabled="busy"
+                    <button class="dropdown-item text-danger" type="button"
+                      :disabled="busy || lessonHasTests(group.id)"
+                      :title="lessonHasTests(group.id) ? t('catalogGroupNotEmpty') : undefined"
                       @click="deleteGroup(group)">{{ t('catalogDelete') }}</button>
                   </div>
                 </details>
@@ -453,6 +471,11 @@ onMounted(() => void load())
               {{ t('adminNewTest') }}
             </button>
           </div>
+          <div v-if="fallbackLink" class="mb-3">
+            <label for="public-test-link" class="form-label">{{ t('publicationLink') }}</label>
+            <input id="public-test-link" class="form-control form-control-sm" readonly :value="fallbackLink"
+              @focus="($event.target as HTMLInputElement).select()" />
+          </div>
           <p v-if="filteredTests.length === 0" class="text-secondary">{{ t('catalogNoTests') }}</p>
           <ul v-else class="list-group list-group-flush">
             <li v-for="test in filteredTests" :key="test.id"
@@ -474,7 +497,7 @@ onMounted(() => void load())
                   <summary class="text-warning-emphasis">{{ t('adminIncomplete') }}</summary>
                   <ul v-if="readiness[test.id]?.issues.length" class="mb-1 mt-1 ps-3">
                     <li v-for="(issue, i) in readiness[test.id].issues" :key="i">
-                      {{ issue.path }}: {{ issue.message }}
+                      {{ issue.path }}: {{ t('readiness_' + issue.code) }}
                     </li>
                   </ul>
                   <p v-else class="text-secondary">{{ t('adminReadinessUnknown') }}</p>
@@ -482,7 +505,7 @@ onMounted(() => void load())
               </div>
               <details class="dropdown">
                 <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminTestActions')">⋮</summary>
-                <div class="dropdown-menu dropdown-menu-end show position-absolute">
+                <div class="dropdown-menu dropdown-menu-end show position-absolute" @click="closeActionMenu">
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId)[0]?.id === test.id"
                     @click="moveTest(test, -1)">{{ t('adminMoveUp') }}</button>
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId).slice(-1)[0]?.id === test.id"

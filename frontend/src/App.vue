@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
 import { authorSession, sessionChecked, refreshAuthorSession } from './auth'
 import { resolveUiLocale, saveUiLocale, type UiLocale } from './ui-locale'
+import { navigationSection } from './navigation'
 
 const route = useRoute()
 const router = useRouter()
 const { locale, t } = useI18n()
 const signingOut = ref(false)
 const authError = ref('')
+const activeSection = computed(() => navigationSection(route.path))
 
 watch(() => route.query.lang, (value) => {
   locale.value = resolveUiLocale(value)
@@ -58,8 +60,15 @@ watch(() => route.path, () => void refreshAuthorSession())
       <RouterLink to="/" class="fs-4 text-decoration-none text-body fw-semibold">{{ t('title') }}</RouterLink>
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <nav class="d-flex gap-3" aria-label="Main navigation">
-          <RouterLink to="/">{{ t('home') }}</RouterLink>
-          <RouterLink v-if="authorSession?.authenticated" to="/admin">{{ t('author') }}</RouterLink>
+          <RouterLink to="/" class="text-decoration-none pb-1"
+            :class="{ 'fw-semibold border-bottom border-2 border-primary': activeSection === 'home' }"
+            :aria-current="activeSection === 'home' ? 'location' : undefined">{{ t('home') }}</RouterLink>
+          <RouterLink v-if="authorSession?.authenticated" to="/admin" class="text-decoration-none pb-1"
+            :class="{ 'fw-semibold border-bottom border-2 border-primary': activeSection === 'admin' }"
+            :aria-current="activeSection === 'admin' ? 'location' : undefined">{{ t('author') }}</RouterLink>
+          <RouterLink v-if="authorSession?.authenticated" to="/admin/media" class="text-decoration-none pb-1"
+            :class="{ 'fw-semibold border-bottom border-2 border-primary': activeSection === 'media' }"
+            :aria-current="activeSection === 'media' ? 'location' : undefined">{{ t('mediaLibraryTitle') }}</RouterLink>
         </nav>
         <select class="form-select form-select-sm" style="width: auto" :value="locale"
           :aria-label="t('languageControl')" @change="selectLocale">

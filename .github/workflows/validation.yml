@@ -29,6 +29,9 @@ jobs:
       - name: Pure learner scoring and answer state regression
         run: npm run test:learner
         working-directory: frontend
+      - name: Navigation and UI language URL regression
+        run: npm run test:navigation
+        working-directory: frontend
       - name: Build
         run: npm run build
         working-directory: frontend

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import MediaUploader, { type UploadedMedia } from '../components/MediaUploader.vue'
 import AdminCatalog from '../components/AdminCatalog.vue'
 import { authorSession } from '../auth'
 
@@ -27,12 +26,6 @@ const setupKey = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
-const uploadedMedia = ref<UploadedMedia[]>([])
-
-function recordUpload(media: UploadedMedia): void {
-  uploadedMedia.value.unshift(media)
-}
-
 const api = (route: string): string => `${import.meta.env.BASE_URL}api/${route}`
 
 async function readSession(): Promise<void> {
@@ -134,22 +127,7 @@ onMounted(() => void readSession())
     <template v-if="!loading && session">
       <template v-if="session.authenticated && session.user">
         <AdminCatalog :csrf-token="session.csrfToken" />
-        <section class="my-4" aria-labelledby="media-heading">
-          <h2 id="media-heading" class="h4">{{ t('mediaUploadTitle') }}</h2>
-          <MediaUploader :csrf-token="session.csrfToken" @uploaded="recordUpload" />
-          <div v-for="media in uploadedMedia" :key="media.mediaId" class="card my-3 p-3">
-            <strong>{{ media.originalName }}</strong>
-            <code class="d-block mb-2">{{ media.mediaId }}</code>
-            <img v-if="media.kind === 'image'" class="img-fluid" style="max-height: 320px; object-fit: contain"
-              :src="api(`admin/media/${media.mediaId}/preview`)" :alt="media.originalName" />
-            <video v-else controls preload="metadata" class="w-100" style="max-height: 320px"
-              :src="api(`admin/media/${media.mediaId}/preview`)">
-              {{ t('videoUnsupported') }}
-            </video>
-          </div>
-        </section>
-
-      </template>
+</template>
       <form v-else-if="session.setupState === 'ready'" class="d-grid gap-3" @submit.prevent="createFirstAuthor">
         <p>{{ t('setupIntroduction') }}</p>
         <div>

@@ -166,6 +166,29 @@ check '.error.code == "MEDIA_MISSING"'
 expect 200 "$HOST/api/admin/tests/$TEST_ID"
 check '.questions[0].prompt[0].type == "text"'
 
+# UX enhancements: the saved complete draft is ready to publish,
+# duplicates are independent drafts and per-lesson order persists.
+expect 200 "$HOST/api/admin/tests/readiness"
+check --arg ID "$TEST_ID" '.tests[$ID].ready == true and (.tests[$ID].issues | length) == 0'
+expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check --arg ID "$TEST_ID" '.id != $ID and .status == "draft" and (.questions | length) == 1'
+COPY_ID="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/tests"
+check --arg ID "$COPY_ID" '([.tests[].id] | index($ID)) != null'
+expect 422 "$HOST/api/admin/tests/order" -X PUT -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\",\"ids\":[\"$TEST_ID\"]}"
+check '.error.code == "INVALID_ORDER"'
+expect 200 "$HOST/api/admin/tests/order" -X PUT -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\",\"ids\":[\"$COPY_ID\",\"$TEST_ID\"]}"
+check --arg FIRST "$COPY_ID" --arg SECOND "$TEST_ID" '.tests[0].id == $FIRST and .tests[1].id == $SECOND'
+expect 200 "$HOST/api/admin/tests/$COPY_ID"
+check '.position == 0'
+expect 200 "$HOST/api/admin/groups/order" -X PUT -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' -d "{\"ids\":[\"$GROUP\"]}"
+check --arg ID "$GROUP" '.groups[0].id == $ID and .groups[0].position == 0'
+expect 200 "$HOST/api/admin/tests/$COPY_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.deleted == true'
+
 # Deletions must be protected by auth and CSRF and must never
 # silently cascade: a lesson with even one draft test cannot be deleted.
 expect 409 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"

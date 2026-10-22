@@ -12,6 +12,10 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [blocks: ContentBlock[]] }>()
 const { t } = useI18n()
 const error = ref('')
+const pickerDialog = ref<HTMLDialogElement | null>(null)
+const pickerIndex = ref(-1)
+const mediaChoices = ref<Array<{ id: string; kind: 'image' | 'video'; originalName: string }>>([])
+const pickerError = ref('')
 
 function update(blocks: ContentBlock[]): void {
   emit('update:modelValue', blocks)
@@ -35,6 +39,32 @@ function onUploaded(index: number, media: UploadedMedia): void {
   error.value = ''
   setMedia(index, media.mediaId)
 }
+async function openPicker(index: number): Promise<void> {
+  pickerIndex.value = index
+  pickerError.value = ''
+  try {
+    const response = await fetch(import.meta.env.BASE_URL + 'api/admin/media', {
+      credentials: 'same-origin', cache: 'no-store',
+    })
+    if (!response.ok) throw new Error('Unable to load library')
+    const data = await response.json() as { media: typeof mediaChoices.value }
+    mediaChoices.value = data.media
+    pickerDialog.value?.showModal()
+  } catch {
+    pickerError.value = t('mediaLibraryUnavailable')
+  }
+}
+function chooseMedia(id: string): void {
+  if (pickerIndex.value < 0) return
+  setMedia(pickerIndex.value, id)
+  pickerDialog.value?.close()
+}
+function uploadToPicker(media: UploadedMedia): void {
+  if (pickerIndex.value < 0) return
+  onUploaded(pickerIndex.value, media)
+  pickerDialog.value?.close()
+}
+
 function remove(index: number): void {
   update(props.modelValue.filter((_, i) => i !== index))
 }
@@ -84,10 +114,10 @@ function preview(mediaId: string): string {
         <video v-if="block.type === 'video' && uuidPattern.test(block.mediaId)"
           :src="preview(block.mediaId)" controls preload="metadata"
           class="w-100 my-2" style="max-height: 240px" />
-        <details>
-          <summary>{{ t('editorUploadHere') }}</summary>
-          <MediaUploader :csrf-token="csrfToken" @uploaded="onUploaded(index, $event)" />
-        </details>
+        <button class="btn btn-outline-primary btn-sm" type="button" @click="openPicker(index)">
+          {{ t('mediaChooseFromLibrary') }}
+        </button>
+        <p v-if="pickerError" class="text-danger small">{{ pickerError }}</p>
       </template>
     </div>
     <div class="d-flex gap-2 flex-wrap">
@@ -98,5 +128,27 @@ function preview(mediaId: string): string {
       <button type="button" class="btn btn-outline-secondary btn-sm"
         @click="add('video')">{{ t('editorAddVideo') }}</button>
     </div>
+    <dialog ref="pickerDialog" class="border rounded shadow p-3 p-md-4" style="width: min(92vw, 780px); max-height: 85vh">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">{{ t('mediaChooseFromLibrary') }}</h2>
+        <button class="btn-close" type="button" :aria-label="t('catalogCancel')" @click="pickerDialog?.close()" />
+      </div>
+      <p v-if="pickerError" role="alert">{{ pickerError }}</p>
+      <div class="row g-2 mb-3">
+        <div v-for="media in mediaChoices.filter(item => item.kind === modelValue[pickerIndex]?.type)"
+          :key="media.id" class="col-6 col-md-4">
+          <button type="button" class="btn btn-outline-secondary w-100 text-break" @click="chooseMedia(media.id)">
+            <img v-if="media.kind === 'image'" :src="preview(media.id)" :alt="media.originalName"
+              class="w-100 object-fit-contain" style="height: 110px" />
+            <video v-else :src="preview(media.id)" preload="metadata" class="w-100" style="height: 110px" />
+            <span class="small">{{ media.originalName }}</span>
+          </button>
+        </div>
+      </div>
+      <p v-if="mediaChoices.filter(item => item.kind === modelValue[pickerIndex]?.type).length === 0"
+        class="text-secondary">{{ t('mediaNoItems') }}</p>
+      <h3 class="h6">{{ t('mediaUploadTitle') }}</h3>
+      <MediaUploader :csrf-token="csrfToken" @uploaded="uploadToPicker" />
+    </dialog>
   </div>
 </template>

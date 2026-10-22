@@ -8,6 +8,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 use Slim\Routing\RouteCollectorProxy;
 use TestBraid\Storage\BoundedFileStream;
+use TestBraid\Storage\JsonFileRepository;
+use stdClass;
 use TestBraid\Storage\PrivateMediaService;
 use TestBraid\Validation\SchemaValidator;
 
@@ -23,6 +25,35 @@ final class AdminMediaRoutes
 
     public function register(RouteCollectorProxy $group): void
     {
+        $group->get('/media', function (Request $request, Response $response): Response {
+            $storage = new JsonFileRepository(getenv('TESTBRAID_STORAGE_DIR') ?: $this->backendRoot . '/storage');
+            $usage = [];
+            foreach ($storage->all('tests') as $test) {
+                foreach ($this->testMediaReferences($test) as $mediaId) {
+                    $usage[$mediaId][] = [
+                        'id' => $test->id,
+                        'title' => $test->title,
+                        'status' => $test->status,
+                    ];
+                }
+            }
+            $items = [];
+            foreach ($storage->all('media') as $media) {
+                $items[] = [
+                    'id' => $media->id,
+                    'kind' => $media->kind,
+                    'originalName' => $media->originalName,
+                    'mimeType' => $media->mimeType,
+                    'sizeBytes' => $media->sizeBytes,
+                    'createdAt' => $media->createdAt,
+                    'usedIn' => $usage[$media->id] ?? [],
+                ];
+            }
+            usort($items, static fn (array $a, array $b): int =>
+                strcmp($b['createdAt'], $a['createdAt']) ?: strcmp($a['id'], $b['id']));
+            return JsonResponse::send($response, ['media' => $items]);
+        });
+
         $group->post('/media', function (Request $request, Response $response): Response {
             try {
                 $contentType = strtolower($request->getHeaderLine('Content-Type'));
@@ -76,6 +107,27 @@ final class AdminMediaRoutes
             }
         };
         $group->map(['GET', 'HEAD'], '/media/{id}/preview', $preview);
+    }
+
+    /** @return list<string> */
+    private function testMediaReferences(stdClass $test): array
+    {
+        $refs = [];
+        $blocks = static function (array $blocks) use (&$refs): void {
+            foreach ($blocks as $block) {
+                if ($block->type !== 'text') $refs[$block->mediaId] = true;
+            }
+        };
+        foreach ($test->questions as $question) {
+            $blocks($question->prompt);
+            if ($question->type === 'choice') {
+                foreach ($question->options as $option) $blocks($option->content);
+            } else {
+                foreach ($question->leftItems as $item) $blocks($item->content);
+                foreach ($question->rightItems as $item) $blocks($item->content);
+            }
+        }
+        return array_keys($refs);
     }
 
     /**
