@@ -150,6 +150,18 @@ async function createGroup(): Promise<void> {
   }
 }
 
+function lessonHasTests(groupId: string): boolean {
+  return tests.value.some(test => test.groupId === groupId)
+}
+
+/** Let each menu action complete, then close its native <details> popup. */
+function closeActionMenu(event: MouseEvent): void {
+  const container = event.currentTarget
+  if (!(container instanceof HTMLElement)) return
+  const details = container.closest('details')
+  if (details) details.open = false
+}
+
 function beginRename(group: Group): void {
   renamingId.value = group.id
   renameValue.value = group.name
@@ -177,7 +189,7 @@ async function renameGroup(): Promise<void> {
 
 
 async function deleteGroup(group: Group): Promise<void> {
-  if (busy.value || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
+  if (busy.value || lessonHasTests(group.id) || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
   busy.value = true
   error.value = ''
   notice.value = ''
@@ -422,7 +434,7 @@ onMounted(() => void load())
                 </button>
                 <details class="dropdown">
                   <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminLessonActions')">⋮</summary>
-                  <div class="dropdown-menu show position-absolute">
+                  <div class="dropdown-menu show position-absolute" @click="closeActionMenu">
                     <button class="dropdown-item" type="button" :disabled="busy || groups[0]?.id === group.id"
                       @click="moveLesson(group.id, -1)">{{ t('adminMoveUp') }}</button>
                     <button class="dropdown-item" type="button" :disabled="busy || groups[groups.length - 1]?.id === group.id"
@@ -430,7 +442,9 @@ onMounted(() => void load())
                     <button class="dropdown-item" type="button" @click="beginRename(group)">
                       {{ t('catalogRenameGroup') }}
                     </button>
-                    <button class="dropdown-item text-danger" type="button" :disabled="busy"
+                    <button class="dropdown-item text-danger" type="button"
+                      :disabled="busy || lessonHasTests(group.id)"
+                      :title="lessonHasTests(group.id) ? t('catalogGroupNotEmpty') : undefined"
                       @click="deleteGroup(group)">{{ t('catalogDelete') }}</button>
                   </div>
                 </details>
@@ -491,7 +505,7 @@ onMounted(() => void load())
               </div>
               <details class="dropdown">
                 <summary class="btn btn-outline-secondary btn-sm" :aria-label="t('adminTestActions')">⋮</summary>
-                <div class="dropdown-menu dropdown-menu-end show position-absolute">
+                <div class="dropdown-menu dropdown-menu-end show position-absolute" @click="closeActionMenu">
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId)[0]?.id === test.id"
                     @click="moveTest(test, -1)">{{ t('adminMoveUp') }}</button>
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId).slice(-1)[0]?.id === test.id"
