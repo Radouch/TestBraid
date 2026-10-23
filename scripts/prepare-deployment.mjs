@@ -42,6 +42,7 @@ try {
     'deploy/www/api/index.php',
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
+    'backend/composer.lock',
     'backend/public/index.php',
     'schemas/test.schema.json',
     'schemas/fixtures/manifest.json',
@@ -61,10 +62,8 @@ try {
   const privateBackend = join(output, 'testbraid-backend')
   cpSync(join(root, 'deploy/testbraid-backend/.htaccess'), join(privateBackend, '.htaccess'))
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
-  const composerLock = join(root, 'backend/composer.lock')
-  if (existsSync(composerLock)) {
-    cpSync(composerLock, join(privateBackend, 'composer.lock'))
-  }
+  // Release installations must use the reviewed Composer dependency versions.
+  cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
 
   // Runtime config/, storage/ and vendor/ are intentionally NOT part of the
   // generated package. They must survive upgrades on the actual server.
