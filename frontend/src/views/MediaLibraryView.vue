@@ -17,6 +17,8 @@ const { t } = useI18n()
 const items = ref<MediaItem[]>([])
 const loading = ref(true)
 const error = ref('')
+const deleteError = ref('')
+const deletingId = ref<string | null>(null)
 const filter = ref<'all' | 'image' | 'video'>('all')
 const search = ref('')
 const displayed = computed(() => items.value.filter(media =>
@@ -40,6 +42,33 @@ async function load(): Promise<void> {
     error.value = t('mediaLibraryUnavailable')
   } finally {
     loading.value = false
+  }
+}
+async function deleteMedia(media: MediaItem): Promise<void> {
+  if (media.usedIn.length || !authorSession.value?.authenticated || deletingId.value) return
+  if (!window.confirm(t('mediaDeleteConfirm', { name: media.originalName }))) return
+  deletingId.value = media.id
+  deleteError.value = ''
+  try {
+    const response = await fetch(import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(media.id), {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: { 'X-CSRF-Token': authorSession.value.csrfToken },
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => null) as { error?: { code?: string } } | null
+      if (response.status === 409 || data?.error?.code === 'MEDIA_IN_USE') {
+        throw new Error(t('mediaDeleteInUse'))
+      }
+      throw new Error(t('mediaDeleteFailed'))
+    }
+    await load()
+  } catch (cause) {
+    deleteError.value = cause instanceof Error ? cause.message : t('mediaDeleteFailed')
+    // A concurrent author may have referenced or removed this file.
+    await load()
+  } finally {
+    deletingId.value = null
   }
 }
 onMounted(async () => {
@@ -74,6 +103,7 @@ onMounted(async () => {
         </select>
       </div>
       <p v-if="error" role="alert" class="alert alert-danger">{{ error }}</p>
+      <p v-if="deleteError" role="alert" class="alert alert-danger">{{ deleteError }}</p>
       <p v-if="loading" role="status">{{ t('loading') }}</p>
       <p v-else-if="displayed.length === 0" class="text-secondary">{{ t('mediaNoItems') }}</p>
       <div v-else class="row g-3">
@@ -96,6 +126,12 @@ onMounted(async () => {
                   </li>
                 </ul>
               </details>
+              <button v-if="media.usedIn.length === 0" type="button"
+                class="btn btn-outline-danger btn-sm mt-3"
+                :disabled="deletingId !== null"
+                @click="deleteMedia(media)">
+                {{ t('mediaDelete') }}
+              </button>
             </div>
           </article>
         </div>
