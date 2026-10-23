@@ -13,9 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Until real npm lockfiles are committed, avoid claiming a reproducible npm ci.
       - name: Install frontend dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
         working-directory: frontend
       - name: Typecheck
         run: npm run typecheck
@@ -44,6 +43,7 @@ jobs:
           node scripts/prepare-deployment.mjs
           test -f deployment-package/testbraid-backend/schemas/test.schema.json
           test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
+          test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
           test -f deployment-package/testbraid-backend/.htaccess
           test ! -e deployment-package/testbraid-backend/config/authors.json
@@ -62,6 +62,9 @@ jobs:
           tools: composer:v2
           coverage: none
       # Composer is installed on CI/hosting, never required on a developer laptop.
+      - name: Validate locked Composer metadata
+        run: composer validate --no-check-publish
+        working-directory: backend
       - name: Install backend dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
         working-directory: backend
