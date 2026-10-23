@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test:schemas": "tsx scripts/test-schema-fixtures.ts",
     "test:editor": "tsx scripts/test-question-model.ts",
+    "test:published": "tsx scripts/test-published-readonly.ts",
     "test:learner": "tsx scripts/test-learner-scoring.ts",
     "test:navigation": "tsx scripts/test-navigation.ts"
   },
