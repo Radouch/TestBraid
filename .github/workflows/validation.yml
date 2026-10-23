@@ -13,9 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Until real npm lockfiles are committed, avoid claiming a reproducible npm ci.
       - name: Install frontend dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
         working-directory: frontend
       - name: Typecheck
         run: npm run typecheck
@@ -61,6 +60,14 @@ jobs:
       # Composer is installed on CI/hosting, never required on a developer laptop.
       - name: Install backend dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
+        working-directory: backend
+      # Temporary bootstrap step: capture Composer's genuine resolved lockfile from CI.
+      - name: Export resolved Composer lockfile (bootstrap only)
+        run: |
+          echo 'TESTBRAID_COMPOSER_LOCK_BEGIN'
+          base64 --wrap=0 composer.lock
+          echo
+          echo 'TESTBRAID_COMPOSER_LOCK_END'
         working-directory: backend
       - name: Lint PHP
         run: composer run lint
