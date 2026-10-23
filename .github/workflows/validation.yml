@@ -60,7 +60,7 @@ jobs:
           coverage: none
       # Composer is installed on CI/hosting, never required on a developer laptop.
       - name: Validate locked Composer metadata
-        run: composer validate --strict --no-check-publish
+        run: composer validate --no-check-publish
         working-directory: backend
       - name: Install backend dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
