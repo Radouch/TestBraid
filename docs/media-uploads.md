@@ -90,9 +90,11 @@ per-kind limits before uploading. Invalid/missing JSON disables uploads
 rather than silently falling back to hardcoded limits. Apache, proxies, disk
 quota and timeouts can impose additional constraints PHP cannot report.
 
-**Deployment:** scripts/prepare-deployment.mjs stages a default
-testbraid-backend/config/uploads.json for **initial installation**.
-Install it once when upgrading an existing host that lacks the file. After
+**Deployment:** scripts/prepare-deployment.mjs stages
+`testbraid-backend/uploads.example.json` outside the runtime config directory.
+For initial installation or an upgrade that lacks the live file, copy this
+example to `testbraid-backend/config/uploads.json` over SFTP (create config/
+if necessary). After
 that, **never overwrite the host's config/uploads.json** when copying new
 deployment packages. Preserve the entire private config/ directory. The
 packaged copy is a first-installation seed, not the live source of truth.
