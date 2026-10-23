@@ -15,22 +15,19 @@ use TestBraid\Validation\SchemaValidator;
  */
 final class PrivateMediaService
 {
-    public const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-    public const VIDEO_MAX_BYTES = 64 * 1024 * 1024;
-
-    /** @var array<string, array{kind:string, extension:string, aliases:list<string>, limit:int}> */
+    /** @var array<string, array{kind:string, extension:string, aliases:list<string>}> */
     private const FORMATS = [
-        'image/jpeg' => ['kind' => 'image', 'extension' => 'jpg', 'aliases' => ['jpg', 'jpeg'], 'limit' => self::IMAGE_MAX_BYTES],
-        'image/png' => ['kind' => 'image', 'extension' => 'png', 'aliases' => ['png'], 'limit' => self::IMAGE_MAX_BYTES],
-        'image/webp' => ['kind' => 'image', 'extension' => 'webp', 'aliases' => ['webp'], 'limit' => self::IMAGE_MAX_BYTES],
-        'video/mp4' => ['kind' => 'video', 'extension' => 'mp4', 'aliases' => ['mp4'], 'limit' => self::VIDEO_MAX_BYTES],
-        'video/webm' => ['kind' => 'video', 'extension' => 'webm', 'aliases' => ['webm'], 'limit' => self::VIDEO_MAX_BYTES],
+        'image/jpeg' => ['kind' => 'image', 'extension' => 'jpg', 'aliases' => ['jpg', 'jpeg']],
+        'image/png' => ['kind' => 'image', 'extension' => 'png', 'aliases' => ['png']],
+        'image/webp' => ['kind' => 'image', 'extension' => 'webp', 'aliases' => ['webp']],
+        'video/mp4' => ['kind' => 'video', 'extension' => 'mp4', 'aliases' => ['mp4']],
+        'video/webm' => ['kind' => 'video', 'extension' => 'webm', 'aliases' => ['webm']],
     ];
 
     private JsonFileRepository $repository;
     private string $root;
 
-    public function __construct(string $backendRoot, private readonly SchemaValidator $schemas)
+    public function __construct(private readonly string $backendRoot, private readonly SchemaValidator $schemas)
     {
         $this->root = rtrim(getenv('TESTBRAID_STORAGE_DIR') ?: $backendRoot . '/storage', DIRECTORY_SEPARATOR);
         $this->repository = new JsonFileRepository($this->root);
@@ -38,6 +35,8 @@ final class PrivateMediaService
 
     public function upload(UploadedFileInterface $upload): stdClass
     {
+        $limits = UploadLimits::fromBackendRoot($this->backendRoot);
+        $maximum = max($limits->maxBytes('image'), $limits->maxBytes('video'));
         if ($upload->getError() !== UPLOAD_ERR_OK) {
             $tooLarge = in_array($upload->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
             throw new ApiProblem($tooLarge ? 413 : 400, $tooLarge ? 'FILE_TOO_LARGE' : 'UPLOAD_FAILED', 'The file upload failed.');
@@ -60,7 +59,7 @@ final class PrivateMediaService
         $clientExtension = strtolower($extensionMatch[1]);
 
         $declaredSize = $upload->getSize();
-        if ($declaredSize !== null && ($declaredSize < 1 || $declaredSize > self::VIDEO_MAX_BYTES)) {
+        if ($declaredSize !== null && ($declaredSize < 1 || $declaredSize > $maximum)) {
             throw new ApiProblem(413, 'FILE_TOO_LARGE', 'The file exceeds the upload limit.');
         }
 
@@ -88,7 +87,7 @@ final class PrivateMediaService
                         break;
                     }
                     $length += strlen($chunk);
-                    if ($length > self::VIDEO_MAX_BYTES) {
+                    if ($length > $maximum) {
                         throw new ApiProblem(413, 'FILE_TOO_LARGE', 'The file exceeds the upload limit.');
                     }
                     $offset = 0;
@@ -122,7 +121,7 @@ final class PrivateMediaService
             if ($format === null || !in_array($clientExtension, $format['aliases'], true)) {
                 throw new ApiProblem(415, 'UNSUPPORTED_MEDIA', 'The file format and extension must match an allowed type.');
             }
-            if ($length > $format['limit']) {
+            if ($length > $limits->maxBytes($format['kind'])) {
                 throw new ApiProblem(413, 'FILE_TOO_LARGE', 'The file exceeds the limit for this media type.');
             }
 
@@ -188,6 +187,36 @@ final class PrivateMediaService
             throw new ApiProblem(400, 'INVALID_ID', 'Invalid media identifier.');
         }
         return $this->repository->get('media', $id);
+    }
+
+    /**
+     * Only call while holding the publication lock and after verifying that
+     * *all* draft and published tests no longer reference this media ID.
+     * Rename the original first to allow rollback if metadata removal fails.
+     */
+    public function delete(stdClass $metadata): void
+    {
+        $source = $this->previewSource($metadata);
+        $original = $source['path'];
+        $staged = $original . '.deleting';
+        if (file_exists($staged) || is_link($staged) || !rename($original, $staged)) {
+            throw new RuntimeException('Unable to stage private media deletion.');
+        }
+        try {
+            if (!$this->repository->delete('media', $metadata->id)) {
+                throw new RuntimeException('Media metadata disappeared during deletion.');
+            }
+        } catch (\Throwable $e) {
+            if (!rename($staged, $original)) {
+                throw new RuntimeException('Unable to restore private media after failed deletion.', 0, $e);
+            }
+            throw $e;
+        }
+        // A crash here can leave a .deleting file, but it cannot remove an
+        // in-use asset: its metadata was removed only under the shared lock.
+        if (!unlink($staged)) {
+            throw new RuntimeException('Unable to remove staged private media file.');
+        }
     }
 
     /** @return array{path:string,size:int,mime:string} */
