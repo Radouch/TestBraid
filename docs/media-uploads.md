@@ -70,7 +70,7 @@ PoC-A 07 (publication) will need to securely expose only media referenced by pub
 
 The application limits come from **one private runtime file**:
 testbraid-backend/config/uploads.json on a deployed host
-(backend/config/uploads.json in a source checkout):
+(the versioned source template is backend/uploads.example.json):
 
 ```json
 {
@@ -90,14 +90,18 @@ per-kind limits before uploading. Invalid/missing JSON disables uploads
 rather than silently falling back to hardcoded limits. Apache, proxies, disk
 quota and timeouts can impose additional constraints PHP cannot report.
 
-**Deployment:** scripts/prepare-deployment.mjs stages
-`testbraid-backend/uploads.example.json` outside the runtime config directory.
+**Deployment:** scripts/prepare-deployment.mjs copies the only versioned template,
+`backend/uploads.example.json`, to `testbraid-backend/uploads.example.json`
+outside the runtime config directory.
 For initial installation or an upgrade that lacks the live file, copy this
 example to `testbraid-backend/config/uploads.json` over SFTP (create config/
 if necessary). After
 that, **never overwrite the host's config/uploads.json** when copying new
 deployment packages. Preserve the entire private config/ directory. The
 packaged copy is a first-installation seed, not the live source of truth.
+The live `backend/config/uploads.json` is ignored by Git. Tests load their
+own disposable copy using `TESTBRAID_UPLOAD_CONFIG_FILE`; this environment
+variable selects a configuration file, not an independent set of limits.
 
 - GET /api/admin/media/limits: authenticated effective policy and warnings.
 - DELETE /api/admin/media/{id}: authenticated + CSRF; unreferenced media only.
