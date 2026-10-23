@@ -65,8 +65,8 @@ try {
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   // Release installations must use the reviewed Composer dependency versions.
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
-  // Ship a template outside config/: the deployment audit deliberately
-  // rejects runtime directories and upgrades must never overwrite config/.
+  // Keep the same relative location as the one versioned source example.
+  // The audit rejects runtime config/, which upgrades must never overwrite.
   cpSync(join(root, 'backend/uploads.example.json'), join(privateBackend, 'uploads.example.json'))
 
   // Runtime config/, storage/ and vendor/ are intentionally NOT part of the
