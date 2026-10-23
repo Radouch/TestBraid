@@ -40,6 +40,7 @@ jobs:
           node scripts/prepare-deployment.mjs
           test -f deployment-package/testbraid-backend/schemas/test.schema.json
           test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
+          test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
           test -f deployment-package/testbraid-backend/.htaccess
           test ! -e deployment-package/testbraid-backend/config/authors.json
@@ -58,16 +59,11 @@ jobs:
           tools: composer:v2
           coverage: none
       # Composer is installed on CI/hosting, never required on a developer laptop.
+      - name: Validate locked Composer metadata
+        run: composer validate --strict --no-check-publish
+        working-directory: backend
       - name: Install backend dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-        working-directory: backend
-      # Temporary bootstrap step: capture Composer's genuine resolved lockfile from CI.
-      - name: Export resolved Composer lockfile (bootstrap only)
-        run: |
-          echo 'TESTBRAID_COMPOSER_LOCK_BEGIN'
-          base64 --wrap=0 composer.lock
-          echo
-          echo 'TESTBRAID_COMPOSER_LOCK_END'
         working-directory: backend
       - name: Lint PHP
         run: composer run lint
