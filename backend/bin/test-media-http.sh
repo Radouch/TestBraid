@@ -27,6 +27,8 @@ trap 'echo "Media HTTP integration failed at line $LINENO: $BASH_COMMAND" >&2; t
 php "$ROOT/bin/test-upload-limits.php"
 
 mkdir -p "$TEMP/config"
+cp "$ROOT/uploads.example.json" "$TEMP/config/uploads.json"
+export TESTBRAID_UPLOAD_CONFIG_FILE="$TEMP/config/uploads.json"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"
 export TESTBRAID_STORAGE_DIR="$TEMP/private-storage"
