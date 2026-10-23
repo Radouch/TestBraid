@@ -26,6 +26,9 @@ jobs:
       - name: Question editor model and publication invariants
         run: npm run test:editor
         working-directory: frontend
+      - name: Published question read-only rendering regression
+        run: npm run test:published
+        working-directory: frontend
       - name: Pure learner scoring and answer state regression
         run: npm run test:learner
         working-directory: frontend
