@@ -86,6 +86,35 @@ class PublicationService
         }
     }
 
+    /**
+     * Delete only author uploads not referenced by any draft or published
+     * test. The same lock used by test writers prevents a use-after-check race.
+     *
+     * @return array{deleted:bool,id:string}
+     */
+    public function deleteUnusedMedia(string $id): array
+    {
+        return $this->exclusive(function () use ($id): array {
+            if (!JsonFileRepository::validId($id)) {
+                throw new ApiProblem(400, 'INVALID_ID', 'Invalid media identifier.');
+            }
+            $metadata = $this->store->get('media', $id);
+            if ($metadata === null) {
+                throw new ApiProblem(404, 'NOT_FOUND', 'Media not found.');
+            }
+            foreach ($this->store->all('tests') as $test) {
+                if (isset($this->references($test)[$id])) {
+                    throw new ApiProblem(409, 'MEDIA_IN_USE', 'The media is still used in a test.');
+                }
+            }
+            // Reconcile any orphan public copy first, so a failed cleanup
+            // cannot remove metadata while leaving a publicly accessible file.
+            $this->reconcileUnlocked();
+            $this->media->delete($metadata);
+            return ['deleted' => true, 'id' => $id];
+        });
+    }
+
     public function publish(string $id): stdClass
     {
         return $this->exclusive(function () use ($id): stdClass {
