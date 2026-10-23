@@ -9,6 +9,7 @@ use TestBraid\Http\ApiProblem;
  * Upload policy loaded from the operator-owned private JSON file on every
  * request. The browser receives effective limits through an author-only API;
  * neither PHP nor the built Vue bundle carries a second copy of the limits.
+ * The operator creates config/uploads.json from uploads.example.json on install.
  */
 final class UploadLimits
 {
