@@ -40,7 +40,7 @@ This establishes working frontend/API routing on the selected host; the author-o
 │   └── .htaccess                   # From deploy/www/.htaccess
 └── testbraid-backend/              # Private: NOT served by Apache
     ├── composer.json
-    ├── composer.lock               # Created on first install, commit afterwards
+    ├── composer.lock               # Reviewed lockfile committed with composer.json
     ├── bin/                        # Private PHP CLI checks
     ├── src/                        # Private PHP source
     ├── schemas/                    # COPY OF ROOT schemas/ FROM SOURCE REPO
@@ -68,7 +68,7 @@ Only Node.js/npm are needed on your computer. No local Composer installation is 
 ```sh
 git clone https://github.com/Radouch/TestBraid.git
 cd TestBraid/frontend
-npm install
+npm ci
 npm run build
 ```
 
@@ -103,6 +103,7 @@ deployment-package/
 ├── www/                         # Upload contents to the public www/
 └── testbraid-backend/           # Upload contents to the private backend/
     ├── composer.json
+    ├── composer.lock
     ├── bin/
     ├── public/
     ├── src/
@@ -110,7 +111,7 @@ deployment-package/
         └── fixtures/manifest.json
 ```
 
-Upload the **contents** of each directory to the corresponding server directory via SFTP, overwriting matching *code* files only. The package deliberately excludes `config/`, `storage/`, and `vendor/`: **keep those existing server directories and their contents unchanged**. Do not use synchronization with `--delete` or wipe the remote backend. Run Composer on the server as described below. If a reviewed `backend/composer.lock` exists in your checkout, the script includes it.
+Upload the **contents** of each directory to the corresponding server directory via SFTP, overwriting matching *code* files only. The package deliberately excludes `config/`, `storage/`, and `vendor/`: **keep those existing server directories and their contents unchanged**. Do not use synchronization with `--delete` or wipe the remote backend. Run Composer on the server as described below. The committed `backend/composer.lock` is required and always included in the private deployment package.
 
 The staging command fails if the frontend build or essential schema fixtures are missing; CI verifies the staged paths too. No Composer or database is required on your computer.
 
@@ -121,7 +122,7 @@ Use SFTP or `rsync`; substitute your real SSH account/paths. **Do not create or 
 - Copy **the contents** of `frontend/dist/` into `<domain-directory>/www/`.
 - Copy **the contents** of `deploy/www/` into the same `www/` directory, including hidden `.htaccess` files.
 - Copy `deploy/testbraid-backend/.htaccess` to the private `testbraid-backend/.htaccess` directory root. This explicitly denies HTTP access to the private backend even if a host exposes a broader document root by mistake. It does not affect PHP `require` / `include` across the filesystem.
-- Copy `backend/composer.json`, `backend/public/`, `backend/src/`, `backend/bin/` and the **entire repository-root `schemas/` directory** to their corresponding private paths. In particular, `schemas/fixtures/manifest.json` must end up as `<domain-directory>/testbraid-backend/schemas/fixtures/manifest.json`, not as `<domain-directory>/schemas/fixtures/manifest.json` or under `www/`.
+- Copy `backend/composer.json`, `backend/composer.lock`, `backend/public/`, `backend/src/`, `backend/bin/` and the **entire repository-root `schemas/` directory** to their corresponding private paths. In particular, `schemas/fixtures/manifest.json` must end up as `<domain-directory>/testbraid-backend/schemas/fixtures/manifest.json`, not as `<domain-directory>/schemas/fixtures/manifest.json` or under `www/`.
 - Do **not** copy `deploy/www/` itself as a nested `www/www` directory.
 - Do **not** expose `backend/`, `vendor/`, `storage/` or any password file inside `www/`.
 
@@ -131,7 +132,7 @@ Example `rsync` structure (replace placeholders before running):
 rsync -av frontend/dist/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
 rsync -av deploy/www/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
 rsync -av deploy/testbraid-backend/.htaccess USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/.htaccess
-rsync -av backend/composer.json USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/
+rsync -av backend/composer.json backend/composer.lock USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/
 rsync -av backend/public/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/public/
 rsync -av backend/src/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/src/
 rsync -av backend/bin/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/bin/
@@ -155,9 +156,20 @@ composer run test:schemas
 
 Before running `test:schemas`, ensure that `testbraid-backend/schemas/test.schema.json` **and** `testbraid-backend/schemas/fixtures/manifest.json` exist. The command runs shared fixtures against PHP's Opis schema validator and publication rules, once installed. If the schemas are absent, Composer can install successfully but validation fails; the test runner now prints a direct instruction instead of an uncaught `json_decode` error. This does not expose test data publicly. The project currently declares PHP 8.1+ for portability; the example host runs PHP 8.5. The Slim requirement is **`^4.15.3`**, avoiding known vulnerabilities in earlier Slim 4 releases.
 
-When `composer.lock` does not exist, the first `composer install` resolves dependencies and creates one. Review and commit that generated lockfile to the repository later so subsequent installations are reproducible. Do not fabricate lockfiles by hand.
+`composer.lock` is committed alongside `composer.json` and included in the SFTP deployment package. Run `composer install` on the host to install the reviewed, locked versions; do not run `composer update` as a routine deployment step. If the server's PHP version or extensions are incompatible with the lockfile, fix the environment or review and regenerate the lockfile in development before deploying.
 
 If `php -v` on SSH differs from the PHP version serving the website, select the correct CLI binary for Composer and investigate web PHP compatibility separately. Never assume that the CLI and web SAPIs have the same version.
+
+## Dependency maintenance and security updates
+
+- **Ordinary frontend checkout / CI:** run `npm ci` in `frontend/` to install exactly the dependencies recorded in `package-lock.json`. It deletes and recreates `node_modules/` and fails if `package.json` and the lockfile disagree. Use `npm install <package>` or a deliberate `npm update` only when changing dependencies, then commit **both** the manifest and lockfile. Run `npm run typecheck`, the frontend regression scripts and `npm run build`.
+- **Ordinary backend checkout / release:** run `composer install` in `backend/` with a supported PHP CLI and required extensions. Install uses `composer.lock`, including transitive package versions. Do not edit lockfile package/version metadata manually. For deliberate PHP dependency upgrades, use `composer update` or a targeted `composer update vendor/package --with-dependencies` in a reviewed change; commit the resulting `composer.lock` and any modified `composer.json`.
+- **Security:** periodically review `npm audit` and `composer audit` output (and upstream security notices). Fix relevant advisories through explicit, reviewed dependency updates rather than unlocking dependencies silently during deployment. Audit reports can include findings that require evaluating actual use or upgrading a major version.
+- **Release checks:** validate `composer validate --strict --no-check-publish`; run the PHP regression scripts and frontend CI checks; generate `node scripts/prepare-deployment.mjs` and `node scripts/verify-deployment-package.mjs` from a clean checkout. The staged private backend **must** include both Composer files, but not `vendor/`, secrets or runtime storage. On the host, run `composer check-platform-reqs --no-dev` after installation.
+
+The lockfiles pin package versions and integrity information; they do not by themselves make the entire toolchain or deployment byte-for-byte reproducible. Pin and verify the PHP/Composer and Node/npm environments for stronger guarantees.
+
+---
 
 ## 6. First-author setup through the browser (no SSH scripts)
 
