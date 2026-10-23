@@ -280,10 +280,10 @@ A filesystem plus Apache cannot make publishing several static media files and o
 
 ## 6D. Media library management and per-host upload limits (Issue #17)
 
-- Upload the new private config/uploads.json **once** when first deploying
-  this version. The deployment package includes a default (10 MiB images /
-  64 MiB videos). On every later upgrade, preserve the operator's file;
-  do not overwrite it with the staged default.
+- For initial deployment, copy the packaged private uploads.example.json to
+  config/uploads.json via SFTP (10 MiB images / 64 MiB videos). The package
+  intentionally does not contain runtime config/. On every later upgrade,
+  preserve the operator's file; never replace it with the staged example.
 - Change maxImageSizeMiB and maxVideoSizeMiB through SFTP as needed. The
   backend and FilePond get their limits from that single file at runtime,
   so **no frontend rebuild** is needed for a limit change.
