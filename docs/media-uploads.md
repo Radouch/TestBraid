@@ -65,3 +65,46 @@ The upload panel shows media from the current page session; it is **not yet a pe
 ## Follow-up
 
 PoC-A 07 (publication) will need to securely expose only media referenced by published tests as static Apache files with byte ranges, keep shared references alive when tests are edited, and avoid exposing draft-only media. The authenticated previews here are not a substitute for that publication flow.
+
+## Media library operations and operator-managed limits (Issue #17)
+
+The application limits come from **one private runtime file**:
+testbraid-backend/config/uploads.json on a deployed host
+(backend/config/uploads.json in a source checkout):
+
+```json
+{
+  "maxImageSizeMiB": 10,
+  "maxVideoSizeMiB": 64
+}
+```
+
+Edit these positive integer MiB limits (1–2048) using SFTP. No frontend
+rebuild or PHP deployment is needed; the backend re-reads the file on each
+upload and on GET /api/admin/media/limits. The author-only endpoint returns
+configured and effective sizes after applying PHP upload_max_filesize and
+post_max_size. For multipart requests, 1 MiB is reserved below post_max_size.
+If PHP disables uploads, all effective limits are zero. The media uploader
+displays localized warnings for any reduced limit and applies effective
+per-kind limits before uploading. Invalid/missing JSON disables uploads
+rather than silently falling back to hardcoded limits. Apache, proxies, disk
+quota and timeouts can impose additional constraints PHP cannot report.
+
+**Deployment:** scripts/prepare-deployment.mjs stages a default
+testbraid-backend/config/uploads.json for **initial installation**.
+Install it once when upgrading an existing host that lacks the file. After
+that, **never overwrite the host's config/uploads.json** when copying new
+deployment packages. Preserve the entire private config/ directory. The
+packaged copy is a first-installation seed, not the live source of truth.
+
+- GET /api/admin/media/limits: authenticated effective policy and warnings.
+- DELETE /api/admin/media/{id}: authenticated + CSRF; unreferenced media only.
+
+The media library shows Delete only for entries where usedIn is empty.
+The backend scans *all* draft and published tests again under the existing
+publication lock and returns 409 MEDIA_IN_USE if any still reference the file.
+It reconciles orphan public copies first and then removes private metadata
+and the original binary, using a temporary rename for rollback on metadata
+failure. An interrupted delete may still leave an orphan .deleting file;
+automatic abandoned-file cleanup is not part of this increment. No
+background garbage collector or standalone unused-media list is added.
