@@ -43,6 +43,7 @@ try {
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
+    'backend/config/uploads.json',
     'backend/public/index.php',
     'schemas/test.schema.json',
     'schemas/fixtures/manifest.json',
@@ -64,12 +65,17 @@ try {
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   // Release installations must use the reviewed Composer dependency versions.
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
+  // Seed an installable initial upload policy. This is operator-owned at
+  // runtime: do not overwrite the deployed config on subsequent upgrades.
+  mkdirSync(join(privateBackend, 'config'), { recursive: true })
+  cpSync(join(root, 'backend/config/uploads.json'), join(privateBackend, 'config/uploads.json'))
 
   // Runtime config/, storage/ and vendor/ are intentionally NOT part of the
   // generated package. They must survive upgrades on the actual server.
   console.log('Deployment files staged at deployment-package/')
   console.log('Upload www/ to the public web root and testbraid-backend/ to the private backend.')
   console.log('Merge files only: do not delete existing server config/, storage/ or vendor/.')
+  console.log('Install config/uploads.json on first deployment only; never overwrite the live file on upgrades.')
 } catch (error) {
   console.error(`Deployment packaging failed: ${error.message}`)
   process.exitCode = 1
