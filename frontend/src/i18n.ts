@@ -226,7 +226,7 @@ export const i18n = createI18n({
       mediaDeleteConfirm: 'Permanently delete "{name}"? This cannot be undone.',
       mediaDeleteInUse: 'The file is now used by a test and cannot be deleted.',
       mediaDeleteFailed: 'The file could not be deleted.',
-      mediaLimitsUnavailable: 'Upload limits could not be loaded. Verify the server's private config/uploads.json.',
+      mediaLimitsUnavailable: 'Upload limits could not be loaded. Verify the private server config/uploads.json.',
       mediaLimitsMismatch: 'Upload limits exceed PHP hosting restrictions.',
       mediaPhpLimits: 'PHP upload_max_filesize: {upload}; post_max_size: {post}.',
       mediaLimitsReduced: '{kind}: configured {configured} MiB, effective {effective} MiB.',
