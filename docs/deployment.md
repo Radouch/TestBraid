@@ -278,6 +278,30 @@ A filesystem plus Apache cannot make publishing several static media files and o
 
 ---
 
+## 6D. Media library management and per-host upload limits (Issue #17)
+
+- For initial deployment, copy the packaged private uploads.example.json to
+  config/uploads.json via SFTP (10 MiB images / 64 MiB videos). This same
+  example is tracked as backend/uploads.example.json in the source repository;
+  backend/config/uploads.json is Git-ignored and operator-owned. The package
+  intentionally does not contain runtime config/. On every later upgrade,
+  preserve the operator's file; never replace it with the staged example.
+- Change maxImageSizeMiB and maxVideoSizeMiB through SFTP as needed. The
+  backend and FilePond get their limits from that single file at runtime,
+  so **no frontend rebuild** is needed for a limit change.
+- PHP's upload_max_filesize and post_max_size still apply. The authenticated
+  uploader warns about a mismatch and uses lower effective limits, reserving
+  1 MiB of multipart headroom for post_max_size. Webserver/proxy limits
+  cannot be reliably detected.
+- The media library allows manually deleting files unused in **every**
+  draft and published test. A newly referenced file is rejected by the
+  backend even if the list was loaded earlier. No background cleanup job.
+- For local verification, run composer run test:upload-limits and composer
+  run test:media-http. Back up private config/ and storage/ before deploying.
+  No access to PHP server logs is required.
+
+---
+
 ## 7. Test the web deployment (initial foundation smoke test passed)
 
 Visit:

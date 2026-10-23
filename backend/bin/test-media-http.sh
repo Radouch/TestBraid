@@ -5,18 +5,30 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TEMP="$(mktemp -d)"
 HOST="http://127.0.0.1:18576"
+MEDIA_DIR="$ROOT/public/media"
 SERVER_PID=""
+CREATED_MEDIA_DIR=0
+CREATED_HTACCESS=0
+[[ -d "$MEDIA_DIR" ]] || { mkdir "$MEDIA_DIR"; CREATED_MEDIA_DIR=1; }
+[[ -e "$MEDIA_DIR/.htaccess" ]] || { cp "$ROOT/../deploy/www/media/.htaccess" "$MEDIA_DIR/.htaccess"; CREATED_HTACCESS=1; }
 cleanup() {
   if [[ -n "$SERVER_PID" ]]; then
     kill "$SERVER_PID" 2>/dev/null || true
     wait "$SERVER_PID" 2>/dev/null || true
   fi
+  if (( CREATED_HTACCESS )); then rm -f "$MEDIA_DIR/.htaccess"; fi
+  if (( CREATED_MEDIA_DIR )); then rmdir "$MEDIA_DIR" || true; fi
   rm -rf "$TEMP"
 }
 trap cleanup EXIT
 trap 'echo "Media HTTP integration failed at line $LINENO: $BASH_COMMAND" >&2; tail -30 "$TEMP/server.log" >&2' ERR
 
+# Exercise the policy parser and PHP mismatch logic in the existing CI media job.
+php "$ROOT/bin/test-upload-limits.php"
+
 mkdir -p "$TEMP/config"
+cp "$ROOT/uploads.example.json" "$TEMP/config/uploads.json"
+export TESTBRAID_UPLOAD_CONFIG_FILE="$TEMP/config/uploads.json"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"
 export TESTBRAID_STORAGE_DIR="$TEMP/private-storage"
@@ -58,6 +70,8 @@ check() {
 }
 
 expect 401 "$HOST/api/admin/media"
+expect 401 "$HOST/api/admin/media/limits"
+expect 401 "$HOST/api/admin/media/11111111-1111-4111-8111-111111111111" -X DELETE
 check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/media" -F "file=@$TEMP/blue.png"
 check '.error.code == "AUTH_REQUIRED"'
@@ -69,6 +83,11 @@ expect 200 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" -d '{"username":"alice","password":"Only-A-Test-Password-456"}'
 CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
 
+expect 200 "$HOST/api/admin/media/limits"
+check '.imageMaxBytes > 0 and .videoMaxBytes > 0
+  and .imageMaxBytes <= .configuredImageMaxBytes
+  and .videoMaxBytes <= .configuredVideoMaxBytes
+  and (.warnings | type == "array")'
 expect 403 "$HOST/api/admin/media" -F "file=@$TEMP/blue.png"
 check '.error.code == "INVALID_CSRF"'
 expect 400 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" -H "Content-Type: application/json" -d '{}'
@@ -130,6 +149,55 @@ check --arg PNG "$PNG_ID" --arg MP4 "$MP4_ID" --arg WEBM "$WEBM_ID" '
   and ([.media[].usedIn[]] | length) == 0'
 expect 200 "$HOST/api/admin/media/$WEBM_ID/preview"
 cmp "$TEMP/body" "$TEMP/clip.webm"
+
+# An unused private upload can be removed, but not while referenced by any
+# draft (including another copy of the draft).
+expect 403 "$HOST/api/admin/media/$PNG_ID" -X DELETE
+check '.error.code == "INVALID_CSRF"'
+expect 400 "$HOST/api/admin/media/not-an-id" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "INVALID_ID"'
+expect 404 "$HOST/api/admin/media/11111111-1111-4111-8111-111111111111" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "NOT_FOUND"'
+
+expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"name":"Shared media draft"}'
+GROUP="$(jq -r '.id' "$TEMP/body")"
+jq -n --arg group "$GROUP" --arg image "$PNG_ID" '{
+  groupId:$group, language:"en", title:"Referenced image", description:"",
+  questions:[{id:"q1",type:"choice",mode:"single",
+    prompt:[{id:"p1",type:"image",mediaId:$image}],
+    options:[
+      {id:"o1",content:[{id:"b1",type:"text",text:"One"}]},
+      {id:"o2",content:[{id:"b2",type:"text",text:"Two"}]}
+    ],
+    correctOptionIds:["o1"]
+  }]
+}' > "$TEMP/referencing-test.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' --data-binary "@$TEMP/referencing-test.json"
+T1="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$T1/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+T2="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/media"
+check --arg image "$PNG_ID" '[.media[] | select(.id == $image) | .usedIn[]] | length == 2'
+expect 409 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "MEDIA_IN_USE"'
+test -f "$TEMP/private-storage/media-files/$PNG_ID.png"
+expect 200 "$HOST/api/admin/tests/$T1" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 409 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check '.error.code == "MEDIA_IN_USE"'
+expect 200 "$HOST/api/admin/tests/$T2" -X DELETE -H "X-CSRF-Token: $CSRF"
+
+expect 200 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+check --arg id "$PNG_ID" '.deleted == true and .id == $id'
+test ! -e "$TEMP/private-storage/media/$PNG_ID.json"
+test ! -e "$TEMP/private-storage/media-files/$PNG_ID.png"
+expect 404 "$HOST/api/admin/media/$PNG_ID/preview"
+expect 404 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/media/$MP4_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/media/$WEBM_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/media"
+check '.media == []'
 
 expect 200 "$HOST/api/auth/logout" -X POST -H "X-CSRF-Token: $CSRF"
 expect 401 "$HOST/api/admin/media"

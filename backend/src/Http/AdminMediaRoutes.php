@@ -11,6 +11,8 @@ use TestBraid\Storage\BoundedFileStream;
 use TestBraid\Storage\JsonFileRepository;
 use stdClass;
 use TestBraid\Storage\PrivateMediaService;
+use TestBraid\Storage\UploadLimits;
+use TestBraid\Publication\PublicationService;
 use TestBraid\Validation\SchemaValidator;
 
 /**
@@ -54,15 +56,25 @@ final class AdminMediaRoutes
             return JsonResponse::send($response, ['media' => $items]);
         });
 
+        $group->get('/media/limits', function (Request $request, Response $response): Response {
+            try {
+                $limits = UploadLimits::fromBackendRoot($this->backendRoot);
+                return JsonResponse::send($response, $limits->asResponse());
+            } catch (ApiProblem $problem) {
+                return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
+            }
+        });
+
         $group->post('/media', function (Request $request, Response $response): Response {
             try {
+                $limits = UploadLimits::fromBackendRoot($this->backendRoot);
                 $contentType = strtolower($request->getHeaderLine('Content-Type'));
                 if (!str_starts_with($contentType, 'multipart/form-data;')) {
                     throw new ApiProblem(400, 'INVALID_UPLOAD', 'A multipart file upload is required.');
                 }
                 $sizeHeader = $request->getHeaderLine('Content-Length');
                 if ($sizeHeader !== '' && ctype_digit($sizeHeader)
-                    && (float) $sizeHeader > PrivateMediaService::VIDEO_MAX_BYTES + 1048576) {
+                    && (float) $sizeHeader > max($limits->maxBytes('image'), $limits->maxBytes('video')) + 1048576) {
                     throw new ApiProblem(413, 'FILE_TOO_LARGE', 'Request exceeds the upload limit.');
                 }
                 $uploads = $request->getUploadedFiles();
@@ -89,6 +101,15 @@ final class AdminMediaRoutes
                     throw new ApiProblem(404, 'NOT_FOUND', 'Media not found.');
                 }
                 return JsonResponse::send($response, (array) $media);
+            } catch (ApiProblem $problem) {
+                return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
+            }
+        });
+
+        $group->delete('/media/{id}', function (Request $request, Response $response, array $args): Response {
+            try {
+                $publisher = new PublicationService($this->backendRoot);
+                return JsonResponse::send($response, $publisher->deleteUnusedMedia($args['id']));
             } catch (ApiProblem $problem) {
                 return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
             }
