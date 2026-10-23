@@ -39,7 +39,9 @@ final class UploadLimits
         } catch (\JsonException) {
             throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits configuration is invalid JSON.');
         }
-        if (!is_array($data) || array_keys($data) !== ['maxImageSizeMiB', 'maxVideoSizeMiB']) {
+        if (!is_array($data) || count($data) !== 2
+            || !array_key_exists('maxImageSizeMiB', $data)
+            || !array_key_exists('maxVideoSizeMiB', $data)) {
             throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits configuration has invalid fields.');
         }
         foreach ($data as $value) {
