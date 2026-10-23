@@ -23,6 +23,9 @@ cleanup() {
 trap cleanup EXIT
 trap 'echo "Media HTTP integration failed at line $LINENO: $BASH_COMMAND" >&2; tail -30 "$TEMP/server.log" >&2' ERR
 
+# Exercise the policy parser and PHP mismatch logic in the existing CI media job.
+php "$ROOT/bin/test-upload-limits.php"
+
 mkdir -p "$TEMP/config"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"
