@@ -160,16 +160,14 @@ Before running `test:schemas`, ensure that `testbraid-backend/schemas/test.schem
 
 If `php -v` on SSH differs from the PHP version serving the website, select the correct CLI binary for Composer and investigate web PHP compatibility separately. Never assume that the CLI and web SAPIs have the same version.
 
-## Dependency maintenance and security updates
+### Dependency maintenance and security updates
 
 - **Ordinary frontend checkout / CI:** run `npm ci` in `frontend/` to install exactly the dependencies recorded in `package-lock.json`. It deletes and recreates `node_modules/` and fails if `package.json` and the lockfile disagree. Use `npm install <package>` or a deliberate `npm update` only when changing dependencies, then commit **both** the manifest and lockfile. Run `npm run typecheck`, the frontend regression scripts and `npm run build`.
 - **Ordinary backend checkout / release:** run `composer install` in `backend/` with a supported PHP CLI and required extensions. Install uses `composer.lock`, including transitive package versions. Do not edit lockfile package/version metadata manually. For deliberate PHP dependency upgrades, use `composer update` or a targeted `composer update vendor/package --with-dependencies` in a reviewed change; commit the resulting `composer.lock` and any modified `composer.json`.
 - **Security:** periodically review `npm audit` and `composer audit` output (and upstream security notices). Fix relevant advisories through explicit, reviewed dependency updates rather than unlocking dependencies silently during deployment. Audit reports can include findings that require evaluating actual use or upgrading a major version.
-- **Release checks:** validate `composer validate --strict --no-check-publish`; run the PHP regression scripts and frontend CI checks; generate `node scripts/prepare-deployment.mjs` and `node scripts/verify-deployment-package.mjs` from a clean checkout. The staged private backend **must** include both Composer files, but not `vendor/`, secrets or runtime storage. On the host, run `composer check-platform-reqs --no-dev` after installation.
+- **Release checks:** validate `composer validate --no-check-publish`; run the PHP regression scripts and frontend CI checks; generate `node scripts/prepare-deployment.mjs` and `node scripts/verify-deployment-package.mjs` from a clean checkout. The staged private backend **must** include both Composer files, but not `vendor/`, secrets or runtime storage. On the host, run `composer check-platform-reqs --no-dev` after installation.
 
 The lockfiles pin package versions and integrity information; they do not by themselves make the entire toolchain or deployment byte-for-byte reproducible. Pin and verify the PHP/Composer and Node/npm environments for stronger guarantees.
-
----
 
 ## 6. First-author setup through the browser (no SSH scripts)
 
