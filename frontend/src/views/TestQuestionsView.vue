@@ -4,6 +4,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import QuestionEditor from '../components/QuestionEditor.vue'
+import PublishedQuestionView from '../components/PublishedQuestionView.vue'
 import {
   createChoice, createMatching, duplicateQuestion, invalidMediaReference, move, publicationProblems,
   type DraftTest, type Question,
@@ -40,6 +41,9 @@ onUnmounted(() => window.removeEventListener('beforeunload', beforeUnload))
 async function load(): Promise<void> {
   loading.value = true
   error.value = ''
+  test.value = null
+  questions.value = []
+  originalQuestions.value = '[]'
   try {
     const sessionResponse = await fetch(api('auth/session'), {
       credentials: 'same-origin', cache: 'no-store',
@@ -196,6 +200,10 @@ onMounted(() => {
         <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="unpublishAndEdit">
           <AppIcon name="pencil-square" />{{ t('adminUnpublishEdit') }}
         </button>
+      </div>
+      <div v-if="test.status === 'published'" class="mt-3">
+        <PublishedQuestionView v-for="(question, index) in test.questions" :key="question.id"
+          :question="question" :index="index" />
       </div>
       <template v-else>
         <div class="editor-toolbar border rounded bg-body p-2 mb-3">
