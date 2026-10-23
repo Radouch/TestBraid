@@ -281,7 +281,9 @@ A filesystem plus Apache cannot make publishing several static media files and o
 ## 6D. Media library management and per-host upload limits (Issue #17)
 
 - For initial deployment, copy the packaged private uploads.example.json to
-  config/uploads.json via SFTP (10 MiB images / 64 MiB videos). The package
+  config/uploads.json via SFTP (10 MiB images / 64 MiB videos). This same
+  example is tracked as backend/uploads.example.json in the source repository;
+  backend/config/uploads.json is Git-ignored and operator-owned. The package
   intentionally does not contain runtime config/. On every later upgrade,
   preserve the operator's file; never replace it with the staged example.
 - Change maxImageSizeMiB and maxVideoSizeMiB through SFTP as needed. The
