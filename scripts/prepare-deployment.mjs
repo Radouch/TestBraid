@@ -43,7 +43,7 @@ try {
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
-    'backend/config/uploads.json',
+    'backend/uploads.example.json',
     'backend/public/index.php',
     'schemas/test.schema.json',
     'schemas/fixtures/manifest.json',
@@ -67,7 +67,7 @@ try {
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
   // Ship a template outside config/: the deployment audit deliberately
   // rejects runtime directories and upgrades must never overwrite config/.
-  cpSync(join(root, 'backend/config/uploads.json'), join(privateBackend, 'uploads.example.json'))
+  cpSync(join(root, 'backend/uploads.example.json'), join(privateBackend, 'uploads.example.json'))
 
   // Runtime config/, storage/ and vendor/ are intentionally NOT part of the
   // generated package. They must survive upgrades on the actual server.
