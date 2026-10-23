@@ -58,7 +58,13 @@ final class UploadLimits
 
     public static function fromBackendRoot(string $backendRoot): self
     {
-        return new self($backendRoot . '/config/uploads.json');
+        // An explicit path lets isolated tests use disposable configuration
+        // without writing a runtime file into the source checkout.
+        $override = getenv('TESTBRAID_UPLOAD_CONFIG_FILE');
+        $file = is_string($override) && $override !== ''
+            ? $override
+            : $backendRoot . '/config/uploads.json';
+        return new self($file);
     }
 
     /** Return null for the documented unlimited (0) PHP setting. */
