@@ -94,6 +94,7 @@ From the repository root, after building `frontend/dist/`, run:
 
 ```sh
 node scripts/prepare-deployment.mjs
+# On a first installation, use --initial-install to include config/app.json
 ```
 
 This creates an ignored, disposable `deployment-package/` directory with two top-level directories:
@@ -111,7 +112,7 @@ deployment-package/
         └── fixtures/manifest.json
 ```
 
-Upload the **contents** of each directory to the corresponding server directory via SFTP, overwriting matching *code* files only. The package deliberately excludes `config/`, `storage/`, and `vendor/`: **keep those existing server directories and their contents unchanged**. Do not use synchronization with `--delete` or wipe the remote backend. Run Composer on the server as described below. The committed `backend/composer.lock` is required and always included in the private deployment package.
+Upload the **contents** of each directory to the corresponding server directory via SFTP, overwriting matching *code* files only. Ordinary upgrade packages exclude `config/`, `storage/`, and `vendor/`: **keep those existing server directories and their contents unchanged**. The explicitly selected `--initial-install` package includes only the ready-to-use private default `config/app.json` for first-time deployments. Do not use synchronization with `--delete` or wipe the remote backend. Run Composer on the server as described below. The committed `backend/composer.lock` is required and always included in the private deployment package.
 
 The staging command fails if the frontend build or essential schema fixtures are missing; CI verifies the staged paths too. No Composer or database is required on your computer.
 
@@ -280,40 +281,85 @@ A filesystem plus Apache cannot make publishing several static media files and o
 
 ## 6D. Installation branding, version, and upload limits
 
-A new installation uses one operator-owned private configuration file:
+The repository includes a ready-to-use default **private**
+`backend/config/app.json`:
 
-1. Build/stage using `node scripts/prepare-deployment.mjs`; the private
-   `testbraid-backend/app.example.json` is included in the package.
-2. In the *private* `testbraid-backend/` directory (beside `www/`), create
-   `config/` if needed and copy `app.example.json` to `config/app.json`.
-3. Set `site.name` (default: "TestBraid"), optional `site.description`
-   (empty by default), and `uploads.maxImageSizeMiB` and
-   `uploads.maxVideoSizeMiB` (default: 10/64 MiB). Do not put this file in
-   `www/`.
-4. Refresh the application. The header and browser tab use the chosen name;
-   the description is displayed directly underneath the name. The footer
-   identifies TestBraid and the release version, with a sign-in/admin link.
+```json
+{
+  "site": {
+    "name": { "cs": "TestBraid", "en": "TestBraid" },
+    "description": {
+      "cs": "Aplikace pro tvorbu a vyplňování multimediálních testů se samostatným vyhodnocením odpovědí.",
+      "en": "An application for creating and taking multimedia self-assessment tests with immediate feedback."
+    }
+  },
+  "uploads": {
+    "maxImageSizeMiB": 10,
+    "maxVideoSizeMiB": 64
+  }
+}
+```
 
-Only public branding is returned by unauthenticated `GET /api/public/config`.
-Upload limits are still returned to authors via
-`GET /api/admin/media/limits`. Changes to app.json are read at runtime and
-do not require rebuilding frontend assets. The displayed release version is
-compiled from `frontend/package.json`; release tags use `vMAJOR.MINOR.PATCH`
-and should match that value. The first pre-release development version is
-`0.1.0`; do not label a build `1.0.0` before a stable release.
+`site.name` and `site.description` may each be either a plain string (same
+text in all languages), or a nonempty map of locale codes to translated text.
+For example, `"name": "TestBraid"` remains valid. Locale maps can also
+include languages not yet supported by the interface. When a translation is
+missing, the frontend uses English, then Czech, then the first available
+translation. A deliberately empty description hides the introduction for
+that language. Changing interface language updates the header, browser tab,
+and home-page introduction without a reload.
 
-**Existing installs:** if `config/app.json` does not exist, the old
-`config/uploads.json` is still honored and the displayed site name remains
-"TestBraid". When migrating, put the *current* limits from uploads.json
-inside the new app.json `uploads` object before uploading it. app.json
-takes precedence immediately. Back up config/ before migration and leave
-it untouched on subsequent upgrades; the deployment package will never
-overwrite runtime config files. A malformed app.json returns a configuration
-error and blocks uploads rather than silently falling back to old limits.
+- **Header and browser tab:** installation name only, in the selected language.
+- **Home page:** installation description as the introductory lead paragraph
+  above the public lesson catalog (no description elsewhere).
+- **Footer:** Powered by TestBraid, release version from `frontend/package.json`,
+  and sign-in/author link. No link to the private repository.
+
+Only `site` is returned from unauthenticated `GET /api/public/config`;
+upload limits remain available to authors through
+`GET /api/admin/media/limits`. Configuration changes take effect on the
+next page load; rebuilding the frontend is unnecessary. Limits are positive
+integer MiB values (1–2048) and still respect PHP/webserver ceilings.
+
+### Packaging for first installs versus upgrades
+
+The packaging command makes the distinction deliberately explicit:
+
+```sh
+# New hosting installation only: includes testbraid-backend/config/app.json
+node scripts/prepare-deployment.mjs --initial-install
+
+# Every subsequent upgrade: excludes config/ completely
+node scripts/prepare-deployment.mjs
+```
+
+For a **new installation**, upload the staged `www/` and
+`testbraid-backend/` into their public and private host directories. The
+`config/app.json` default is already at the correct location: **no copying
+or renaming of an example file is needed**. The source file is tracked in
+Git because it contains only public defaults, not secrets.
+
+**Never use `--initial-install` on an existing host.** It would stage a
+default app.json which a blind SFTP copy could overwrite onto a locally
+customized one. Always back up and preserve the host's entire
+`testbraid-backend/config/` (and `storage/`) on upgrades; never use a
+remote sync with `--delete`. The upgrade-safe package stages no runtime
+config directory. The package audit rejects author files, other private
+settings, and non-default staged app.json.
+
+**Existing installs:** `config/uploads.json` is still supported if
+`config/app.json` is absent. To migrate, edit/create app.json using the
+example above **with the actual limits currently in uploads.json**, rather
+than reverting them to 10/64 MiB. Once the new file is present it takes
+precedence. Existing app.json files with string name/description are also
+supported unchanged. If the new app.json is malformed, uploads fail closed
+instead of reverting to old limits.
 
 For local verification run `composer run test:upload-limits` and
-`composer run test:media-http`. PHP upload_max_filesize, post_max_size,
-Apache/proxy restrictions and host storage limits still apply.
+`composer run test:media-http`; use `npm run test:branding` for the
+frontend locale fallback checks. Release tags should match the version
+compiled from `frontend/package.json` (initial development version
+`0.1.0`; stable `1.0.0` is reserved for the first stable release).
 
 ## 7. Test the web deployment (initial foundation smoke test passed)
 

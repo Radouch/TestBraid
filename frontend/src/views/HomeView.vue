@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AppIcon from '../components/AppIcon.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { localizeSiteText, siteIdentity } from '../site-identity'
 
 interface PublicTestSummary {
   id: string
@@ -14,7 +15,8 @@ interface PublicLesson {
   tests: PublicTestSummary[]
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const introduction = computed(() => localizeSiteText(siteIdentity.value.description, locale.value))
 const groups = ref<PublicLesson[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -47,7 +49,7 @@ onMounted(() => void loadCatalog())
 <template>
   <section aria-labelledby="public-catalog-heading">
     <h1 id="public-catalog-heading" class="h2">{{ t('publicCatalogHeading') }}</h1>
-    <p class="text-secondary">{{ t('publicCatalogIntroduction') }}</p>
+    <p v-if="introduction" class="lead text-secondary mb-4">{{ introduction }}</p>
     <p v-if="loading" role="status">{{ t('publicCatalogLoading') }}</p>
     <div v-else-if="error" class="alert alert-warning" role="alert">
       <p class="mb-2">{{ error }}</p>

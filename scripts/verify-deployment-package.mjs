@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url'
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const root = resolve(process.argv[2] ?? join(project, 'deployment-package'))
 const web = join(root, 'www')
+const installationConfigDirectory = join(root, 'testbraid-backend/config')
 
 function fail(reason) { throw new Error('Deployment package rejected: ' + reason) }
 function file(path) {
@@ -30,7 +31,10 @@ try {
       const stat = lstatSync(path)
       if (stat.isSymbolicLink()) fail('symlink at ' + relative(root, path))
       if (stat.isDirectory()) {
-        if (['.git', 'node_modules', 'config', 'storage', 'vendor'].includes(entry)) {
+        // Only the initial-install package may have the single reviewed
+        // default config/app.json, never author secrets or runtime settings.
+        if (['.git', 'node_modules', 'storage', 'vendor'].includes(entry)
+          || (entry === 'config' && path !== installationConfigDirectory)) {
           fail('runtime or development directory: ' + relative(root, path))
         }
         walk(path)
@@ -50,7 +54,6 @@ try {
     'testbraid-backend/public/index.php',
     'testbraid-backend/composer.json',
     'testbraid-backend/composer.lock',
-    'testbraid-backend/app.example.json',
     'testbraid-backend/src/Http/EnvironmentDiagnostics.php',
     'testbraid-backend/src/Publication/PublicationService.php',
     'testbraid-backend/src/Storage/JsonFileRepository.php',
@@ -61,7 +64,6 @@ try {
   ]) file(join(root, required))
 
   for (const forbidden of [
-    'testbraid-backend/config',
     'testbraid-backend/storage',
     'testbraid-backend/vendor',
     'www/config',
@@ -71,6 +73,22 @@ try {
     'www/composer.json',
     'www/phpinfo.php',
   ]) absent(join(root, forbidden))
+
+  // A normal upgrade stages no config. An explicit initial install stages
+  // exactly the versioned, non-secret default; reject anything else.
+  if (existsSync(installationConfigDirectory)) {
+    const entries = readdirSync(installationConfigDirectory)
+    if (entries.length !== 1 || entries[0] !== 'app.json') {
+      fail('initial configuration must contain only app.json')
+    }
+    const staged = join(installationConfigDirectory, 'app.json')
+    file(staged)
+    if (readFileSync(staged, 'utf8') !== readFileSync(join(project, 'backend/config/app.json'), 'utf8')) {
+      fail('staged app.json differs from the versioned first-install default')
+    }
+    const settings = JSON.parse(readFileSync(staged, 'utf8'))
+    if (!settings.site || !settings.uploads) fail('initial configuration is missing required sections')
+  }
 
   // The media directory in the release must not contain uploaded files.
   const stagedMedia = readdirSync(join(web, 'media'))
@@ -100,7 +118,7 @@ try {
 
   const index = readFileSync(join(web, 'index.html'), 'utf8').toLowerCase()
   if (!index.includes('<html')) fail('frontend entry is not an HTML build')
-  console.log('PASS: deployment package contains code, schemas and deny policies without secrets or runtime files')
+  console.log('PASS: deployment package contains code, schemas and deny policies without runtime secrets')
 } catch (error) {
   console.error(error.message)
   process.exitCode = 1

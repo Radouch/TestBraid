@@ -55,12 +55,26 @@ try {
     $site = \TestBraid\Config\InstallationConfig::fromFile($path)->site();
     check($site['name'] === 'Learning Center' && $site['description'] === 'Self-assessment tests', 'Wrong public branding.');
 
+    // Maps are exposed unchanged to the frontend; legacy string fields also work.
+    file_put_contents($path, '{"site":{"name":{"cs":"Český název","en":"English title"},"description":{"cs":"Český perex","en":"English intro"}},"uploads":{"maxImageSizeMiB":12,"maxVideoSizeMiB":80}}');
+    $translations = \TestBraid\Config\InstallationConfig::fromFile($path)->site();
+    check($translations['name']['cs'] === 'Český název' && $translations['name']['en'] === 'English title',
+        'Multilingual site name is incorrect.');
+    check($translations['description']['cs'] === 'Český perex', 'Multilingual introduction is incorrect.');
+    check((new UploadLimits($path, '256M', '256M', true))->asResponse()['configuredImageMaxBytes'] === 12 * 1048576,
+        'Multilingual config must preserve upload limits.');
+
     // Invalid branding must not be accepted along with otherwise valid limits.
     foreach ([
         '{"site":{"name":"","description":""},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
         '{"site":{"name":"Test","description":42},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
         '{"site":{"name":"Test","description":""},"uploads":{"maxImageSizeMiB":0,"maxVideoSizeMiB":64}}',
         '{"site":{"name":"Test","description":"","extra":1},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
+        '{"site":{"name":{},"description":""},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
+        '{"site":{"name":[],"description":""},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
+        '{"site":{"name":{"xx":""},"description":""},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
+        '{"site":{"name":{"invalid_locale_key":"Test"},"description":""},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
+        '{"site":{"name":{"cs":123},"description":""},"uploads":{"maxImageSizeMiB":10,"maxVideoSizeMiB":64}}',
     ] as $invalidApp) {
         file_put_contents($path, $invalidApp);
         try {
@@ -76,7 +90,7 @@ try {
     mkdir($directory . '/config', 0700, true);
     try {
         file_put_contents($directory . '/config/uploads.json', '{"maxImageSizeMiB":25,"maxVideoSizeMiB":100}');
-        check(\TestBraid\Config\InstallationConfig::publicSite($directory)['name'] === 'TestBraid',
+        check(\TestBraid\Config\InstallationConfig::publicSite($directory)['name']['en'] === 'TestBraid',
             'Legacy installation lost its default branding.');
         $legacy = UploadLimits::fromBackendRoot($directory);
         check($legacy->asResponse()['configuredImageMaxBytes'] === 25 * 1048576, 'Legacy upload limits were not preserved.');

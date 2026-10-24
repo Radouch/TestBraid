@@ -12,6 +12,12 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const output = join(root, 'deployment-package')
+const args = process.argv.slice(2)
+if (args.some(arg => arg !== '--initial-install') || args.length > 1) {
+  console.error('Usage: node scripts/prepare-deployment.mjs [--initial-install]')
+  process.exit(1)
+}
+const initialInstall = args.includes('--initial-install')
 
 function requireFile(relativePath) {
   const absolute = join(root, relativePath)
@@ -43,7 +49,7 @@ try {
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
-    'backend/app.example.json',
+    'backend/config/app.json',
     'backend/public/index.php',
     'schemas/test.schema.json',
     'schemas/fixtures/manifest.json',
@@ -65,16 +71,21 @@ try {
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   // Release installations must use the reviewed Composer dependency versions.
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
-  // Keep the same relative location as the one versioned source example.
-  // The audit rejects runtime config/, which upgrades must never overwrite.
-  cpSync(join(root, 'backend/app.example.json'), join(privateBackend, 'app.example.json'))
+  // Only an explicitly requested FIRST installation stages an editable default.
+  // Normal upgrades must never include config/, because blindly merging an
+  // archive over a live host can overwrite operator-owned settings.
+  if (initialInstall) {
+    const configDirectory = join(privateBackend, 'config')
+    mkdirSync(configDirectory, { recursive: true })
+    cpSync(join(root, 'backend/config/app.json'), join(configDirectory, 'app.json'))
+  }
 
-  // Runtime config/, storage/ and vendor/ are intentionally NOT part of the
-  // generated package. They must survive upgrades on the actual server.
   console.log('Deployment files staged at deployment-package/')
   console.log('Upload www/ to the public web root and testbraid-backend/ to the private backend.')
   console.log('Merge files only: do not delete existing server config/, storage/ or vendor/.')
-  console.log('First install: copy app.example.json to private config/app.json; migrate existing upload limits before switching, and preserve config/ on upgrades.')
+  console.log(initialInstall
+    ? 'Initial install package: includes private config/app.json. Use only on a NEW host.'
+    : 'Upgrade-safe package: no config/ is included. For a NEW host, regenerate with --initial-install.')
 } catch (error) {
   console.error(`Deployment packaging failed: ${error.message}`)
   process.exitCode = 1

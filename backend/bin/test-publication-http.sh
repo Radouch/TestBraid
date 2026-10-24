@@ -27,7 +27,7 @@ trap cleanup EXIT
 trap 'echo "Publication test failed at line $LINENO: $BASH_COMMAND" >&2; tail -35 "$TEMP/server.log" >&2' ERR
 
 mkdir -p "$TEMP/config"
-cp "$ROOT/app.example.json" "$TEMP/config/app.json"
+cp "$ROOT/config/app.json" "$TEMP/config/app.json"
 export TESTBRAID_APP_CONFIG_FILE="$TEMP/config/app.json"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"

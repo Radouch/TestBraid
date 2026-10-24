@@ -6,6 +6,7 @@ import { authorSession, sessionChecked, refreshAuthorSession } from './auth'
 import { resolveUiLocale, saveUiLocale, type UiLocale } from './ui-locale'
 import { navigationSection } from './navigation'
 import { APP_VERSION } from './version'
+import { loadSiteIdentity, localizeSiteText, siteIdentity } from './site-identity'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,28 +14,10 @@ const { locale, t } = useI18n()
 const signingOut = ref(false)
 const authError = ref('')
 const activeSection = computed(() => navigationSection(route.path))
-const siteName = ref('TestBraid')
-const siteDescription = ref('')
+const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
 const appVersion = APP_VERSION
 
 watch(siteName, (name) => { document.title = name }, { immediate: true })
-
-async function loadSite(): Promise<void> {
-  try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/public/config', {
-      credentials: 'omit',
-      cache: 'no-store',
-    })
-    if (!response.ok) return
-    const payload = await response.json() as { site?: { name?: unknown; description?: unknown } }
-    if (typeof payload.site?.name === 'string' && payload.site.name.trim()) {
-      siteName.value = payload.site.name
-      siteDescription.value = typeof payload.site.description === 'string' ? payload.site.description : ''
-    }
-  } catch {
-    // Keep the default brand when the API is unavailable.
-  }
-}
 
 watch(() => route.query.lang, (value) => {
   locale.value = resolveUiLocale(value)
@@ -75,7 +58,7 @@ async function signOut(): Promise<void> {
 
 onMounted(() => {
   void refreshAuthorSession()
-  void loadSite()
+  void loadSiteIdentity()
 })
 watch(() => route.path, () => void refreshAuthorSession())
 </script>
@@ -83,10 +66,7 @@ watch(() => route.path, () => void refreshAuthorSession())
 <template>
   <div class="container py-4 d-flex flex-column min-vh-100">
     <header class="d-flex justify-content-between align-items-center flex-wrap gap-3 border-bottom pb-3 mb-4">
-      <div class="d-flex flex-column">
-        <RouterLink to="/" class="fs-4 text-decoration-none text-body fw-semibold">{{ siteName }}</RouterLink>
-        <p v-if="siteDescription" class="text-secondary small mb-0">{{ siteDescription }}</p>
-      </div>
+      <RouterLink to="/" class="fs-4 text-decoration-none text-body fw-semibold">{{ siteName }}</RouterLink>
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <nav class="d-flex gap-3" aria-label="Main navigation">
           <RouterLink to="/" class="text-decoration-none pb-1"
