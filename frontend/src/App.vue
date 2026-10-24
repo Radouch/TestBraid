@@ -5,6 +5,8 @@ import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
 import { authorSession, sessionChecked, refreshAuthorSession } from './auth'
 import { resolveUiLocale, saveUiLocale, type UiLocale } from './ui-locale'
 import { navigationSection } from './navigation'
+import { APP_VERSION } from './version'
+import { loadSiteIdentity, localizeSiteText, siteIdentity } from './site-identity'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +14,10 @@ const { locale, t } = useI18n()
 const signingOut = ref(false)
 const authError = ref('')
 const activeSection = computed(() => navigationSection(route.path))
+const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
+const appVersion = APP_VERSION
+
+watch(siteName, (name) => { document.title = name }, { immediate: true })
 
 watch(() => route.query.lang, (value) => {
   locale.value = resolveUiLocale(value)
@@ -50,14 +56,17 @@ async function signOut(): Promise<void> {
   }
 }
 
-onMounted(() => void refreshAuthorSession())
+onMounted(() => {
+  void refreshAuthorSession()
+  void loadSiteIdentity()
+})
 watch(() => route.path, () => void refreshAuthorSession())
 </script>
 
 <template>
   <div class="container py-4 d-flex flex-column min-vh-100">
     <header class="d-flex justify-content-between align-items-center flex-wrap gap-3 border-bottom pb-3 mb-4">
-      <RouterLink to="/" class="fs-4 text-decoration-none text-body fw-semibold">{{ t('title') }}</RouterLink>
+      <RouterLink to="/" class="fs-4 text-decoration-none text-body fw-semibold">{{ siteName }}</RouterLink>
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <nav class="d-flex gap-3" aria-label="Main navigation">
           <RouterLink to="/" class="text-decoration-none pb-1"
@@ -85,9 +94,10 @@ watch(() => route.path, () => void refreshAuthorSession())
     </header>
     <p v-if="authError" class="alert alert-danger" role="alert">{{ authError }}</p>
     <main class="flex-grow-1"><RouterView /></main>
-    <footer class="border-top mt-4 pt-3 text-end">
-      <RouterLink v-if="sessionChecked && !authorSession?.authenticated" to="/admin">
-        {{ t('signIn') }}
+    <footer class="border-top mt-4 pt-3 d-flex justify-content-between align-items-center flex-wrap gap-2 small text-secondary">
+      <span>Powered by TestBraid · {{ t('version') }} {{ appVersion }}</span>
+      <RouterLink v-if="sessionChecked" to="/admin">
+        {{ authorSession?.authenticated ? t('author') : t('signIn') }}
       </RouterLink>
     </footer>
   </div>

@@ -34,6 +34,9 @@ jobs:
       - name: Navigation and UI language URL regression
         run: npm run test:navigation
         working-directory: frontend
+      - name: Multilingual installation branding regression
+        run: npm run test:branding
+        working-directory: frontend
       - name: Build
         run: npm run build
         working-directory: frontend
@@ -46,10 +49,18 @@ jobs:
           test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
           test -f deployment-package/testbraid-backend/.htaccess
+          test ! -e deployment-package/testbraid-backend/config
           test ! -e deployment-package/testbraid-backend/config/authors.json
           test ! -e deployment-package/testbraid-backend/vendor
-      - name: Audit complete SFTP deployment package
+      - name: Audit upgrade-safe SFTP deployment package
         run: node scripts/verify-deployment-package.mjs
+      - name: Stage and audit a fresh installation with default config
+        run: |
+          node scripts/prepare-deployment.mjs --initial-install
+          test -f deployment-package/testbraid-backend/config/app.json
+          test ! -e deployment-package/testbraid-backend/config/authors.json
+          cmp backend/config/app.json deployment-package/testbraid-backend/config/app.json
+          node scripts/verify-deployment-package.mjs
 
   backend:
     name: PHP / Opis

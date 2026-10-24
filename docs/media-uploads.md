@@ -68,40 +68,49 @@ PoC-A 07 (publication) will need to securely expose only media referenced by pub
 
 ## Media library operations and operator-managed limits (Issue #17)
 
-The application limits come from **one private runtime file**:
-testbraid-backend/config/uploads.json on a deployed host
-(the versioned source template is backend/uploads.example.json):
+The operator configures the private runtime file
+`testbraid-backend/config/app.json`, based on the committed source default
+`backend/config/app.json`:
 
 ```json
 {
-  "maxImageSizeMiB": 10,
-  "maxVideoSizeMiB": 64
+  "site": {
+    "name": { "cs": "TestBraid", "en": "TestBraid" },
+    "description": {
+      "cs": "Aplikace pro tvorbu a vyplňování multimediálních testů se samostatným vyhodnocením odpovědí.",
+      "en": "An application for creating and taking multimedia self-assessment tests with immediate feedback."
+    }
+  },
+  "uploads": {
+    "maxImageSizeMiB": 10,
+    "maxVideoSizeMiB": 64
+  }
 }
 ```
 
-Edit these positive integer MiB limits (1–2048) using SFTP. No frontend
-rebuild or PHP deployment is needed; the backend re-reads the file on each
-upload and on GET /api/admin/media/limits. The author-only endpoint returns
-configured and effective sizes after applying PHP upload_max_filesize and
-post_max_size. For multipart requests, 1 MiB is reserved below post_max_size.
-If PHP disables uploads, all effective limits are zero. The media uploader
-displays localized warnings for any reduced limit and applies effective
-per-kind limits before uploading. Invalid/missing JSON disables uploads
-rather than silently falling back to hardcoded limits. Apache, proxies, disk
-quota and timeouts can impose additional constraints PHP cannot report.
+`site.name` (shown in header and browser title) and
+`site.description` (shown only as the home-page lead) may each be
+a language-neutral string or a locale map. The active interface language
+selects the translation; missing entries fall back to English, Czech, then
+the first available entry. Only `site` is exposed through public
+`GET /api/public/config`; upload settings are not returned there.
 
-**Deployment:** scripts/prepare-deployment.mjs copies the only versioned template,
-`backend/uploads.example.json`, to `testbraid-backend/uploads.example.json`
-outside the runtime config directory.
-For initial installation or an upgrade that lacks the live file, copy this
-example to `testbraid-backend/config/uploads.json` over SFTP (create config/
-if necessary). After
-that, **never overwrite the host's config/uploads.json** when copying new
-deployment packages. Preserve the entire private config/ directory. The
-packaged copy is a first-installation seed, not the live source of truth.
-The live `backend/config/uploads.json` is ignored by Git. Tests load their
-own disposable copy using `TESTBRAID_UPLOAD_CONFIG_FILE`; this environment
-variable selects a configuration file, not an independent set of limits.
+Upload limits are private, positive integer MiB values (1–2048). The
+backend reads them on requests; PHP upload_max_filesize and post_max_size
+apply, with a 1 MiB multipart margin. The author-only
+`GET /api/admin/media/limits` reports configured/effective limits and
+warnings. Invalid config fails closed, instead of falling back to
+unrestricted uploads.
+
+For a **new installation only**, use
+`node scripts/prepare-deployment.mjs --initial-install` to stage
+`testbraid-backend/config/app.json` already in place. For every
+**upgrade**, use `node scripts/prepare-deployment.mjs` without the flag,
+so that no `config/` directory is staged. Never overwrite existing
+host-side settings. Existing installations with only
+`config/uploads.json` continue to use that file until app.json is
+created. Copy the current upload limits into the new file during migration.
+Old app.json files with string site fields remain compatible.
 
 - GET /api/admin/media/limits: authenticated effective policy and warnings.
 - DELETE /api/admin/media/{id}: authenticated + CSRF; unreferenced media only.

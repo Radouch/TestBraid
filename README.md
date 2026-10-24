@@ -17,6 +17,22 @@ The project is **under active PoC-A development**. The Vue/Slim foundation passe
 
 Randomized test generation from question banks is a **future feature**, not part of the initial delivery.
 
+## Self-hosted installation identity
+
+Each installation can set its own **multilingual** name and short home-page
+introduction in the private `testbraid-backend/config/app.json` file. The
+repository includes `backend/config/app.json` with Czech and English
+defaults; simple language-independent strings remain supported. Upload
+limits share the same configuration. First-time deployment packages include
+the ready-to-use file with `--initial-install`; normal upgrade packages
+**exclude all config/** to preserve local settings. Existing
+`config/uploads.json` installations remain compatible until their
+limits are migrated. A standard footer identifies **TestBraid** and shows its
+build version (currently `0.1.0`), alongside the author sign-in link.
+Release tags use `vMAJOR.MINOR.PATCH`; the source repository is not linked
+from the public interface while it remains private.
+See [deployment details](docs/deployment.md#6d-installation-branding-version-and-upload-limits).
+
 ## Documentation
 
 - [Functional specification](docs/functional-specification.md) — agreed requirements, priorities and open questions.
@@ -38,7 +54,7 @@ Project documentation and source code will be primarily in English; see [AGENTS.
 
 ## Initial developer scaffold
 
-See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. After building the Vue frontend, run `node scripts/prepare-deployment.mjs` from the repository root to create the complete public/private SFTP deployment tree in `deployment-package/`. This copies the canonical root `schemas/` (including `fixtures/`) into the private deployed backend without moving it in source control; server `config/`, `storage/` and `vendor/` are deliberately excluded. The original deployed scaffold exposes `GET /api/health`. Existing functionality includes validation, author authentication, private persistence and media publication. The test editor and learner runner remain PoC-B work.
+See [deployment guide](docs/deployment.md) for a frontend-only local build and installation of PHP dependencies using Composer on the shared host. A local Composer installation is optional. After building the Vue frontend, run `node scripts/prepare-deployment.mjs` from the repository root to create the upgrade-safe public/private SFTP deployment tree in `deployment-package/`. Use `--initial-install` on a new server to include the default private `config/app.json`. This copies the canonical root `schemas/` (including `fixtures/`) into the private deployed backend without moving it in source control; server `config/` (on upgrades), `storage/` and `vendor/` are deliberately excluded. The original deployed scaffold exposes `GET /api/health`. Existing functionality includes validation, author authentication, private persistence and media publication. The test editor and learner runner remain PoC-B work.
 
 ## Schema fixtures
 

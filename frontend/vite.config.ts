@@ -1,8 +1,12 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+const { version } = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')) as { version: string }
+
 export default defineConfig({
+  define: { __TESTBRAID_VERSION__: JSON.stringify(version) },
   plugins: [vue()],
   server: {
     // The shared canonical JSON schemas are next to frontend/, not inside it.

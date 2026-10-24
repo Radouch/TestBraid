@@ -27,8 +27,8 @@ trap 'echo "Media HTTP integration failed at line $LINENO: $BASH_COMMAND" >&2; t
 php "$ROOT/bin/test-upload-limits.php"
 
 mkdir -p "$TEMP/config"
-cp "$ROOT/uploads.example.json" "$TEMP/config/uploads.json"
-export TESTBRAID_UPLOAD_CONFIG_FILE="$TEMP/config/uploads.json"
+cp "$ROOT/config/app.json" "$TEMP/config/app.json"
+export TESTBRAID_APP_CONFIG_FILE="$TEMP/config/app.json"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"
 export TESTBRAID_STORAGE_DIR="$TEMP/private-storage"
@@ -69,6 +69,15 @@ check() {
   fi
 }
 
+expect 200 "$HOST/api/public/config"
+check '.site.name == {"cs":"TestBraid","en":"TestBraid"} and (.site.description.cs | type == "string") and (.site.description.en | type == "string") and (.uploads == null)'
+# Public translations update immediately; the API must not expose upload limits.
+cat > "$TEMP/config/app.json" <<'JSON'
+{"site":{"name":{"cs":"Výukové testy","en":"Learning tests"},"description":{"cs":"Procvičování","en":"Practice"}},"uploads":{"maxImageSizeMiB":12,"maxVideoSizeMiB":64}}
+JSON
+expect 200 "$HOST/api/public/config"
+check '.site.name.cs == "Výukové testy" and .site.name.en == "Learning tests" and .site.description.cs == "Procvičování" and (.uploads == null)'
+# The author-only upload policy must use the same private file.
 expect 401 "$HOST/api/admin/media"
 expect 401 "$HOST/api/admin/media/limits"
 expect 401 "$HOST/api/admin/media/11111111-1111-4111-8111-111111111111" -X DELETE

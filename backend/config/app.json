@@ -1,0 +1,16 @@
+{
+  "site": {
+    "name": {
+      "cs": "TestBraid",
+      "en": "TestBraid"
+    },
+    "description": {
+      "cs": "Aplikace pro tvorbu a vyplňování multimediálních testů se samostatným vyhodnocením odpovědí.",
+      "en": "An application for creating and taking multimedia self-assessment tests with immediate feedback."
+    }
+  },
+  "uploads": {
+    "maxImageSizeMiB": 10,
+    "maxVideoSizeMiB": 64
+  }
+}

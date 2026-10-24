@@ -12,7 +12,8 @@
     "test:editor": "tsx scripts/test-question-model.ts",
     "test:published": "tsx scripts/test-published-readonly.ts",
     "test:learner": "tsx scripts/test-learner-scoring.ts",
-    "test:navigation": "tsx scripts/test-navigation.ts"
+    "test:navigation": "tsx scripts/test-navigation.ts",
+    "test:branding": "tsx scripts/test-site-identity.ts"
   },
   "dependencies": {
     "ajv": "^8.17.1",
