@@ -30,6 +30,8 @@
   "runnerPreviewLoadError": "Could not load the private test preview.",
   "runnerNotFound": "This test is not available.",
   "runnerPublicLoadError": "The published test could not be loaded.",
+  "runnerBackToCatalog": "Back to test list",
+  "runnerCatalogNavigation": "Return to test list",
   "runnerDraftIncomplete": "This is an incomplete draft. Some answers or content might be missing:",
   "runnerEmptyDraft": "The draft does not contain any questions yet.",
   "runnerQuestion": "Question {index}",

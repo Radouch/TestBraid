@@ -30,6 +30,8 @@
   "runnerPreviewLoadError": "Soukromý náhled testu se nepodařilo načíst.",
   "runnerNotFound": "Tento test není dostupný.",
   "runnerPublicLoadError": "Publikovaný test se nepodařilo načíst.",
+  "runnerBackToCatalog": "Zpět na seznam testů",
+  "runnerCatalogNavigation": "Návrat na seznam testů",
   "runnerDraftIncomplete": "Tento rozpracovaný test není úplný. Mohou v něm chybět odpovědi nebo obsah:",
   "runnerEmptyDraft": "Rozpracovaný test zatím neobsahuje žádnou otázku.",
   "runnerQuestion": "Otázka {index}",
