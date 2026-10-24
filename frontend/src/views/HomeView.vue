@@ -48,8 +48,8 @@ onMounted(() => void loadCatalog())
 
 <template>
   <section aria-labelledby="public-catalog-heading">
-    <h1 id="public-catalog-heading" class="h2">{{ t('publicCatalogHeading') }}</h1>
     <p v-if="introduction" class="lead text-secondary mb-4">{{ introduction }}</p>
+    <h1 id="public-catalog-heading" class="h2">{{ t('publicCatalogHeading') }}</h1>
     <p v-if="loading" role="status">{{ t('publicCatalogLoading') }}</p>
     <div v-else-if="error" class="alert alert-warning" role="alert">
       <p class="mb-2">{{ error }}</p>
