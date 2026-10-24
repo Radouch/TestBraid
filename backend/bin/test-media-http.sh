@@ -191,6 +191,8 @@ expect 200 "$HOST/api/admin/media/$ASSIGNED_ID"
 check --arg group "$GROUP" '.groupId == $group'
 expect 200 "$HOST/api/admin/media/$ASSIGNED_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d '{"groupId":null}'
 check '.groupId == null'
+expect 200 "$HOST/api/admin/media/$ASSIGNED_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\"}"
+check --arg group "$GROUP" '.groupId == $group'
 
 jq -n --arg group "$GROUP" --arg image "$PNG_ID" '{
   groupId:$group, language:"en", title:"Referenced image", description:"",
@@ -208,6 +210,11 @@ expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" \
 T1="$(jq -r '.id' "$TEMP/body")"
 expect 201 "$HOST/api/admin/tests/$T1/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
 T2="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/media"
+check --arg image "$PNG_ID" '[.media[] | select(.id == $image) | .usedIn[]] | length == 2'
+# A referenced asset can belong to any home lesson, regardless of the test.
+expect 200 "$HOST/api/admin/media/$PNG_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\"}"
+check --arg group "$GROUP" '.groupId == $group'
 expect 200 "$HOST/api/admin/media"
 check --arg image "$PNG_ID" '[.media[] | select(.id == $image) | .usedIn[]] | length == 2'
 expect 409 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
