@@ -14,6 +14,7 @@ interface TestRecord {
   groupId: string
   title: string
   description: string
+  showOverallScore?: boolean
   language: string
   status: 'draft' | 'published'
   questions: Question[]
@@ -45,6 +46,7 @@ const selectedTestId = ref('')
 const draftGroupId = ref('')
 const draftTitle = ref('')
 const draftDescription = ref('')
+const draftShowOverallScore = ref(true)
 const draftLanguage = ref('cs')
 
 const filteredTests = computed(() =>
@@ -89,6 +91,7 @@ function resetForm(): void {
   selectedTestId.value = ''
   draftTitle.value = ''
   draftDescription.value = ''
+  draftShowOverallScore.value = true
   draftLanguage.value = 'cs'
   draftGroupId.value = groups.value[0]?.id ?? ''
 }
@@ -237,6 +240,7 @@ function editTest(test: TestRecord): void {
   draftGroupId.value = test.groupId
   draftTitle.value = test.title
   draftDescription.value = test.description
+  draftShowOverallScore.value = test.showOverallScore !== false
   draftLanguage.value = test.language
   error.value = ''
   notice.value = ''
@@ -260,6 +264,7 @@ async function saveDraft(): Promise<void> {
       language: draftLanguage.value,
       title: draftTitle.value.trim(),
       description: draftDescription.value,
+      showOverallScore: draftShowOverallScore.value,
       // Re-submit the existing question array unchanged during metadata edits.
       // Only the future question editor is allowed to change this payload.
       ...(selectedDraft.value ? { questions: selectedDraft.value.questions } : {}),
@@ -561,6 +566,12 @@ onMounted(() => void load())
             <div>
               <label for="draft-description" class="form-label">{{ t('catalogDescription') }}</label>
               <textarea id="draft-description" v-model="draftDescription" class="form-control" rows="3" maxlength="50000" />
+            </div>
+            <div class="form-check">
+              <input id="draft-show-overall-score" v-model="draftShowOverallScore" type="checkbox"
+                class="form-check-input" :disabled="busy" />
+              <label for="draft-show-overall-score" class="form-check-label">{{ t('catalogShowOverallScore') }}</label>
+              <div class="form-text">{{ t('catalogShowOverallScoreHelp') }}</div>
             </div>
             <div>
               <label for="draft-language" class="form-label">{{ t('catalogContentLanguage') }}</label>
