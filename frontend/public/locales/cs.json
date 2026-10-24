@@ -325,5 +325,9 @@
   "authFailed": "Přihlášení se nezdařilo. Zkontrolujte údaje a zkuste to znovu.",
   "tooManyAttempts": "Příliš mnoho neúspěšných pokusů. Zkuste to později.",
   "learnerPlaceholder": "Prohlížeč testů zatím není implementován.",
-  "learnerTest": "ID testu: {id}"
+  "learnerTest": "ID testu: {id}",
+  "mediaHomeLesson": "Lekce média",
+  "mediaAllLessons": "Všechna média (všechny lekce)",
+  "mediaUnassigned": "Nepřiřazená média",
+  "mediaAssignFailed": "Médium se nepodařilo přiřadit k lekci."
 }

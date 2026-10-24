@@ -7,20 +7,29 @@ import AppIcon from './AppIcon.vue'
 import { createBlock, move, uuidPattern, type BlockKind, type ContentBlock } from '../editor/model'
 
 const props = withDefaults(defineProps<{
-  modelValue: ContentBlock[]; csrfToken: string; label: string; hideLabel?: boolean
+  modelValue: ContentBlock[]; csrfToken: string; label: string; hideLabel?: boolean; groupId: string
 }>(), { hideLabel: false })
 const emit = defineEmits<{ 'update:modelValue': [blocks: ContentBlock[]] }>()
 const { t } = useI18n()
 const root = ref<HTMLElement | null>(null)
 const pickerDialog = ref<HTMLDialogElement | null>(null)
-const mediaChoices = ref<Array<{ id: string; kind: 'image' | 'video'; originalName: string }>>([])
+const mediaChoices = ref<Array<{ id: string; kind: 'image' | 'video'; originalName: string; groupId: string | null }>>([])
+const lessons = ref<Array<{ id: string; name: string }>>([])
+const lessonFilter = ref('__all__')
 const pickerError = ref('')
 const pickerLoading = ref(false)
 const pickerKind = ref<'image' | 'video'>('image')
 // Target by stable block ID, never by an index that could change while an
 // upload or library request is pending. New media is inserted only on success.
 const pickerTarget = ref<{ blockId: string } | { beforeId: string | null } | null>(null)
-const matchingMedia = computed(() => mediaChoices.value.filter(item => item.kind === pickerKind.value))
+const matchingMedia = computed(() => mediaChoices.value.filter(item =>
+  item.kind === pickerKind.value &&
+  (lessonFilter.value === '__all__' || (lessonFilter.value === '__unassigned__'
+    ? !item.groupId : item.groupId === lessonFilter.value))
+))
+function lessonName(id: string | null): string {
+  return lessons.value.find(lesson => lesson.id === id)?.name ?? t('mediaUnassigned')
+}
 let libraryRequest: AbortController | undefined
 
 function resizeText(element: HTMLTextAreaElement): void {
@@ -69,15 +78,25 @@ async function openPicker(kind: 'image' | 'video', target: NonNullable<typeof pi
   pickerTarget.value = target
   pickerError.value = ''
   mediaChoices.value = []
+  lessonFilter.value = props.groupId
   pickerLoading.value = true
   pickerDialog.value?.showModal()
   try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/admin/media', {
-      credentials: 'same-origin', cache: 'no-store', signal: request.signal,
-    })
-    if (!response.ok) throw new Error('Unable to load library')
+    const [response, groupsResponse] = await Promise.all([
+      fetch(import.meta.env.BASE_URL + 'api/admin/media', {
+        credentials: 'same-origin', cache: 'no-store', signal: request.signal,
+      }),
+      fetch(import.meta.env.BASE_URL + 'api/admin/groups', {
+        credentials: 'same-origin', cache: 'no-store', signal: request.signal,
+      }),
+    ])
+    if (!response.ok || !groupsResponse.ok) throw new Error('Unable to load library')
     const data = await response.json() as { media: typeof mediaChoices.value }
-    if (!request.signal.aborted) mediaChoices.value = data.media
+    const groups = await groupsResponse.json() as { groups: typeof lessons.value }
+    if (!request.signal.aborted) {
+      mediaChoices.value = data.media
+      lessons.value = groups.groups
+    }
   } catch {
     if (!request.signal.aborted) pickerError.value = t('mediaLibraryUnavailable')
   } finally {
@@ -183,6 +202,12 @@ onUnmounted(() => libraryRequest?.abort())
         <h2 class="h5 mb-0">{{ t('editorSelectMedia_' + pickerKind) }}</h2>
         <button class="btn btn-outline-secondary icon-button" type="button" :aria-label="t('catalogCancel')" :title="t('catalogCancel')" @click="pickerDialog?.close()"><AppIcon name="x-lg" /></button>
       </div>
+      <label for="media-picker-lesson" class="form-label">{{ t('mediaHomeLesson') }}</label>
+      <select id="media-picker-lesson" v-model="lessonFilter" class="form-select mb-3">
+        <option value="__all__">{{ t('mediaAllLessons') }}</option>
+        <option v-for="lesson in lessons" :key="lesson.id" :value="lesson.id">{{ lesson.name }}</option>
+        <option value="__unassigned__">{{ t('mediaUnassigned') }}</option>
+      </select>
       <p v-if="pickerError" class="text-danger" role="alert">{{ pickerError }}</p>
       <p v-if="pickerLoading" role="status">{{ t('loading') }}</p>
       <div class="row g-2 mb-3">
@@ -191,7 +216,8 @@ onUnmounted(() => libraryRequest?.abort())
             <img v-if="media.kind === 'image'" :src="preview(media.id)" alt=""
               class="w-100 object-fit-contain" style="height: 110px" />
             <video v-else :src="preview(media.id)" preload="metadata" class="w-100" style="height: 110px" />
-            <span class="small">{{ media.originalName }}</span>
+            <span class="small d-block">{{ media.originalName }}</span>
+            <span class="small text-secondary d-block">{{ lessonName(media.groupId) }}</span>
           </button>
         </div>
       </div>
@@ -199,7 +225,8 @@ onUnmounted(() => libraryRequest?.abort())
       <h3 class="h6">{{ t('mediaUploadTitle') }}</h3>
       <!-- Reset the uploader on every dialog opening so a completed prior file
            cannot be mistaken for an attachment to the new target block. -->
-      <MediaUploader v-if="pickerTarget" :csrf-token="csrfToken" :kind="pickerKind" @uploaded="onUploaded" />
+      <MediaUploader v-if="pickerTarget" :csrf-token="csrfToken" :kind="pickerKind"
+        :group-id="groupId" @uploaded="onUploaded" />
     </dialog>
   </div>
 </template>

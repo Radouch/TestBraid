@@ -123,3 +123,23 @@ and the original binary, using a temporary rename for rollback on metadata
 failure. An interrupted delete may still leave an orphan .deleting file;
 automatic abandoned-file cleanup is not part of this increment. No
 background garbage collector or standalone unused-media list is added.
+
+## Virtual lesson folders (media home lesson)
+
+Media files remain in the same private physical storage. An optional nullable
+`groupId` in each media metadata JSON assigns one home lesson; old records
+without this field are treated as unassigned. Tests continue to reference only
+`mediaId`, so an asset may be used across lessons without copying it.
+
+Author-only endpoints:
+
+- `GET /api/admin/media` returns `groupId` (or `null`) per entry.
+- `POST /api/admin/media` optionally accepts multipart text field `groupId`.
+- `PATCH /api/admin/media/{id}` accepts JSON `{"groupId": "<lesson-uuid>"}`
+  or `{"groupId": null}` to move an asset to unassigned.
+
+The server checks group IDs against existing lessons under the same lock used
+by lesson deletion and test writes. Removing an empty lesson detaches any
+associated media; it never deletes media files or modifies test references.
+This metadata has no influence on whether an asset is exposed publicly:
+publication still depends exclusively on references from published tests.

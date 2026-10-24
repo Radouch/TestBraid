@@ -171,6 +171,29 @@ check '.error.code == "NOT_FOUND"'
 expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" -d '{"name":"Shared media draft"}'
 GROUP="$(jq -r '.id' "$TEMP/body")"
+# Virtual home folders are independent of references and static publication.
+expect 403 "$HOST/api/admin/media/$MP4_ID" -X PATCH -H 'Content-Type: application/json' -d '{"groupId":null}'
+check '.error.code == "INVALID_CSRF"'
+expect 422 "$HOST/api/admin/media/$MP4_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d '{"groupId":"bad-id"}'
+check '.error.code == "INVALID_GROUP"'
+expect 422 "$HOST/api/admin/media/$MP4_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d '{"groupId":"11111111-1111-4111-8111-111111111111"}'
+check '.error.code == "GROUP_MISSING"'
+expect 200 "$HOST/api/admin/media/$MP4_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\"}"
+check --arg group "$GROUP" '.groupId == $group'
+expect 200 "$HOST/api/admin/media"
+check --arg id "$MP4_ID" --arg group "$GROUP" '[.media[] | select(.id == $id) | .groupId] == [$group]'
+expect 422 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" -F "file=@$TEMP/blue.png" -F 'groupId=invalid'
+check '.error.code == "INVALID_GROUP"'
+expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" -F "file=@$TEMP/blue.png" -F "groupId=$GROUP"
+check --arg group "$GROUP" '.groupId == $group'
+ASSIGNED_ID="$(jq -r '.mediaId' "$TEMP/body")"
+expect 200 "$HOST/api/admin/media/$ASSIGNED_ID"
+check --arg group "$GROUP" '.groupId == $group'
+expect 200 "$HOST/api/admin/media/$ASSIGNED_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d '{"groupId":null}'
+check '.groupId == null'
+expect 200 "$HOST/api/admin/media/$ASSIGNED_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\"}"
+check --arg group "$GROUP" '.groupId == $group'
+
 jq -n --arg group "$GROUP" --arg image "$PNG_ID" '{
   groupId:$group, language:"en", title:"Referenced image", description:"",
   questions:[{id:"q1",type:"choice",mode:"single",
@@ -189,6 +212,11 @@ expect 201 "$HOST/api/admin/tests/$T1/duplicate" -X POST -H "X-CSRF-Token: $CSRF
 T2="$(jq -r '.id' "$TEMP/body")"
 expect 200 "$HOST/api/admin/media"
 check --arg image "$PNG_ID" '[.media[] | select(.id == $image) | .usedIn[]] | length == 2'
+# A referenced asset can belong to any home lesson, regardless of the test.
+expect 200 "$HOST/api/admin/media/$PNG_ID" -X PATCH -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' -d "{\"groupId\":\"$GROUP\"}"
+check --arg group "$GROUP" '.groupId == $group'
+expect 200 "$HOST/api/admin/media"
+check --arg image "$PNG_ID" '[.media[] | select(.id == $image) | .usedIn[]] | length == 2'
 expect 409 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
 check '.error.code == "MEDIA_IN_USE"'
 test -f "$TEMP/private-storage/media-files/$PNG_ID.png"
@@ -205,6 +233,11 @@ expect 404 "$HOST/api/admin/media/$PNG_ID/preview"
 expect 404 "$HOST/api/admin/media/$PNG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
 expect 200 "$HOST/api/admin/media/$MP4_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
 expect 200 "$HOST/api/admin/media/$WEBM_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+# Deleting an empty lesson must retain files but detach their virtual assignment.
+expect 200 "$HOST/api/admin/groups/$GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/media/$ASSIGNED_ID"
+check '.groupId == null'
+expect 200 "$HOST/api/admin/media/$ASSIGNED_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
 expect 200 "$HOST/api/admin/media"
 check '.media == []'
 

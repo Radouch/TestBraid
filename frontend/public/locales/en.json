@@ -325,5 +325,9 @@
   "authFailed": "Sign in failed. Check your credentials or session and try again.",
   "tooManyAttempts": "Too many unsuccessful attempts. Try again later.",
   "learnerPlaceholder": "The test player is not implemented yet.",
-  "learnerTest": "Test ID: {id}"
+  "learnerTest": "Test ID: {id}",
+  "mediaHomeLesson": "Media lesson",
+  "mediaAllLessons": "All media (all lessons)",
+  "mediaUnassigned": "Unassigned media",
+  "mediaAssignFailed": "Could not assign the media to the lesson."
 }
