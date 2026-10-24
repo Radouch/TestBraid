@@ -99,7 +99,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
     <p v-if="!submitted" class="small text-secondary">{{ t('runnerPairsEditable') }}</p>
     <p class="visually-hidden" role="status" aria-live="polite">{{ announcement }}</p>
     <section class="paired-items" :aria-labelledby="'your-pairs-' + question.id">
-      <p v-if="!state.pairs.length" class="small text-secondary">{{ t('runnerNoPairsYet') }}</p>
+      <p v-if="!submitted && !state.pairs.length" class="small text-secondary">{{ t('runnerNoPairsYet') }}</p>
       <div v-for="(pair, pairIndex) in state.pairs" :key="pair.left.id" class="learner-pair border rounded p-2 mb-2"
         :class="submitted && validKey ? (expected.get(pair.left.id) === pair.right.id ? 'pair-correct' : 'pair-incorrect') : ''"
         role="group" :aria-label="t('runnerPairNumber', { index: pairIndex + 1 })">
@@ -108,6 +108,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
             :aria-label="t('runnerUnpairNumber', { index: pairIndex + 1 })" @click="unpair(pair.left.id)"><AppIcon name="x-lg" />{{ t('runnerUnpair') }}</button>
           <span v-else class="fw-semibold small pair-status"
             :class="expected.get(pair.left.id) === pair.right.id ? 'text-success' : 'text-danger'">
+            <AppIcon :name="expected.get(pair.left.id) === pair.right.id ? 'check2-circle' : 'x-lg'" />
             {{ expected.get(pair.left.id) === pair.right.id ? t('runnerPairCorrect') : t('runnerPairIncorrect') }}
           </span>
         </div>
@@ -121,8 +122,8 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
           </div>
         </div>
         <div v-if="submitted && validKey && expected.get(pair.left.id) !== pair.right.id"
-          class="pair-correction border-top mt-2 pt-2">
-          <p class="small fw-semibold text-success mb-2">{{ t('runnerCorrectCounterpart') }}</p>
+          class="pair-correction rounded mt-2 p-2">
+          <p class="small fw-semibold text-success-emphasis mb-2"><AppIcon name="check2-circle" /> {{ t('runnerCorrectCounterpart') }}</p>
           <ContentBlocksViewer v-if="correctItem(pair.left.id)" class="correct-counterpart-content" :blocks="correctItem(pair.left.id)!.content"
             :private-preview="privatePreview" :media-urls="mediaUrls" />
         </div>
@@ -175,14 +176,14 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
     <section v-else-if="state.left.length" class="unanswered-pairs border-top pt-3 mt-3">
       <h3 class="h6">{{ t('runnerUnansweredPairs') }}</h3>
       <div v-for="item in state.left" :key="item.id" class="learner-pair border rounded p-2 mb-2 pair-unanswered">
-        <p class="small fw-semibold text-warning-emphasis">{{ t('runnerNotPaired') }}</p>
+        <p class="small fw-semibold text-secondary"><AppIcon name="dash-lg" /> {{ t('runnerNotPaired') }}</p>
         <div class="paired-row unanswered-row">
           <div class="matching-item paired-content">
             <ContentBlocksViewer :blocks="item.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
           <span v-if="validKey" class="pair-link text-secondary" aria-hidden="true"><AppIcon name="arrow-left-right" /></span>
-          <div v-if="validKey && correctItem(item.id)" class="matching-item paired-content">
-            <p class="small fw-semibold text-success mb-2">{{ t('runnerCorrectCounterpart') }}</p>
+          <div v-if="validKey && correctItem(item.id)" class="matching-item paired-content pair-correction">
+            <p class="small fw-semibold text-success-emphasis mb-2"><AppIcon name="check2-circle" /> {{ t('runnerCorrectCounterpart') }}</p>
             <ContentBlocksViewer :blocks="correctItem(item.id)!.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
         </div>
@@ -204,12 +205,17 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
 .selection-card { border: 2px solid var(--bs-border-color); }
 .left-pool .selection-card, .candidate-ready { cursor: pointer; }
 .item-active { border-color: var(--bs-primary); background: rgb(13 110 253 / .04); }
-.pair-correct { border-color: var(--bs-success) !important; }
-.pair-incorrect { border-color: var(--bs-danger) !important; }
-.pair-unanswered { border-color: var(--bs-warning) !important; }
-.working-area, .right-pool { scroll-margin-top: 1rem; }
+.pair-correct { border-color: var(--bs-success) !important; background: rgb(var(--bs-success-rgb) / .06); }
+.pair-incorrect { border-color: var(--bs-danger) !important; background: rgb(var(--bs-danger-rgb) / .06); }
+.pair-unanswered { background: var(--bs-tertiary-bg); }
+.pair-correction { border: 1px solid var(--bs-success-border-subtle); background: var(--bs-success-bg-subtle); }
+.working-area, .right-pool { scroll-margin-top: var(--runner-scroll-offset, 1rem); }
+.matching-runner .btn { min-height: 2.75rem; }
 @media (max-width: 767.98px) {
   .paired-row { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
   .pair-link { justify-self: center; transform: rotate(90deg); }
+  .matching-item :deep(img), .matching-item :deep(video),
+  .paired-content :deep(img), .paired-content :deep(video),
+  .mobile-source :deep(img), .mobile-source :deep(video) { max-height: 320px !important; }
 }
 </style>

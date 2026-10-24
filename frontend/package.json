@@ -12,6 +12,7 @@
     "test:editor": "tsx scripts/test-question-model.ts",
     "test:published": "tsx scripts/test-published-readonly.ts",
     "test:learner": "tsx scripts/test-learner-scoring.ts",
+    "test:runner": "node scripts/run-dom-tests.mjs",
     "test:navigation": "tsx scripts/test-navigation.ts",
     "test:branding": "tsx scripts/test-site-identity.ts",
     "test:locales": "tsx scripts/test-ui-languages.ts"
@@ -31,6 +32,8 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@vitejs/plugin-vue": "^6.0.0",
+    "esbuild": "0.28.2",
+    "happy-dom": "21.0.4",
     "tsx": "^4.20.0",
     "typescript": "~5.9.0",
     "vite": "^7.0.0",

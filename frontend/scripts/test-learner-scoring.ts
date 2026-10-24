@@ -5,6 +5,7 @@ import { freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAns
 import { matchingPresentation } from '../src/learner/matching'
 import { createMatchingOrder } from '../src/learner/presentation'
 import { toggleChoiceCorrect } from '../src/editor/model'
+import { choiceFeedback, questionProgress } from '../src/learner/overview'
 
 // Presentation-only setting: legacy tests show points, and disabling it
 // never alters per-question grading or the answer key.
@@ -211,3 +212,28 @@ assert.equal(matchingPresentation(matching, { left1: 'right1', left2: 'right1' }
 assert.deepEqual(matchingPresentation(matching, {}, ['unknown', 'right1', 'right1']).right
   .map(item => item.id), ['right1', 'right2'])
 console.log('PASS: learner card pairs/free pools, chronology, unpair/reassignment, answer-key independence and immutability')
+
+// Completion deliberately ignores correctness, including partial multiple
+// choice selections and structurally incomplete author previews.
+assert.deepEqual(questionProgress(choice, initial), { state: 'unanswered', completed: 0, total: 1 })
+assert.equal(questionProgress(choice, wrong).state, 'unanswered')
+const partialChoice = setChoiceAnswer(initial, choice, 'a', true)
+assert.equal(questionProgress(choice, partialChoice).state, 'answered')
+assert.deepEqual(questionProgress({ ...choice, correctOptionIds: [] }, partialChoice), questionProgress(choice, partialChoice))
+assert.deepEqual(questionProgress(matching, initial), { state: 'unanswered', completed: 0, total: 2 })
+assert.deepEqual(questionProgress(matching, wrong), { state: 'partial', completed: 1, total: 2 })
+assert.equal(questionProgress(matching, cardAnswers).state, 'answered')
+assert.deepEqual(questionProgress({ ...matching, matches: [] }, wrong), questionProgress(matching, wrong))
+assert.deepEqual(questionProgress(matching, {
+  choices: {}, matches: { [matching.id]: { left1: 'right1', left2: 'right1', stale: 'right2' } },
+}), { state: 'partial', completed: 1, total: 2 })
+assert.equal(questionProgress({ ...matching, leftItems: [], rightItems: [], matches: [] }, initial).state, 'unanswered')
+assert.equal(choiceFeedback(choice, ['a', 'b'], 'a', false), 'selected')
+assert.equal(choiceFeedback(choice, ['a', 'b'], 'b', false), 'selected')
+assert.equal(choiceFeedback(choice, ['a', 'b'], 'c', false), 'neutral')
+assert.equal(choiceFeedback(choice, ['a', 'b'], 'a', true), 'chosen-correct')
+assert.equal(choiceFeedback(choice, ['a', 'b'], 'b', true), 'chosen-incorrect')
+assert.equal(choiceFeedback(choice, ['a', 'b'], 'c', true), 'correct-unselected')
+assert.equal(choiceFeedback({ ...choice, correctOptionIds: [] }, ['a'], 'a', true), 'selected')
+assert.equal(choiceFeedback({ ...choice, correctOptionIds: [] }, ['a'], 'b', true), 'neutral')
+console.log('PASS: answer-key-independent completion and choice feedback before/after grading')

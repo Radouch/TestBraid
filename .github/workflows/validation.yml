@@ -31,6 +31,9 @@ jobs:
       - name: Pure learner scoring and answer state regression
         run: npm run test:learner
         working-directory: frontend
+      - name: Continuous learner page interaction regression
+        run: npm run test:runner
+        working-directory: frontend
       - name: Navigation and UI language URL regression
         run: npm run test:navigation
         working-directory: frontend
