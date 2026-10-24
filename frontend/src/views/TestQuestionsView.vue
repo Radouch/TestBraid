@@ -136,6 +136,9 @@ async function save(): Promise<void> {
         title: server.title,
         description: server.description,
         language: server.language,
+        // The question editor must not overwrite this setting from the
+        // metadata form while replacing the rest of the test document.
+        showOverallScore: server.showOverallScore !== false,
         questions: questions.value,
       }),
     })

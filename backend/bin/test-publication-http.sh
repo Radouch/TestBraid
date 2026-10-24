@@ -110,7 +110,7 @@ check '.groups == []'
 # become public; unrelated private uploads remain private.
 jq -n --arg group "$GROUP" --arg img "$IMAGE_ID" '{
   groupId:$group,language:"en",title:"Published example",
-  description:"A multimedia question",
+  description:"A multimedia question",showOverallScore:false,
   questions:[{
     id:"q1",type:"choice",mode:"single",
     prompt:[{id:"p1",type:"image",mediaId:$img}],
@@ -128,11 +128,11 @@ expect 404 "$HOST/api/public/tests/$T1"
 expect 200 "$HOST/api/public/catalog"
 check '.groups == []'
 expect 200 "$HOST/api/admin/tests/$T1/publish" -X POST -H "X-CSRF-Token: $CSRF"
-check '.status == "published" and .publishedAt != null'
+check '.status == "published" and .publishedAt != null and .showOverallScore == false'
 test -f "$MEDIA_DIR/$IMAGE_NAME"
 test ! -f "$MEDIA_DIR/$MOVIE_NAME"
 expect 200 "$HOST/api/public/tests/$T1"
-check --arg id "$IMAGE_ID" '.test.status == "published" and .mediaUrls[$id] == ("/media/" + $id + ".png")'
+check --arg id "$IMAGE_ID" '.test.status == "published" and .test.showOverallScore == false and .mediaUrls[$id] == ("/media/" + $id + ".png")'
 # An anonymous catalog must include only published tests under the group
 # containing them. It must not leak private-only lessons, draft titles,
 # question content, answer keys, media IDs, author metadata or timestamps.

@@ -122,7 +122,7 @@ check '.name == "Renamed lesson"'
 printf '{"groupId":"%s","language":"en","title":"Draft","description":"Intro","questions":[]}' "$GROUP" > "$TEMP/create.json"
 expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/create.json"
-check '.status == "draft" and .publishedAt == null and .questions == []'
+check '.status == "draft" and .publishedAt == null and .questions == [] and .showOverallScore == true'
 TEST_ID="$(jq -r '.id' "$TEMP/body")"
 test -f "$TEMP/private-storage/tests/$TEST_ID.json"
 expect 200 "$HOST/api/admin/tests/$TEST_ID"
@@ -149,6 +149,28 @@ expect 200 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application
 check '.title == "Updated test" and (.questions | length) == 1'
 expect 200 "$HOST/api/admin/tests/$TEST_ID"
 check '.questions[0].correctOptionIds == ["option-a"]'
+
+# Disabling score display is persisted independently of the answer key.
+# An older editor omitting this optional setting must not reset it.
+jq '.showOverallScore = false' "$TEMP/update.json" > "$TEMP/no-score.json"
+expect 200 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/no-score.json"
+check '.showOverallScore == false and .questions[0].correctOptionIds == ["option-a"]'
+expect 200 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/update.json"
+check '.showOverallScore == false'
+expect 200 "$HOST/api/admin/tests/$TEST_ID"
+check '.showOverallScore == false'
+expect 200 "$HOST/api/admin/tests?groupId=$GROUP"
+check --arg ID "$TEST_ID" 'any(.tests[]; .id == $ID and .showOverallScore == false)'
+
+# The type is validated, not interpreted using PHP truthiness.
+jq '.showOverallScore = "false"' "$TEMP/update.json" > "$TEMP/invalid-score.json"
+expect 422 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/invalid-score.json"
+check '.error.code == "VALIDATION_FAILED"'
+expect 200 "$HOST/api/admin/tests/$TEST_ID"
+check '.showOverallScore == false'
 jq '. + {"status":"published"}' "$TEMP/update.json" > "$TEMP/illegal.json"
 expect 422 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/illegal.json"
@@ -171,7 +193,7 @@ check '.questions[0].prompt[0].type == "text"'
 expect 200 "$HOST/api/admin/tests/readiness"
 check --arg ID "$TEST_ID" '.tests[$ID].ready == true and (.tests[$ID].issues | length) == 0'
 expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
-check --arg ID "$TEST_ID" '.id != $ID and .status == "draft" and (.questions | length) == 1'
+check --arg ID "$TEST_ID" '.id != $ID and .status == "draft" and .showOverallScore == false and (.questions | length) == 1'
 COPY_ID="$(jq -r '.id' "$TEMP/body")"
 expect 200 "$HOST/api/admin/tests"
 check --arg ID "$COPY_ID" '([.tests[].id] | index($ID)) != null'

@@ -44,6 +44,8 @@ A few short symbolic IDs appear below to keep examples readable; production IDs 
 
 One private file per test: `storage/tests/<test-id>.json`.
 
+The optional boolean `showOverallScore` controls only learner result presentation. When `false`, individual correct/incorrect/unanswered feedback and correct answers remain visible after submission, but per-question point labels and the overall score panel are hidden. The scoring algorithm is unchanged. The default is `true`; existing test documents without this property retain the original score display. New tests explicitly store the setting, and the author can change it in the test details form (draft tests).
+
 ```json
 {
   "schemaVersion": 1,
@@ -52,6 +54,7 @@ One private file per test: `storage/tests/<test-id>.json`.
   "language": "en",
   "title": "Recognizing objects",
   "description": "Identify the objects shown in the questions.",
+  "showOverallScore": true,
   "status": "draft",
   "createdAt": "2026-10-18T19:00:00Z",
   "updatedAt": "2026-10-18T19:00:00Z",
@@ -337,11 +340,12 @@ Example editable portion in a `PUT` request:
   "language": "en",
   "title": "Recognizing objects",
   "description": "Identify the objects.",
+  "showOverallScore": true,
   "questions": []
 }
 ```
 
-`PUT` replaces all editable fields and the task list; it is not a partial merge. A draft with `questions: []` can be saved, but not published. Response returns the canonical updated test including server metadata.
+`PUT` replaces all editable fields and the task list; it is not a partial merge. A draft with `questions: []` can be saved, but not published. Response returns the canonical updated test including server metadata. The optional `showOverallScore` field is preserved when omitted from a PUT to support older clients; it defaults to `true` for new tests.
 
 ### 7.3 Admin — media
 

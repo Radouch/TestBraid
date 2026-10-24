@@ -43,6 +43,10 @@
       "type": "string",
       "maxLength": 50000
     },
+    "showOverallScore": {
+      "type": "boolean",
+      "description": "Show point values and the overall score after submission. Defaults to true when absent."
+    },
     "status": {
       "enum": [
         "draft",

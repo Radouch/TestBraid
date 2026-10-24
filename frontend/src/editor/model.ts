@@ -41,11 +41,18 @@ export interface DraftTest {
   language: string
   title: string
   description: string
+  /** Missing in pre-feature tests; absent means scoring is displayed. */
+  showOverallScore?: boolean
   questions: Question[]
   status: 'draft' | 'published'
   createdAt: string
   updatedAt: string
   publishedAt: string | null
+}
+
+/** Existing stored tests without the optional flag keep their original score display. */
+export function showsOverallScore(test: Pick<DraftTest, 'showOverallScore'>): boolean {
+  return test.showOverallScore !== false
 }
 
 export const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
