@@ -5,7 +5,8 @@ import MediaLibraryView from './views/MediaLibraryView.vue'
 import TestView from './views/TestView.vue'
 import TestQuestionsView from './views/TestQuestionsView.vue'
 import TestPreviewView from './views/TestPreviewView.vue'
-import { retainExplicitLanguage } from './navigation'
+import NotFoundView from './views/NotFoundView.vue'
+import { NOT_FOUND_PATH, retainExplicitLanguage } from './navigation'
 
 export const router = createRouter({
   // Honor the Vite build base so deployment is not tied to a particular domain/path.
@@ -17,6 +18,8 @@ export const router = createRouter({
     { path: '/admin/tests/:id/questions', name: 'test-questions', component: TestQuestionsView },
     { path: '/admin/tests/:id/preview', name: 'test-preview', component: TestPreviewView },
     { path: '/tests/:id', name: 'test', component: TestView },
+    // Only unmatched locations reach the 404 page; keep this route last.
+    { path: NOT_FOUND_PATH, name: 'not-found', component: NotFoundView },
   ],
 })
 

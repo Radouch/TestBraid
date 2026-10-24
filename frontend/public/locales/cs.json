@@ -1,6 +1,9 @@
 {
   "languageName": "Čeština",
   "home": "Úvod",
+  "notFoundTitle": "Stránka nebyla nalezena",
+  "notFoundDescription": "Požadovaná stránka neexistuje. Zkontrolujte adresu nebo se vraťte na úvodní stránku.",
+  "notFoundHome": "Zpět na úvod",
   "publicCatalogHeading": "Dostupné testy",
   "publicCatalogIntroduction": "Vyberte si lekci a publikovaný test k procvičení. Není potřeba přihlášení a výsledky se neukládají.",
   "publicCatalogLoading": "Načítání lekcí a testů…",

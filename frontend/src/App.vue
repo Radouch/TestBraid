@@ -14,11 +14,14 @@ const router = useRouter()
 const { locale, t } = useI18n()
 const signingOut = ref(false)
 const authError = ref('')
-const activeSection = computed(() => navigationSection(route.path))
+// No navigation item should appear active on an unknown route.
+const activeSection = computed(() => route.name === 'not-found' ? null : navigationSection(route.path))
 const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
 const appVersion = APP_VERSION
 
-watch(siteName, (name) => { document.title = name }, { immediate: true })
+watch([siteName, locale, () => route.name], ([name, , page]) => {
+  document.title = page === 'not-found' ? `${t('notFoundTitle')} | ${name}` : name
+}, { immediate: true })
 
 watch(() => route.query.lang, (value) => {
   locale.value = resolveUiLocale(value)
