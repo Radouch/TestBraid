@@ -6,7 +6,7 @@ import { authorSession, sessionChecked, refreshAuthorSession } from './auth'
 import { resolveUiLocale, saveUiLocale, type UiLocale } from './ui-locale'
 import { navigationSection } from './navigation'
 import { APP_VERSION } from './version'
-import { loadSiteIdentity, localizeSiteText, siteIdentity } from './site-identity'
+import { localizeSiteText, siteIdentity } from './site-identity'
 
 const route = useRoute()
 const router = useRouter()
@@ -56,10 +56,7 @@ async function signOut(): Promise<void> {
   }
 }
 
-onMounted(() => {
-  void refreshAuthorSession()
-  void loadSiteIdentity()
-})
+onMounted(() => void refreshAuthorSession())
 watch(() => route.path, () => void refreshAuthorSession())
 </script>
 
@@ -95,7 +92,7 @@ watch(() => route.path, () => void refreshAuthorSession())
     <p v-if="authError" class="alert alert-danger" role="alert">{{ authError }}</p>
     <main class="flex-grow-1"><RouterView /></main>
     <footer class="border-top mt-4 pt-3 d-flex justify-content-between align-items-center flex-wrap gap-2 small text-secondary">
-      <span>Powered by TestBraid · {{ t('version') }} {{ appVersion }}</span>
+      <span><a href="https://github.com/Radouch/TestBraid" target="_blank" rel="noopener noreferrer">Powered by TestBraid</a> · {{ t('version') }} {{ appVersion }}</span>
       <RouterLink v-if="sessionChecked" to="/admin">
         {{ authorSession?.authenticated ? t('author') : t('signIn') }}
       </RouterLink>
