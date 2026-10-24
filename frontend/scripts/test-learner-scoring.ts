@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict'
 import { reactive } from 'vue'
-import type { ChoiceQuestion, MatchingQuestion, Question } from '../src/editor/model'
+import { showsOverallScore, type ChoiceQuestion, type MatchingQuestion, type Question } from '../src/editor/model'
 import { freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
 import { matchingPresentation } from '../src/learner/matching'
 import { createMatchingOrder } from '../src/learner/presentation'
 import { toggleChoiceCorrect } from '../src/editor/model'
+
+// Presentation-only setting: legacy tests show points, and disabling it
+// never alters per-question grading or the answer key.
+assert.equal(showsOverallScore({}), true)
+assert.equal(showsOverallScore({ showOverallScore: true }), true)
+assert.equal(showsOverallScore({ showOverallScore: false }), false)
 
 const text = (id: string, value: string) => ({ id, type: 'text' as const, text: value })
 const choice: ChoiceQuestion = {
