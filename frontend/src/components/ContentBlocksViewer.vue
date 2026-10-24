@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContentMedia from './ContentMedia.vue'
 import type { ContentBlock } from '../editor/model'
 import { uuidPattern } from '../editor/model'
 
@@ -15,12 +16,8 @@ function source(id: string, urls?: Record<string, string>, privatePreview = fals
   <div class="d-grid gap-2">
     <template v-for="block in blocks" :key="block.id">
       <p v-if="block.type === 'text'" class="mb-1" style="white-space: pre-wrap">{{ block.text }}</p>
-      <img v-else-if="block.type === 'image' && source(block.mediaId, mediaUrls, privatePreview)"
-        :src="source(block.mediaId, mediaUrls, privatePreview)"
-        class="img-fluid" style="max-height: 360px; object-fit: contain" alt="" />
-      <video v-else-if="block.type === 'video' && source(block.mediaId, mediaUrls, privatePreview)"
-        :src="source(block.mediaId, mediaUrls, privatePreview)"
-        controls preload="metadata" class="w-100" style="max-height: 360px" />
+      <ContentMedia v-else-if="source(block.mediaId, mediaUrls, privatePreview)" :kind="block.type"
+        :src="source(block.mediaId, mediaUrls, privatePreview)" />
     </template>
   </div>
 </template>

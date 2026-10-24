@@ -331,5 +331,21 @@
   "mediaHomeLesson": "Media lesson",
   "mediaAllLessons": "All media (all lessons)",
   "mediaUnassigned": "Unassigned media",
-  "mediaAssignFailed": "Could not assign the media to the lesson."
+  "mediaAssignFailed": "Could not assign the media to the lesson.",
+  "runnerOverview": "Question overview",
+  "runnerQuestionPosition": "Question {index} of {total}",
+  "runnerAnsweredProgress": "Answered {count} of {total}",
+  "runnerAnswered": "Answered",
+  "runnerUnanswered": "Unanswered",
+  "runnerPartialPairs": "{count} of {total} pairs",
+  "runnerToggleOverview": "{position}. Expand or collapse question overview",
+  "runnerExpandQuestion": "Expand question",
+  "runnerCollapseQuestion": "Collapse question",
+  "runnerSelectedAnswer": "Your choice",
+  "runnerChosenCorrect": "Your choice – correct",
+  "runnerChosenIncorrect": "Your choice – incorrect",
+  "runnerCorrectUnselected": "Correct option – not selected",
+  "runnerEvaluated": "Test checked",
+  "runnerReviewAnswers": "Review your answers",
+  "runnerUngraded": "Cannot grade – answer key is incomplete"
 }

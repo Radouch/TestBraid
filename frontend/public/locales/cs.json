@@ -331,5 +331,21 @@
   "mediaHomeLesson": "Lekce média",
   "mediaAllLessons": "Všechna média (všechny lekce)",
   "mediaUnassigned": "Nepřiřazená média",
-  "mediaAssignFailed": "Médium se nepodařilo přiřadit k lekci."
+  "mediaAssignFailed": "Médium se nepodařilo přiřadit k lekci.",
+  "runnerOverview": "Přehled otázek",
+  "runnerQuestionPosition": "Otázka {index} ze {total}",
+  "runnerAnsweredProgress": "Zodpovězeno {count} ze {total}",
+  "runnerAnswered": "Zodpovězeno",
+  "runnerUnanswered": "Nezodpovězeno",
+  "runnerPartialPairs": "{count} ze {total} dvojic",
+  "runnerToggleOverview": "{position}. Rozbalit nebo sbalit přehled otázek",
+  "runnerExpandQuestion": "Rozbalit otázku",
+  "runnerCollapseQuestion": "Sbalit otázku",
+  "runnerSelectedAnswer": "Vaše volba",
+  "runnerChosenCorrect": "Vaše volba – správně",
+  "runnerChosenIncorrect": "Vaše volba – nesprávně",
+  "runnerCorrectUnselected": "Správná možnost – nezvoleno",
+  "runnerEvaluated": "Test je vyhodnocen",
+  "runnerReviewAnswers": "Prohlédněte si odpovědi",
+  "runnerUngraded": "Nelze vyhodnotit – chybí správné řešení"
 }
