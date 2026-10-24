@@ -18,6 +18,7 @@ const authError = ref('')
 const activeSection = computed(() => route.name === 'not-found' ? null : navigationSection(route.path))
 const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
 const appVersion = APP_VERSION
+const brandMarkUrl = `${import.meta.env.BASE_URL}testbraid-mark.svg`
 
 watch([siteName, locale, () => route.name], ([name, , page]) => {
   document.title = page === 'not-found' ? `${t('notFoundTitle')} | ${name}` : name
@@ -96,7 +97,13 @@ watch(() => route.path, () => void refreshAuthorSession())
     <p v-if="authError" class="alert alert-danger" role="alert">{{ authError }}</p>
     <main class="flex-grow-1"><RouterView /></main>
     <footer class="border-top mt-4 pt-3 d-flex justify-content-between align-items-center flex-wrap gap-2 small text-secondary">
-      <span><a href="https://github.com/Radouch/TestBraid" target="_blank" rel="noopener noreferrer">Powered by TestBraid</a> · {{ t('version') }} {{ appVersion }}</span>
+      <span>
+        <a href="https://github.com/Radouch/TestBraid" target="_blank" rel="noopener noreferrer"
+          class="d-inline-flex align-items-center gap-1">
+          <img :src="brandMarkUrl" alt="" aria-hidden="true" width="16" height="16" />
+          Powered by TestBraid
+        </a> · {{ t('version') }} {{ appVersion }}
+      </span>
       <RouterLink v-if="sessionChecked" to="/admin">
         {{ authorSession?.authenticated ? t('author') : t('signIn') }}
       </RouterLink>
