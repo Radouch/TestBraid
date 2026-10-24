@@ -127,7 +127,7 @@ final class AdminDataRoutes
 
         $group->post('/tests', fn (Request $r, Response $p): Response => $this->handle($p, fn (): stdClass =>
             $this->publisher()->exclusive(function () use ($r): stdClass {
-            $data = JsonRequest::fields($r, ['groupId', 'language', 'title', 'description'], ['questions']);
+            $data = JsonRequest::fields($r, ['groupId', 'language', 'title', 'description'], ['questions', 'showOverallScore']);
             $this->checkGroup($data->groupId);
             $test = (object) [
                 'schemaVersion' => 1,
@@ -136,6 +136,7 @@ final class AdminDataRoutes
                 'language' => $data->language,
                 'title' => $data->title,
                 'description' => $data->description,
+                'showOverallScore' => property_exists($data, 'showOverallScore') ? $data->showOverallScore : true,
                 'status' => 'draft',
                 'position' => $this->nextPosition('tests', $data->groupId),
                 'createdAt' => self::now(),
@@ -254,7 +255,7 @@ final class AdminDataRoutes
                     throw new ApiProblem(404, 'NOT_FOUND', 'Test not found.');
                 }
                 // Replace all editable fields. Server-owned fields are preserved.
-                $data = JsonRequest::fields($r, ['groupId', 'language', 'title', 'description', 'questions']);
+                $data = JsonRequest::fields($r, ['groupId', 'language', 'title', 'description', 'questions'], ['showOverallScore']);
                 $this->checkGroup($data->groupId);
                 $test = (object) [
                     'schemaVersion' => $previous->schemaVersion,
@@ -263,6 +264,10 @@ final class AdminDataRoutes
                     'language' => $data->language,
                     'title' => $data->title,
                     'description' => $data->description,
+                    // Old clients may omit this optional flag; preserve the
+                    // current setting rather than silently enabling scoring.
+                    'showOverallScore' => property_exists($data, 'showOverallScore')
+                        ? $data->showOverallScore : ($previous->showOverallScore ?? true),
                     'status' => $previous->status,
                     'createdAt' => $previous->createdAt,
                     'updatedAt' => self::now(),
