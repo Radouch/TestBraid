@@ -12,7 +12,9 @@ const choice: ChoiceQuestion = {
   correctOptionIds: ['a', 'c'],
 }
 const mediaId = '11111111-1111-4111-8111-111111111111'
+const imageId = '22222222-2222-4222-8222-222222222222'
 choice.options[1]!.content.push({ id: 'clip', type: 'video', mediaId })
+choice.options[3]!.content.push({ id: 'image', type: 'image', mediaId: imageId })
 const matching: MatchingQuestion = {
   id: 'matching', type: 'matching', prompt: [text('mp', 'Match the signs')],
   leftItems: ['l1', 'l2', 'l3'].map(id => ({ id, content: [text(id, 'Source ' + id)] })),
@@ -26,6 +28,7 @@ const test = shallowRef<DraftTest>({
     { ...choice, id: 'missing' }],
 })
 const privatePreview = shallowRef(false)
+const mediaUrls = shallowRef({ [mediaId]: '/training/media/example.mp4', [imageId]: '/training/media/example.jpg' })
 const original = JSON.stringify(test.value)
 const cs = JSON.parse(readFileSync('public/locales/cs.json', 'utf8')) as Record<string, string>
 const i18n = createI18n({ legacy: false, locale: 'cs', fallbackLocale: 'en', messages: {
@@ -45,7 +48,7 @@ const host = document.createElement('div')
 document.body.append(host)
 const app = createApp({ render: () => h(TestRunner, {
   test: test.value, privatePreview: privatePreview.value,
-  mediaUrls: privatePreview.value ? {} : { [mediaId]: '/training/media/example.mp4' },
+  mediaUrls: privatePreview.value ? {} : mediaUrls.value,
 }, { context: () => h('a', { href: '/training/#lesson-lesson' }, 'Back to lesson') }) }).use(i18n)
 const errors: unknown[] = []
 app.config.errorHandler = error => { errors.push(error) }
@@ -99,6 +102,50 @@ try {
   assert.equal(find('video').closest('label'), null)
   assert.equal(find('video').getAttribute('controls'), '')
   assert.equal(find('video').getAttribute('src'), '/training/media/example.mp4')
+
+  // Real intrinsic dimensions arrive after media loading, independently of
+  // block IDs and response state. Exercise both media types and source reuse.
+  const video = find<HTMLVideoElement>('video', question('choice'))
+  const image = find<HTMLImageElement>('img', question('choice'))
+  const dimensions = (element: Element, width: number, height: number, image = false) => {
+    Object.defineProperty(element, image ? 'naturalWidth' : 'videoWidth', { configurable: true, value: width })
+    Object.defineProperty(element, image ? 'naturalHeight' : 'videoHeight', { configurable: true, value: height })
+  }
+  assert.equal(video.classList.contains('media-portrait'), false)
+  dimensions(video, 1080, 1920)
+  video.dispatchEvent(new Event('loadedmetadata'))
+  dimensions(image, 900, 1600, true)
+  image.dispatchEvent(new Event('load'))
+  await settle()
+  assert.ok(video.classList.contains('media-portrait'))
+  assert.ok(image.classList.contains('media-portrait'))
+  dimensions(video, 1920, 1080)
+  video.dispatchEvent(new Event('resize'))
+  dimensions(image, 800, 800, true)
+  image.dispatchEvent(new Event('load'))
+  await settle()
+  assert.equal(video.classList.contains('media-portrait'), false)
+  assert.equal(image.classList.contains('media-portrait'), false)
+  dimensions(video, 1080, 1920)
+  video.dispatchEvent(new Event('resize'))
+  await settle()
+  assert.ok(video.classList.contains('media-portrait'))
+  mediaUrls.value = { ...mediaUrls.value, [mediaId]: '/training/media/replacement.mp4' }
+  await settle()
+  assert.equal(video.getAttribute('src'), '/training/media/replacement.mp4')
+  assert.equal(video.classList.contains('media-portrait'), false)
+  dimensions(video, 0, 0)
+  video.dispatchEvent(new Event('loadedmetadata'))
+  await settle()
+  assert.equal(video.classList.contains('media-portrait'), false)
+  dimensions(image, 600, 1000, true)
+  image.dispatchEvent(new Event('load'))
+  await settle()
+  assert.ok(image.classList.contains('media-portrait'))
+  image.dispatchEvent(new Event('error'))
+  await settle()
+  assert.equal(image.classList.contains('media-portrait'), false)
+  console.log('PASS DOM: portrait image/video detection, landscape/square media, metadata changes and replacement/error reset')
 
   await choose('choice', 'a')
   assert.ok(tile('choice', 'a').classList.contains('option-selected'))
@@ -202,7 +249,11 @@ try {
   assert.equal(question('matching').querySelectorAll('.pair-unanswered').length, 1)
   const wrong = find('.pair-incorrect', question('matching'))
   assert.ok(wrong.textContent?.includes('Counterpart r3'))
-  assert.ok(find('.pair-correction', wrong).textContent?.includes('Counterpart r2'))
+  const counterpartColumn = find('.pair-counterparts', wrong)
+  assert.ok(find('.paired-content', counterpartColumn).textContent?.includes('Counterpart r3'))
+  assert.ok(find('.pair-correction', counterpartColumn).textContent?.includes('Counterpart r2'))
+  assert.equal(find('.pair-correction', wrong).parentElement, counterpartColumn)
+  assert.equal(find('.paired-row', wrong).lastElementChild, counterpartColumn)
   assert.ok(find('.pair-unanswered .pair-correction', question('matching')).textContent?.includes('Counterpart r3'))
   await click(tile('choice', 'd'))
   assert.equal(input('choice', 'd').checked, false)

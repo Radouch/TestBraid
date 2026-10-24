@@ -365,7 +365,6 @@ onBeforeUnmount(() => {
 .question-body { padding: 1.25rem; }
 .question-prompt { padding-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color); }
 .question-prompt :deep(> :last-child) { margin-bottom: 0 !important; }
-.test-runner :deep(video) { object-fit: contain; }
 .choice-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: .75rem; }
 .choice-option { min-width: 0; padding: 1rem; border: 2px solid var(--bs-border-color); background: var(--bs-body-bg); }
 .choice-option:not(:has(input:disabled)) { cursor: pointer; }

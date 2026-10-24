@@ -117,15 +117,17 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
             <ContentBlocksViewer :blocks="pair.left.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
           </div>
           <span class="pair-link text-secondary" aria-hidden="true"><AppIcon name="arrow-left-right" /></span>
-          <div class="matching-item paired-content">
-            <ContentBlocksViewer :blocks="pair.right.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
+          <div class="matching-item pair-counterparts">
+            <div class="paired-content">
+              <ContentBlocksViewer :blocks="pair.right.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
+            </div>
+            <div v-if="submitted && validKey && expected.get(pair.left.id) !== pair.right.id"
+              class="pair-correction rounded mt-2 p-2">
+              <p class="small fw-semibold text-success-emphasis mb-2"><AppIcon name="check2-circle" /> {{ t('runnerCorrectCounterpart') }}</p>
+              <ContentBlocksViewer v-if="correctItem(pair.left.id)" :blocks="correctItem(pair.left.id)!.content"
+                :private-preview="privatePreview" :media-urls="mediaUrls" />
+            </div>
           </div>
-        </div>
-        <div v-if="submitted && validKey && expected.get(pair.left.id) !== pair.right.id"
-          class="pair-correction rounded mt-2 p-2">
-          <p class="small fw-semibold text-success-emphasis mb-2"><AppIcon name="check2-circle" /> {{ t('runnerCorrectCounterpart') }}</p>
-          <ContentBlocksViewer v-if="correctItem(pair.left.id)" class="correct-counterpart-content" :blocks="correctItem(pair.left.id)!.content"
-            :private-preview="privatePreview" :media-urls="mediaUrls" />
         </div>
       </div>
     </section>
@@ -193,15 +195,12 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
 </template>
 
 <style scoped>
-.matching-runner { overflow-anchor: none; }
+.matching-runner { overflow-anchor: none; --content-media-landscape-height: 180px; --content-media-portrait-height: 420px; }
 .paired-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: .75rem; align-items: start; }
 .paired-content { padding: .5rem; border: 2px solid var(--bs-border-color); border-radius: var(--bs-border-radius); background: var(--bs-body-bg); }
-.pair-link { align-self: center; min-width: 2rem; font-size: 1.5rem; text-align: center; }
+.pair-link { align-self: start; margin-top: .5rem; min-width: 2rem; font-size: 1.5rem; text-align: center; }
 .matching-item { min-width: 0; overflow-wrap: anywhere; }
-.matching-item :deep(img), .matching-item :deep(video) { max-height: 180px !important; object-fit: contain; }
-.paired-content :deep(img), .paired-content :deep(video), .mobile-source :deep(img), .mobile-source :deep(video) { max-height: 140px !important; }
-.pair-correction :deep(img), .pair-correction :deep(video) { max-height: 180px !important; }
-.correct-counterpart-content { max-width: 32rem; }
+.paired-content, .pair-correction, .mobile-source { --content-media-landscape-height: 140px; --content-media-portrait-height: 360px; }
 .selection-card { border: 2px solid var(--bs-border-color); }
 .left-pool .selection-card, .candidate-ready { cursor: pointer; }
 .item-active { border-color: var(--bs-primary); background: rgb(13 110 253 / .04); }
@@ -213,9 +212,7 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
 .matching-runner .btn { min-height: 2.75rem; }
 @media (max-width: 767.98px) {
   .paired-row { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
-  .pair-link { justify-self: center; transform: rotate(90deg); }
-  .matching-item :deep(img), .matching-item :deep(video),
-  .paired-content :deep(img), .paired-content :deep(video),
-  .mobile-source :deep(img), .mobile-source :deep(video) { max-height: 320px !important; }
+  .pair-link { justify-self: center; margin-top: 0; transform: rotate(90deg); }
+  .matching-runner, .paired-content, .pair-correction, .mobile-source { --content-media-landscape-height: 320px; --content-media-portrait-height: 520px; }
 }
 </style>

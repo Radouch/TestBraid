@@ -43,6 +43,10 @@ After submission responses are locked. Valid answer keys produce a textual
 Correct/Incorrect pair status and corresponding border color. Incorrect pairs show
 both the chosen content and the actual correct counterpart. Unanswered sources
 are listed with their correct counterparts. No positional item codes are needed.
+The correction stays beneath the chosen counterpart in the right column, and
+these two remain grouped when the pair stacks on a phone. Portrait images/videos
+receive more vertical space without cropping; see `learner-continuous-page.md`
+for the context-specific, viewport-bounded limits.
 An incomplete preview key still produces the existing draft warning and cannot
 label an arbitrary pair as correct or incorrect.
 

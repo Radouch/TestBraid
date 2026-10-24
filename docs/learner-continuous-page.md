@@ -34,6 +34,14 @@ Videos use their native controls and contain their full frame. Matching actions,
 question headings and overview entries have generous touch targets. Matching
 source/counterpart jumps use the same measured sticky-bar offset.
 
+Images and videos use their loaded intrinsic dimensions to distinguish portrait
+media from landscape/square media. Portrait limits are 560px in prompts/choices,
+420px in free matching pools and 360px in paired/corrected matching content.
+On narrow screens, matching portrait media can reach 520px. These are maximums:
+the available width and viewport height can reduce them. Both dimensions remain
+automatic, preserving the whole frame and aspect ratio. Orientation is reset
+when the source changes; nothing is written into authored test/media metadata.
+
 ## Results
 
 Submitting locks responses, pauses media and moves focus to the result heading
@@ -51,7 +59,9 @@ Choice feedback distinguishes:
 | Incorrect, not chosen | Neutral | No extra result label |
 
 Matching results show the chosen content, correct/incorrect pair status, and
-the actual correct counterpart for wrong or missing pairs. Missing pairs use
+the actual correct counterpart for wrong or missing pairs. For a wrong pair,
+the correction sits directly below the chosen answer in the right column; on
+phones, both remain together below the source. Missing pairs use
 neutral gray, with the correct counterpart in a separate success area. An
 incomplete draft key is explicitly ungradable, with no false correctness colors.
 
@@ -70,6 +80,8 @@ partial/stale/duplicate matching responses, choice feedback and existing scoring
 collapse/media preservation, media-control isolation, overview/focus behavior,
 partial matching, locale stability, scroll tracking, measured mobile jump offsets,
 grading/corrections, hidden scores, retry and protected incomplete previews.
+It also checks portrait image/video metadata, landscape/square classification,
+source/error resets and the correction's placement within the counterpart column.
 It uses injected geometry for scrolling; it does not claim browser layout,
 native playback or real-device visual acceptance. GitHub Actions runs both suites.
 
