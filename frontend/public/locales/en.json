@@ -1,6 +1,9 @@
 {
   "languageName": "English",
   "home": "Home",
+  "notFoundTitle": "Page not found",
+  "notFoundDescription": "The requested page does not exist. Check the address or return to the home page.",
+  "notFoundHome": "Back to home",
   "publicCatalogHeading": "Available tests",
   "publicCatalogIntroduction": "Choose a lesson and a published test to practice. No account is required and results are not stored.",
   "publicCatalogLoading": "Loading available lessons and tests…",

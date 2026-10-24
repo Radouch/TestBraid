@@ -3,6 +3,9 @@ import { explicitUiLocale } from './ui-locale'
 
 export type NavigationSection = 'home' | 'admin' | 'media'
 
+/** Vue Router catch-all for unknown URLs, including nested paths. */
+export const NOT_FOUND_PATH = '/:pathMatch(.*)*'
+
 /** Keep author pages together under Administration; the media library has its own link. */
 export function navigationSection(path: string): NavigationSection {
   if (path === '/admin/media' || path.startsWith('/admin/media/')) return 'media'

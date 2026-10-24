@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { navigationSection, retainExplicitLanguage } from '../src/navigation'
+import { NOT_FOUND_PATH, navigationSection, retainExplicitLanguage } from '../src/navigation'
 import { setAvailableUiLanguages } from '../src/ui-locale'
 
 assert.equal(navigationSection('/'), 'home')
@@ -18,7 +18,8 @@ const router = createRouter({
     { path: '/', component: dummy },
     { path: '/admin', component: dummy },
     { path: '/admin/media', component: dummy },
-    { path: '/tests/:id', component: dummy },
+    { path: '/tests/:id', name: 'test', component: dummy },
+    { path: NOT_FOUND_PATH, name: 'not-found', component: dummy },
   ],
 })
 router.beforeEach(retainExplicitLanguage)
@@ -52,6 +53,21 @@ await router.push('/admin')
 assert.equal(router.currentRoute.value.query.lang, undefined)
 await router.push('/admin/media')
 assert.equal(router.currentRoute.value.query.lang, undefined)
+
+// Unknown direct URLs and nested paths reach the 404 route instead of an empty view.
+await router.push('/prasopes')
+assert.equal(router.currentRoute.value.name, 'not-found')
+assert.equal(router.currentRoute.value.path, '/prasopes')
+await router.push('/admin/invalid/page')
+assert.equal(router.currentRoute.value.name, 'not-found')
+await router.push('/tests/valid-id')
+assert.equal(router.currentRoute.value.name, 'test')
+
+// The home link from the 404 view still preserves an explicit language.
+await router.push('/prasopes?lang=cs')
+assert.equal(router.currentRoute.value.name, 'not-found')
+await router.push('/')
+assert.equal(router.currentRoute.value.fullPath, '/?lang=cs')
 
 // A disabled language is not propagated between pages.
 setAvailableUiLanguages(['cs'])
