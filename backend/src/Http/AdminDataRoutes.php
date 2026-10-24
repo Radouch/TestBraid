@@ -98,6 +98,13 @@ final class AdminDataRoutes
                             throw new ApiProblem(409, 'GROUP_NOT_EMPTY', 'Move or delete all tests before removing this group.');
                         }
                     }
+                    // Detach home-lesson metadata; do not delete media or change any test references.
+                    foreach ($this->store()->all('media') as $media) {
+                        if (($media->groupId ?? null) !== $id) continue;
+                        $media->groupId = null;
+                        $this->validate('media', $media);
+                        $this->store()->write('media', $media->id, $media, false);
+                    }
                     if (!$this->store()->delete('groups', $id)) {
                         throw new ApiProblem(404, 'NOT_FOUND', 'Group not found.');
                     }

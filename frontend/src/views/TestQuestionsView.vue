@@ -225,7 +225,7 @@ onMounted(() => {
         </div>
         <p v-if="questions.length === 0" class="text-secondary">{{ t('editorNoQuestions') }}</p>
         <QuestionEditor v-for="(question, index) in questions" :key="question.id"
-          :question="question" :index="index" :csrf-token="csrfToken" :total="questions.length"
+          :question="question" :index="index" :csrf-token="csrfToken" :group-id="test.groupId" :total="questions.length"
           :initially-expanded="index === 0 || question.id === expandedQuestionId"
           @remove="removeQuestion(index)" @move="moveQuestion(index, $event)" @duplicate="copyQuestion(index)" />
         <div class="card p-3 mt-3">

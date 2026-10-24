@@ -11,7 +11,7 @@ import {
   type ContentItem, type Question, type ChoiceQuestion, type MatchingQuestion,
 } from '../editor/model'
 
-const props = defineProps<{ question: Question; csrfToken: string; index: number; total: number; initiallyExpanded: boolean }>()
+const props = defineProps<{ question: Question; csrfToken: string; groupId: string; index: number; total: number; initiallyExpanded: boolean }>()
 const emit = defineEmits<{ remove: []; move: [direction: -1 | 1]; duplicate: [] }>()
 const { t } = useI18n()
 const choice = computed<ChoiceQuestion | null>(() => props.question.type === 'choice' ? props.question : null)
@@ -80,7 +80,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
     </div>
 
     <div v-if="expanded" :id="'question-body-' + question.id" class="px-3 pb-3">
-      <ContentBlocksEditor v-model="question.prompt" :csrf-token="csrfToken" :label="t('editorPrompt')" />
+      <ContentBlocksEditor v-model="question.prompt" :csrf-token="csrfToken" :group-id="groupId" :label="t('editorPrompt')" />
       <template v-if="choice">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 mb-2">
           <h4 class="h6 mb-0">{{ t('editorAnswers') }}</h4>
@@ -110,7 +110,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
               <button type="button" class="btn btn-sm text-danger" @click="removeOption(option.id)"><AppIcon name="trash3" />{{ t('editorRemoveOption') }}</button>
             </EditorMenu>
           </div>
-          <ContentBlocksEditor :model-value="option.content" :csrf-token="csrfToken"
+          <ContentBlocksEditor :model-value="option.content" :csrf-token="csrfToken" :group-id="groupId"
             :label="t('editorOptionNumber', { index: optionIndex + 1 })" hide-label @update:model-value="updateContent(option, $event)" />
         </div>
         <button class="btn btn-outline-primary btn-sm mt-2" type="button" @click="addOption"><AppIcon name="plus-lg" />{{ t('editorAddOption') }}</button>
@@ -132,7 +132,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
           <div class="row g-3 p-2">
             <div class="col-md-6">
               <p class="small text-secondary mb-1 d-md-none">{{ t('editorLeftItem') }}</p>
-              <ContentBlocksEditor v-if="pair.left" :model-value="pair.left.content" :csrf-token="csrfToken"
+              <ContentBlocksEditor v-if="pair.left" :model-value="pair.left.content" :csrf-token="csrfToken" :group-id="groupId"
                 :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorLeftItem')" hide-label
                 @update:model-value="updateContent(pair.left!, $event)" />
               <button v-else type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">
@@ -141,7 +141,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
             </div>
             <div class="col-md-6">
               <p class="small text-secondary mb-1 d-md-none">{{ t('editorRightItem') }}</p>
-              <ContentBlocksEditor v-if="pair.right" :model-value="pair.right.content" :csrf-token="csrfToken"
+              <ContentBlocksEditor v-if="pair.right" :model-value="pair.right.content" :csrf-token="csrfToken" :group-id="groupId"
                 :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorRightItem')" hide-label
                 @update:model-value="updateContent(pair.right!, $event)" />
               <button v-else type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)">

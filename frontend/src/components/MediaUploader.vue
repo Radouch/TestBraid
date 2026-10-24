@@ -14,7 +14,7 @@ export interface UploadedMedia {
   sizeBytes: number
 }
 
-const props = defineProps<{ csrfToken: string; kind?: 'image' | 'video' }>()
+const props = defineProps<{ csrfToken: string; kind?: 'image' | 'video'; groupId?: string | null }>()
 const emit = defineEmits<{ uploaded: [media: UploadedMedia] }>()
 const { t } = useI18n()
 const uploadError = ref('')
@@ -115,6 +115,10 @@ const server = computed(() => ({
     headers: { 'X-CSRF-Token': props.csrfToken },
     withCredentials: true,
     onload: uploaded,
+    ondata: (data: FormData) => {
+      if (props.groupId !== undefined) data.append('groupId', props.groupId ?? '')
+      return data
+    },
     onerror: serverError,
   },
 }))

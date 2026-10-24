@@ -7,6 +7,7 @@ use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 use stdClass;
 use TestBraid\Http\ApiProblem;
+use TestBraid\Publication\PublicationService;
 use TestBraid\Validation\SchemaValidator;
 
 /**
@@ -33,7 +34,7 @@ final class PrivateMediaService
         $this->repository = new JsonFileRepository($this->root);
     }
 
-    public function upload(UploadedFileInterface $upload): stdClass
+    public function upload(UploadedFileInterface $upload, ?string $groupId = null): stdClass
     {
         $limits = UploadLimits::fromBackendRoot($this->backendRoot);
         $maximum = max($limits->maxBytes('image'), $limits->maxBytes('video'));
@@ -161,6 +162,7 @@ final class PrivateMediaService
                 'extension' => $format['extension'],
                 'sizeBytes' => $length,
                 'originalName' => $original,
+                'groupId' => $groupId,
                 'createdAt' => gmdate('Y-m-d\TH:i:s\Z'),
             ];
             if (!$this->schemas->validate('media', $metadata)['valid']) {
@@ -172,12 +174,49 @@ final class PrivateMediaService
                 throw new RuntimeException('Unable to finalize private upload.');
             }
             $publishedPath = $destination;
-            $this->repository->write('media', $id, $metadata, true);
+            // Group deletion and media assignment share the publication lock.
+            // Hold it only for the metadata commit, not the file transfer.
+            (new PublicationService($this->backendRoot))->exclusive(function () use ($groupId, $id, $metadata): void {
+                $this->assertGroup($groupId);
+                $this->repository->write('media', $id, $metadata, true);
+            });
             $publishedPath = null; // metadata and binary file are now committed
             return $metadata;
         } finally {
             if (is_file($temporary)) @unlink($temporary);
             if ($publishedPath !== null && is_file($publishedPath)) @unlink($publishedPath);
+        }
+    }
+
+    /** Assign a virtual home lesson without changing test references or physical media paths. */
+    public function assignGroup(string $id, ?string $groupId): stdClass
+    {
+        if (!JsonFileRepository::validId($id)) {
+            throw new ApiProblem(400, 'INVALID_ID', 'Invalid media identifier.');
+        }
+        return (new PublicationService($this->backendRoot))->exclusive(function () use ($id, $groupId): stdClass {
+            $media = $this->repository->get('media', $id);
+            if ($media === null) {
+                throw new ApiProblem(404, 'NOT_FOUND', 'Media not found.');
+            }
+            $this->assertGroup($groupId);
+            $media->groupId = $groupId;
+            if (!$this->schemas->validate('media', $media)['valid']) {
+                throw new ApiProblem(422, 'VALIDATION_FAILED', 'Invalid media metadata.');
+            }
+            $this->repository->write('media', $id, $media, false);
+            return $media;
+        });
+    }
+
+    private function assertGroup(?string $groupId): void
+    {
+        if ($groupId === null) return;
+        if (!JsonFileRepository::validId($groupId)) {
+            throw new ApiProblem(422, 'INVALID_GROUP', 'Invalid lesson identifier.');
+        }
+        if ($this->repository->get('groups', $groupId) === null) {
+            throw new ApiProblem(422, 'GROUP_MISSING', 'The lesson does not exist.');
         }
     }
 

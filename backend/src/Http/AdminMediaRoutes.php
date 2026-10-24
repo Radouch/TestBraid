@@ -45,6 +45,7 @@ final class AdminMediaRoutes
                     'id' => $media->id,
                     'kind' => $media->kind,
                     'originalName' => $media->originalName,
+                    'groupId' => $media->groupId ?? null,
                     'mimeType' => $media->mimeType,
                     'sizeBytes' => $media->sizeBytes,
                     'createdAt' => $media->createdAt,
@@ -81,13 +82,20 @@ final class AdminMediaRoutes
                 if (array_keys($uploads) !== ['file'] || !$uploads['file'] instanceof UploadedFileInterface) {
                     throw new ApiProblem(400, 'INVALID_UPLOAD', 'Upload exactly one file in the file field.');
                 }
-                $media = $this->service()->upload($uploads['file']);
+                $fields = $request->getParsedBody();
+                if (!is_array($fields)) $fields = $_POST;
+                if (!is_array($fields) || array_diff(array_keys($fields), ['groupId']) !== []) {
+                    throw new ApiProblem(422, 'INVALID_UPLOAD', 'Unsupported upload fields.');
+                }
+                $groupId = $this->groupId($fields['groupId'] ?? null);
+                $media = $this->service()->upload($uploads['file'], $groupId);
                 return JsonResponse::send($response, [
                     'mediaId' => $media->id,
                     'kind' => $media->kind,
                     'mimeType' => $media->mimeType,
                     'sizeBytes' => $media->sizeBytes,
                     'originalName' => $media->originalName,
+                    'groupId' => $media->groupId,
                 ], 201);
             } catch (ApiProblem $problem) {
                 return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
@@ -100,6 +108,16 @@ final class AdminMediaRoutes
                 if ($media === null) {
                     throw new ApiProblem(404, 'NOT_FOUND', 'Media not found.');
                 }
+                return JsonResponse::send($response, (array) $media);
+            } catch (ApiProblem $problem) {
+                return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
+            }
+        });
+
+        $group->patch('/media/{id}', function (Request $request, Response $response, array $args): Response {
+            try {
+                $fields = JsonRequest::fields($request, ['groupId']);
+                $media = $this->service()->assignGroup($args['id'], $this->groupId($fields->groupId));
                 return JsonResponse::send($response, (array) $media);
             } catch (ApiProblem $problem) {
                 return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage());
@@ -128,6 +146,15 @@ final class AdminMediaRoutes
             }
         };
         $group->map(['GET', 'HEAD'], '/media/{id}/preview', $preview);
+    }
+
+    private function groupId(mixed $value): ?string
+    {
+        if ($value === null || $value === '') return null;
+        if (!is_string($value) || !JsonFileRepository::validId($value)) {
+            throw new ApiProblem(422, 'INVALID_GROUP', 'Invalid lesson identifier.');
+        }
+        return $value;
     }
 
     /** @return list<string> */
