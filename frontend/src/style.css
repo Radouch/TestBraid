@@ -1,3 +1,117 @@
+:root {
+  --app-page-bg: #f1f3f5;
+  --app-footer-bg: var(--bs-secondary-bg);
+}
+
+body { background-color: var(--app-page-bg); }
+
+/* Full-width chrome shares Bootstrap's content alignment on every route. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.app-header {
+  background-color: var(--bs-body-bg);
+  border-bottom: var(--bs-border-width) solid var(--bs-border-color);
+}
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1.5rem;
+  padding-block: 1rem;
+}
+.app-brand {
+  min-width: 0;
+  max-width: 100%;
+  margin-inline-end: auto;
+  overflow-wrap: anywhere;
+  font-size: 1.5rem;
+}
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+  max-width: 100%;
+}
+.app-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: .5rem .75rem;
+  border-radius: var(--bs-border-radius);
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.app-nav-link:hover {
+  color: var(--bs-primary-text-emphasis);
+  background-color: var(--bs-tertiary-bg);
+}
+.app-nav-link-active,
+.app-nav-link-active:hover {
+  color: var(--bs-primary-text-emphasis);
+  background-color: var(--bs-primary-bg-subtle);
+  font-weight: 600;
+}
+.app-header-controls,
+.app-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  max-width: 100%;
+  gap: .5rem;
+}
+.app-header-controls { gap: .75rem 1rem; }
+.app-language-select { width: auto; max-width: 100%; }
+.app-account {
+  padding-inline-start: 1rem;
+  border-inline-start: var(--bs-border-width) solid var(--bs-border-color);
+  overflow-wrap: anywhere;
+}
+.app-main {
+  flex-grow: 1;
+  min-width: 0;
+  padding-block: 2rem;
+  /* Long imported text and URLs must not widen the page on small screens. */
+  overflow-wrap: anywhere;
+}
+.app-main .card {
+  --bs-card-border-color: var(--bs-border-color);
+  --bs-card-cap-bg: var(--bs-tertiary-bg);
+}
+/* The footer follows long content and reaches the bottom on short pages. */
+.app-footer {
+  background-color: var(--app-footer-bg);
+  border-top: var(--bs-border-width) solid var(--bs-border-color);
+  color: var(--bs-secondary-color);
+  font-size: .875rem;
+}
+.app-footer-inner,
+.app-footer-branding {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+}
+.app-footer-inner {
+  justify-content: space-between;
+  padding-block: 1.25rem;
+}
+.app-footer a { color: inherit; text-underline-offset: .2em; }
+.app-footer a:hover { color: var(--bs-primary-text-emphasis); }
+
+@media (max-width: 767.98px) {
+  .app-nav { order: 3; flex-basis: 100%; }
+  .app-account { padding-inline-start: 0; border-inline-start: 0; }
+}
+@media (max-width: 575.98px) {
+  .app-header-inner { gap: .75rem 1rem; }
+  .app-main { padding-block: 1.5rem; }
+}
+
 /* Keep labelled actions readable while standalone icons have a generous target. */
 .btn > .app-icon, .dropdown-item > .app-icon { margin-inline-end: .35em; }
 .btn.icon-button { display: inline-flex; align-items: center; justify-content: center; min-width: 2.5rem; min-height: 2.5rem; padding: .45rem; }
