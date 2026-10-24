@@ -61,6 +61,9 @@ async function setLesson(media: MediaItem, selected: string): Promise<void> {
   if (!authorSession.value?.authenticated || assigningId.value) return
   assigningId.value = media.id
   assignError.value = ''
+  const previous = media.groupId
+  // Keep the select controlled while the request is pending, then roll back on failure.
+  media.groupId = selected === '__unassigned__' ? null : selected
   try {
     const response = await fetch(import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(media.id), {
       method: 'PATCH',
@@ -72,6 +75,7 @@ async function setLesson(media: MediaItem, selected: string): Promise<void> {
     const updated = await response.json() as MediaItem
     media.groupId = updated.groupId
   } catch {
+    media.groupId = previous
     assignError.value = t('mediaAssignFailed')
   } finally {
     assigningId.value = null
