@@ -15,6 +15,8 @@ use TestBraid\Http\JsonResponse;
 use TestBraid\Http\AdminDataRoutes;
 use TestBraid\Http\AdminMediaRoutes;
 use TestBraid\Http\PublicTestRoutes;
+use TestBraid\Config\InstallationConfig;
+use TestBraid\Http\ApiProblem;
 
 // This application is private; only the separate public api/index.php is web-accessible.
 $root = dirname(__DIR__);
@@ -52,6 +54,17 @@ $app->addErrorMiddleware(false, true, true);
 
 $app->get('/api/health', static function (Request $request, Response $response): Response {
     return JsonResponse::send($response, ['status' => 'ok', 'service' => 'testbraid-api']);
+});
+
+// Expose only public branding, never the private app.json or upload settings.
+$app->get('/api/public/config', static function (Request $request, Response $response) use ($root): Response {
+    try {
+        return JsonResponse::send($response, ['site' => InstallationConfig::publicSite($root)])
+            ->withHeader('Cache-Control', 'no-store');
+    } catch (ApiProblem $problem) {
+        return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage())
+            ->withHeader('Cache-Control', 'no-store');
+    }
 });
 
 $app->get('/api/auth/session', static function (Request $request, Response $response) use ($sessions, $authors, $setup): Response {

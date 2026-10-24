@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace TestBraid\Storage;
 
-use TestBraid\Http\ApiProblem;
+use TestBraid\Config\InstallationConfig;
 
 /**
  * Upload policy loaded from the operator-owned private JSON file on every
  * request. The browser receives effective limits through an author-only API;
  * neither PHP nor the built Vue bundle carries a second copy of the limits.
- * The operator creates config/uploads.json from uploads.example.json on install.
+ * Existing config/uploads.json remains supported until app.json is created.
  */
 final class UploadLimits
 {
@@ -28,30 +28,9 @@ final class UploadLimits
         ?string $phpPostSetting = null,
         ?bool $uploadsEnabled = null
     ) {
-        if (!is_file($file) || is_link($file) || !is_readable($file)) {
-            throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits configuration is missing or unreadable.');
-        }
-        $raw = file_get_contents($file);
-        if ($raw === false || strlen($raw) > 4096) {
-            throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits configuration cannot be read.');
-        }
-        try {
-            $data = json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits configuration is invalid JSON.');
-        }
-        if (!is_array($data) || count($data) !== 2
-            || !array_key_exists('maxImageSizeMiB', $data)
-            || !array_key_exists('maxVideoSizeMiB', $data)) {
-            throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits configuration has invalid fields.');
-        }
-        foreach ($data as $value) {
-            if (!is_int($value) || $value < 1 || $value > 2048) {
-                throw new ApiProblem(503, 'UPLOAD_CONFIG_INVALID', 'Upload limits must be integers between 1 and 2048 MiB.');
-            }
-        }
-        $this->imageConfigured = $data['maxImageSizeMiB'] * self::MIB;
-        $this->videoConfigured = $data['maxVideoSizeMiB'] * self::MIB;
+        $limits = InstallationConfig::fromFile($file, 'UPLOAD_CONFIG_INVALID')->uploads();
+        $this->imageConfigured = $limits['maxImageSizeMiB'] * self::MIB;
+        $this->videoConfigured = $limits['maxVideoSizeMiB'] * self::MIB;
         $this->phpUploadMaximum = self::iniBytes($phpUploadSetting ?? (string) ini_get('upload_max_filesize'));
         $this->phpPostMaximum = self::iniBytes($phpPostSetting ?? (string) ini_get('post_max_size'));
         $this->uploadsEnabled = $uploadsEnabled ?? filter_var(ini_get('file_uploads'), FILTER_VALIDATE_BOOLEAN);
@@ -59,13 +38,7 @@ final class UploadLimits
 
     public static function fromBackendRoot(string $backendRoot): self
     {
-        // An explicit path lets isolated tests use disposable configuration
-        // without writing a runtime file into the source checkout.
-        $override = getenv('TESTBRAID_UPLOAD_CONFIG_FILE');
-        $file = is_string($override) && $override !== ''
-            ? $override
-            : $backendRoot . '/config/uploads.json';
-        return new self($file);
+        return new self(InstallationConfig::uploadFile($backendRoot));
     }
 
     /** Return null for the documented unlimited (0) PHP setting. */

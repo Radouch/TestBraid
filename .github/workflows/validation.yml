@@ -46,6 +46,8 @@ jobs:
           test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
           test -f deployment-package/testbraid-backend/.htaccess
+          test -f deployment-package/testbraid-backend/app.example.json
+          test ! -e deployment-package/testbraid-backend/config/app.json
           test ! -e deployment-package/testbraid-backend/config/authors.json
           test ! -e deployment-package/testbraid-backend/vendor
       - name: Audit complete SFTP deployment package

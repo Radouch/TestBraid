@@ -50,6 +50,7 @@ try {
     'testbraid-backend/public/index.php',
     'testbraid-backend/composer.json',
     'testbraid-backend/composer.lock',
+    'testbraid-backend/app.example.json',
     'testbraid-backend/src/Http/EnvironmentDiagnostics.php',
     'testbraid-backend/src/Publication/PublicationService.php',
     'testbraid-backend/src/Storage/JsonFileRepository.php',

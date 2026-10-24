@@ -68,40 +68,49 @@ PoC-A 07 (publication) will need to securely expose only media referenced by pub
 
 ## Media library operations and operator-managed limits (Issue #17)
 
-The application limits come from **one private runtime file**:
-testbraid-backend/config/uploads.json on a deployed host
-(the versioned source template is backend/uploads.example.json):
+The operator now configures **one private runtime file**,
+`testbraid-backend/config/app.json`, created from the packaged
+`testbraid-backend/app.example.json` (source: `backend/app.example.json`):
 
 ```json
 {
-  "maxImageSizeMiB": 10,
-  "maxVideoSizeMiB": 64
+  "site": {
+    "name": "TestBraid",
+    "description": ""
+  },
+  "uploads": {
+    "maxImageSizeMiB": 10,
+    "maxVideoSizeMiB": 64
+  }
 }
 ```
 
-Edit these positive integer MiB limits (1–2048) using SFTP. No frontend
-rebuild or PHP deployment is needed; the backend re-reads the file on each
-upload and on GET /api/admin/media/limits. The author-only endpoint returns
-configured and effective sizes after applying PHP upload_max_filesize and
-post_max_size. For multipart requests, 1 MiB is reserved below post_max_size.
-If PHP disables uploads, all effective limits are zero. The media uploader
-displays localized warnings for any reduced limit and applies effective
-per-kind limits before uploading. Invalid/missing JSON disables uploads
-rather than silently falling back to hardcoded limits. Apache, proxies, disk
-quota and timeouts can impose additional constraints PHP cannot report.
+The `site.name` and `site.description` are shown in the public header (the
+description is omitted when empty). `GET /api/public/config` returns **only**
+these two public strings. Upload limits remain private and are exposed in
+effective form through the authenticated media-limits endpoint. The frontend
+bundle gets its release version from `frontend/package.json` at build time,
+not from app.json. The footer says “Powered by TestBraid · Version X.Y.Z”
+and links to the sign-in/author page, without making the private repository
+public.
 
-**Deployment:** scripts/prepare-deployment.mjs copies the only versioned template,
-`backend/uploads.example.json`, to `testbraid-backend/uploads.example.json`
-outside the runtime config directory.
-For initial installation or an upgrade that lacks the live file, copy this
-example to `testbraid-backend/config/uploads.json` over SFTP (create config/
-if necessary). After
-that, **never overwrite the host's config/uploads.json** when copying new
-deployment packages. Preserve the entire private config/ directory. The
-packaged copy is a first-installation seed, not the live source of truth.
-The live `backend/config/uploads.json` is ignored by Git. Tests load their
-own disposable copy using `TESTBRAID_UPLOAD_CONFIG_FILE`; this environment
-variable selects a configuration file, not an independent set of limits.
+Limits are positive integer MiB values (1–2048). The backend re-reads the
+file on requests, so editing app.json via SFTP requires no Vite rebuild.
+The backend combines application limits with PHP upload_max_filesize and
+post_max_size (1 MiB multipart headroom); additional host limits still apply.
+Malformed configuration rejects uploads rather than silently increasing
+limits. Runtime config/ and storage/ are never included in staging packages.
+
+**Upgrading from uploads.json:** the existing
+`testbraid-backend/config/uploads.json` remains supported unchanged. If
+`config/app.json` is absent, TestBraid uses the old file for upload limits
+and shows the default TestBraid site name. To customize branding, copy
+`app.example.json` to `config/app.json` and **copy your actual upload
+limits** into its `uploads` section. The new file takes precedence; only
+then may the old uploads.json be archived/removed. Keep config/ intact
+during every upgrade. `TESTBRAID_APP_CONFIG_FILE` can point to a
+separate private app.json for testing. The legacy
+`TESTBRAID_UPLOAD_CONFIG_FILE` override remains supported for older tests.
 
 - GET /api/admin/media/limits: authenticated effective policy and warnings.
 - DELETE /api/admin/media/{id}: authenticated + CSRF; unreferenced media only.

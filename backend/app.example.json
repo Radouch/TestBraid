@@ -1,0 +1,10 @@
+{
+  "site": {
+    "name": "TestBraid",
+    "description": ""
+  },
+  "uploads": {
+    "maxImageSizeMiB": 10,
+    "maxVideoSizeMiB": 64
+  }
+}

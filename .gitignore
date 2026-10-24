@@ -17,6 +17,7 @@ backend/private/
 backend/storage/
 backend/config/authors.json
 backend/config/uploads.json
+backend/config/app.json
 backend/config/setup.key
 backend/config/.authors.lock
 backend/.phpunit.cache/

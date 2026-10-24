@@ -17,6 +17,18 @@ The project is **under active PoC-A development**. The Vue/Slim foundation passe
 
 Randomized test generation from question banks is a **future feature**, not part of the initial delivery.
 
+## Self-hosted installation identity
+
+Each installation can set its own public name and short description in the private
+`testbraid-backend/config/app.json` file, seeded from
+`backend/app.example.json`. The same file defines media upload limits.
+Existing `config/uploads.json` installations remain compatible until their
+limits are migrated. A standard footer identifies **TestBraid** and shows its
+build version (currently `0.1.0`), alongside the author sign-in link.
+Release tags use `vMAJOR.MINOR.PATCH`; the source repository is not linked
+from the public interface while it remains private.
+See [deployment details](docs/deployment.md#6d-installation-branding-version-and-upload-limits).
+
 ## Documentation
 
 - [Functional specification](docs/functional-specification.md) — agreed requirements, priorities and open questions.

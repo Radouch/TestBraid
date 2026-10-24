@@ -43,7 +43,7 @@ try {
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
-    'backend/uploads.example.json',
+    'backend/app.example.json',
     'backend/public/index.php',
     'schemas/test.schema.json',
     'schemas/fixtures/manifest.json',
@@ -67,14 +67,14 @@ try {
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
   // Keep the same relative location as the one versioned source example.
   // The audit rejects runtime config/, which upgrades must never overwrite.
-  cpSync(join(root, 'backend/uploads.example.json'), join(privateBackend, 'uploads.example.json'))
+  cpSync(join(root, 'backend/app.example.json'), join(privateBackend, 'app.example.json'))
 
   // Runtime config/, storage/ and vendor/ are intentionally NOT part of the
   // generated package. They must survive upgrades on the actual server.
   console.log('Deployment files staged at deployment-package/')
   console.log('Upload www/ to the public web root and testbraid-backend/ to the private backend.')
   console.log('Merge files only: do not delete existing server config/, storage/ or vendor/.')
-  console.log('First install: copy uploads.example.json to private config/uploads.json on the server; preserve it on upgrades.')
+  console.log('First install: copy app.example.json to private config/app.json; migrate existing upload limits before switching, and preserve config/ on upgrades.')
 } catch (error) {
   console.error(`Deployment packaging failed: ${error.message}`)
   process.exitCode = 1

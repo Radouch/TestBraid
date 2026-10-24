@@ -27,8 +27,8 @@ trap 'echo "Media HTTP integration failed at line $LINENO: $BASH_COMMAND" >&2; t
 php "$ROOT/bin/test-upload-limits.php"
 
 mkdir -p "$TEMP/config"
-cp "$ROOT/uploads.example.json" "$TEMP/config/uploads.json"
-export TESTBRAID_UPLOAD_CONFIG_FILE="$TEMP/config/uploads.json"
+cp "$ROOT/app.example.json" "$TEMP/config/app.json"
+export TESTBRAID_APP_CONFIG_FILE="$TEMP/config/app.json"
 export TESTBRAID_AUTHORS_FILE="$TEMP/config/authors.json"
 export TESTBRAID_LOGIN_DIR="$TEMP/login-attempts"
 export TESTBRAID_STORAGE_DIR="$TEMP/private-storage"
@@ -69,6 +69,8 @@ check() {
   fi
 }
 
+expect 200 "$HOST/api/public/config"
+check '.site == {"name":"TestBraid","description":""} and (.uploads == null)'
 expect 401 "$HOST/api/admin/media"
 expect 401 "$HOST/api/admin/media/limits"
 expect 401 "$HOST/api/admin/media/11111111-1111-4111-8111-111111111111" -X DELETE
