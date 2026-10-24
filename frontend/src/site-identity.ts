@@ -38,6 +38,8 @@ export async function loadSiteIdentity(): Promise<void> {
     const response = await fetch(import.meta.env.BASE_URL + 'api/public/config', {
       credentials: 'omit',
       cache: 'no-store',
+      // Avoid leaving the entire application unrendered on a stalled host.
+      signal: AbortSignal.timeout(5000),
     })
     if (!response.ok) return
     const payload = await response.json() as { site?: { name?: unknown; description?: unknown } }

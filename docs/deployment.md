@@ -312,8 +312,13 @@ and home-page introduction without a reload.
 - **Header and browser tab:** installation name only, in the selected language.
 - **Home page:** installation description as the introductory lead paragraph
   above the public lesson catalog (no description elsewhere).
-- **Footer:** Powered by TestBraid, release version from `frontend/package.json`,
-  and sign-in/author link. No link to the private repository.
+- **Footer:** "Powered by TestBraid" links to the GitHub repository (currently
+  private, so anonymous visitors cannot access it), followed by the release
+  version from `frontend/package.json` and the sign-in/author link.
+- **Initial rendering:** Vue waits for `GET /api/public/config` before mounting,
+  preventing the default TestBraid name from flashing on customized hosts.
+  A stalled request times out after 5 seconds; failed requests fall back to
+  TestBraid instead of leaving the application blank.
 
 Only `site` is returned from unauthenticated `GET /api/public/config`;
 upload limits remain available to authors through

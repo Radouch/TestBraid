@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { localizeSiteText, siteIdentity } from '../src/site-identity'
+import { mountAfterConfiguration } from '../src/bootstrap'
 
 // A localized name/title and introduction follow the selected UI language.
 const name = { cs: 'Výuka znakového jazyka', en: 'Sign language lessons' }
@@ -26,4 +27,22 @@ siteIdentity.value = { name, description: intro }
 assert.equal(localizeSiteText(siteIdentity.value.name, 'cs'), 'Výuka znakového jazyka')
 assert.equal(localizeSiteText(siteIdentity.value.description, 'en'), 'Practice')
 
-console.log('PASS: localized site title, home introduction and fallback behavior')
+// Rendering must wait until the installation-specific name has loaded.
+let releaseConfig: (() => void) | undefined
+const pendingConfig = new Promise<void>((resolve) => { releaseConfig = resolve })
+let rendered = false
+const startup = mountAfterConfiguration(() => pendingConfig, () => { rendered = true })
+assert.equal(rendered, false, 'App rendered before site configuration finished.')
+releaseConfig?.()
+await startup
+assert.equal(rendered, true, 'App did not render after configuration loaded.')
+
+// A failed configuration endpoint must not prevent the app from loading.
+let fallbackRendered = false
+await mountAfterConfiguration(
+  async () => { throw new Error('Configuration endpoint unavailable') },
+  () => { fallbackRendered = true },
+)
+assert.equal(fallbackRendered, true, 'App should render with defaults after a configuration failure.')
+
+console.log('PASS: localized site branding, startup ordering and failure fallback')
