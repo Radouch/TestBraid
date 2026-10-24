@@ -65,3 +65,15 @@ After installing dependencies, run `npm run test:schemas` from `frontend/` and `
 ## Author authentication (incremental)
 
 The authentication component provides bilingual sign-in/out and one-time first-author setup forms backed by PHP sessions, CSRF protection and private configuration files. The first account can be created without SSH scripts by uploading a random `setup.key` via SFTP and completing the form in `/admin`. See [deployment instructions](docs/deployment.md#6-first-author-setup-through-the-browser-no-ssh-scripts). Protected JSON group and draft-test endpoints are available, but they are not a browser-based test editor. Basic storage functionality has been live-tested on the host. No author credentials or private files belong in this repository.
+
+
+## Adding interface languages after deployment
+
+UI dictionaries are loaded from public `www/locales/<code>.json` at runtime.
+Add a JSON translation based on `en.json`, set its `languageName`, then
+enable its code in the private `config/app.json` `uiLanguages` list.
+For a Czech-only deployment, use `"uiLanguages": ["cs"]`.
+Once this runtime-locale release is installed, adding or removing offered
+languages requires **no frontend rebuild**. The allowed UI languages are
+independent of the content language of individual tests.
+See [deployment notes](docs/deployment.md#runtime-ui-translations-and-languages-offered).

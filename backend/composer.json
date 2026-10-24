@@ -24,7 +24,8 @@
     "test:media-http": "bash bin/test-media-http.sh",
     "test:upload-limits": "php bin/test-upload-limits.php",
     "test:publication-http": "bash bin/test-publication-http.sh",
-    "test:publication-failures": "php bin/test-publication-failures.php"
+    "test:publication-failures": "php bin/test-publication-failures.php",
+    "test:ui-languages": "php bin/test-ui-languages.php"
   },
   "autoload": {
     "psr-4": {

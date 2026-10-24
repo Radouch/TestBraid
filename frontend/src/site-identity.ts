@@ -12,6 +12,9 @@ export interface SiteIdentity {
 
 export const siteIdentity = ref<SiteIdentity>({ name: 'TestBraid', description: '' })
 
+/** Public allowlist from the private app.json; translations are loaded separately. */
+export const configuredUiLanguages = ref<string[]>(['en', 'cs'])
+
 export function localizeSiteText(value: LocalizedText, language: string): string {
   if (typeof value === 'string') return value.trim()
 
@@ -42,9 +45,14 @@ export async function loadSiteIdentity(): Promise<void> {
       signal: AbortSignal.timeout(5000),
     })
     if (!response.ok) return
-    const payload = await response.json() as { site?: { name?: unknown; description?: unknown } }
+    const payload = await response.json() as { site?: { name?: unknown; description?: unknown }; uiLanguages?: unknown }
     if (isLocalizedText(payload.site?.name) && isLocalizedText(payload.site?.description)) {
       siteIdentity.value = { name: payload.site.name, description: payload.site.description }
+    }
+    if (Array.isArray(payload.uiLanguages) && payload.uiLanguages.length > 0
+      && payload.uiLanguages.every((code: unknown) => typeof code === 'string'
+        && /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(code))) {
+      configuredUiLanguages.value = payload.uiLanguages
     }
   } catch {
     // Default branding remains available if the backend cannot be reached.

@@ -1,9 +1,18 @@
-export type UiLocale = 'en' | 'cs'
+import { ref } from 'vue'
+
+export type UiLocale = string
 
 const STORAGE_KEY = 'testbraid.uiLocale'
 
+/** Only loaded languages enabled by this installation are selectable. */
+export const availableUiLanguages = ref<UiLocale[]>(['en', 'cs'])
+
+export function setAvailableUiLanguages(languages: UiLocale[]): void {
+  availableUiLanguages.value = [...new Set(languages)]
+}
+
 export function explicitUiLocale(value: unknown): UiLocale | null {
-  return value === 'cs' || value === 'en' ? value : null
+  return typeof value === 'string' && availableUiLanguages.value.includes(value) ? value : null
 }
 
 function storedLocale(): UiLocale | null {
@@ -19,10 +28,12 @@ export function preferredUiLocale(): UiLocale {
   if (saved) return saved
   const preferred = navigator.languages?.length ? navigator.languages : [navigator.language]
   for (const language of preferred) {
-    const base = language.toLowerCase().split('-')[0]
-    if (base === 'cs' || base === 'en') return base
+    const lower = language.toLowerCase()
+    const matching = availableUiLanguages.value.find(code => code.toLowerCase() === lower)
+      ?? availableUiLanguages.value.find(code => code.toLowerCase() === lower.split('-')[0])
+    if (matching) return matching
   }
-  return 'en'
+  return availableUiLanguages.value[0] ?? 'en'
 }
 
 export function resolveUiLocale(queryLanguage: unknown): UiLocale {
@@ -30,6 +41,7 @@ export function resolveUiLocale(queryLanguage: unknown): UiLocale {
 }
 
 export function saveUiLocale(value: UiLocale): void {
+  if (!explicitUiLocale(value)) return
   try {
     window.localStorage.setItem(STORAGE_KEY, value)
   } catch {

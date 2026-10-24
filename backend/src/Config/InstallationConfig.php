@@ -14,6 +14,8 @@ use TestBraid\Http\ApiProblem;
  */
 final class InstallationConfig
 {
+    private const DEFAULT_UI_LANGUAGES = ['en', 'cs'];
+
     private const DEFAULT_SITE = [
         'name' => ['cs' => 'TestBraid', 'en' => 'TestBraid'],
         'description' => [
@@ -25,16 +27,24 @@ final class InstallationConfig
     /**
      * @param array{name:string|array<string,string>,description:string|array<string,string>} $site
      * @param array{maxImageSizeMiB:int,maxVideoSizeMiB:int} $uploads
+     * @param list<string> $uiLanguages
      */
     private function __construct(
         private readonly array $site,
-        private readonly array $uploads
+        private readonly array $uploads,
+        private readonly array $uiLanguages
     ) {}
 
     /** @return array{name:string|array<string,string>,description:string|array<string,string>} */
     public function site(): array
     {
         return $this->site;
+    }
+
+    /** @return list<string> */
+    public function uiLanguages(): array
+    {
+        return $this->uiLanguages;
     }
 
     /** @return array{maxImageSizeMiB:int,maxVideoSizeMiB:int} */
@@ -51,13 +61,20 @@ final class InstallationConfig
      */
     public static function publicSite(string $backendRoot): array
     {
+        return self::publicConfiguration($backendRoot)['site'];
+    }
+
+    /** @return array{site:array,uiLanguages:list<string>} */
+    public static function publicConfiguration(string $backendRoot): array
+    {
         $override = getenv('TESTBRAID_APP_CONFIG_FILE');
         $explicit = is_string($override) && $override !== '';
         $path = $explicit ? $override : $backendRoot . '/config/app.json';
         if (!$explicit && !file_exists($path) && !is_link($path)) {
-            return self::DEFAULT_SITE;
+            return ['site' => self::DEFAULT_SITE, 'uiLanguages' => self::DEFAULT_UI_LANGUAGES];
         }
-        return self::fromFile($path)->site();
+        $config = self::fromFile($path);
+        return ['site' => $config->site(), 'uiLanguages' => $config->uiLanguages()];
     }
 
     /**
@@ -103,7 +120,9 @@ final class InstallationConfig
         }
 
         if (array_key_exists('site', $data) || array_key_exists('uploads', $data)) {
-            if (count($data) !== 2 || !array_key_exists('site', $data)
+            if ((count($data) !== 2 && count($data) !== 3)
+                || array_diff(array_keys($data), ['site', 'uploads', 'uiLanguages']) !== []
+                || !array_key_exists('site', $data)
                 || !array_key_exists('uploads', $data) || !is_array($data['site'])
                 || count($data['site']) !== 2
                 || !array_key_exists('name', $data['site'])
@@ -115,10 +134,12 @@ final class InstallationConfig
                 'description' => self::siteText($data['site']['description'], true, 500, $errorCode),
             ];
             $uploads = $data['uploads'];
+            $uiLanguages = self::languageList($data['uiLanguages'] ?? self::DEFAULT_UI_LANGUAGES, $errorCode);
         } else {
             // Legacy config/uploads.json has a flat pair of size limits.
             $site = self::DEFAULT_SITE;
             $uploads = $data;
+            $uiLanguages = self::DEFAULT_UI_LANGUAGES;
         }
 
         if (!is_array($uploads) || count($uploads) !== 2
@@ -131,7 +152,25 @@ final class InstallationConfig
                 throw new ApiProblem(503, $errorCode, 'Upload limits must be integers between 1 and 2048 MiB.');
             }
         }
-        return new self($site, $uploads);
+        return new self($site, $uploads, $uiLanguages);
+    }
+
+    /** @return list<string> */
+    private static function languageList(mixed $input, string $errorCode): array
+    {
+        if (!is_array($input) || !array_is_list($input) || count($input) < 1 || count($input) > 20) {
+            throw new ApiProblem(503, $errorCode, 'uiLanguages must be a nonempty list (up to 20).');
+        }
+        $unique = [];
+        foreach ($input as $code) {
+            if (!is_string($code)
+                || !preg_match('/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/D', $code)
+                || in_array($code, $unique, true)) {
+                throw new ApiProblem(503, $errorCode, 'uiLanguages contains an invalid or duplicate locale.');
+            }
+            $unique[] = $code;
+        }
+        return $unique;
     }
 
     /**
