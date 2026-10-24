@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { navigationSection, retainExplicitLanguage } from '../src/navigation'
+import { setAvailableUiLanguages } from '../src/ui-locale'
 
 assert.equal(navigationSection('/'), 'home')
 assert.equal(navigationSection('/tests/any-test'), 'home')
@@ -51,5 +52,12 @@ await router.push('/admin')
 assert.equal(router.currentRoute.value.query.lang, undefined)
 await router.push('/admin/media')
 assert.equal(router.currentRoute.value.query.lang, undefined)
+
+// A disabled language is not propagated between pages.
+setAvailableUiLanguages(['cs'])
+await router.push('/?lang=en')
+await router.push('/admin')
+assert.equal(router.currentRoute.value.query.lang, undefined)
+setAvailableUiLanguages(['en', 'cs'])
 
 console.log('PASS: active navigation sections and explicit language URL propagation')

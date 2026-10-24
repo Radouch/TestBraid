@@ -3,7 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
 import { authorSession, sessionChecked, refreshAuthorSession } from './auth'
-import { resolveUiLocale, saveUiLocale, type UiLocale } from './ui-locale'
+import { availableUiLanguages, explicitUiLocale, resolveUiLocale, saveUiLocale } from './ui-locale'
+import { languageOptions } from './i18n'
 import { navigationSection } from './navigation'
 import { APP_VERSION } from './version'
 import { localizeSiteText, siteIdentity } from './site-identity'
@@ -28,8 +29,8 @@ watch(locale, (value) => {
 
 function selectLocale(event: Event): void {
   const value = (event.target as HTMLSelectElement).value
-  if (value !== 'en' && value !== 'cs') return
-  const chosen = value as UiLocale
+  const chosen = explicitUiLocale(value)
+  if (!chosen) return
   saveUiLocale(chosen)
   locale.value = chosen
   void router.replace({ query: { ...route.query, lang: chosen } })
@@ -76,10 +77,10 @@ watch(() => route.path, () => void refreshAuthorSession())
             :class="{ 'fw-semibold border-bottom border-2 border-primary': activeSection === 'media' }"
             :aria-current="activeSection === 'media' ? 'location' : undefined">{{ t('mediaLibraryTitle') }}</RouterLink>
         </nav>
-        <select class="form-select form-select-sm" style="width: auto" :value="locale"
+        <select v-if="availableUiLanguages.length > 1" class="form-select form-select-sm" style="width: auto" :value="locale"
           :aria-label="t('languageControl')" @change="selectLocale">
-          <option value="en">English</option>
-          <option value="cs">Čeština</option>
+          <option v-for="language in languageOptions" :key="language.code"
+            :value="language.code">{{ language.label }}</option>
         </select>
         <div v-if="authorSession?.authenticated && authorSession.user" class="d-flex align-items-center gap-2">
           <span class="small">{{ authorSession.user.username }}</span>

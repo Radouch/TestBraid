@@ -433,3 +433,35 @@ Deployment/privacy checks passed on the actual Apache host on 2026-10-19. The au
 The PoC-A 08 branch adds an **authenticated, read-only** `GET /api/admin/environment-diagnostics` endpoint for these allowlisted PHP/session values. The owner deployed it and returned the expected report on 2026-10-19. No secret material, server paths or cookie IDs are exposed. See [PoC-A acceptance evidence and deployment gate](poc-a-acceptance.md) for the exact, repeatable checks and restoration instructions.
 
 Additional host-specific adjustments should remain in `deploy/` or this guide instead of hardcoding domains or installation paths into application source.
+
+
+### Runtime UI translations and languages offered
+
+Interface translations are **not bundled into JavaScript**. Built-in translations
+are published in `www/locales/en.json` and `www/locales/cs.json`, copied from
+`frontend/public/locales/` when packaging a release. A hosting operator may
+upload additional UTF-8 JSON dictionaries such as `www/locales/de.json`
+directly over SFTP; no npm build or application upgrade is required.
+
+The private `testbraid-backend/config/app.json` optionally accepts a
+top-level list `"uiLanguages": ["cs"]` (or `["en", "cs", "de"]`).
+This is the **interface-language allowlist**, not the language of test content.
+An existing app.json without the field continues to offer English and Czech.
+Only listed languages with a readable JSON dictionary are shown; when just one
+language is available, the language switcher is hidden. A disabled language
+in `?lang=` or localStorage does not override the allowlist.
+The preferred browser language is used when enabled, otherwise the first
+language in the list is chosen. English is loaded separately as the missing-key
+fallback even when not offered in the selector.
+
+Each locale file is a JSON object with string-valued translation keys matching
+`en.json`, plus `"languageName": "Deutsch"` for its native display name.
+If a key is missing, the English translation is used. To add a language after
+deployment, upload `www/locales/<code>.json`, then add `<code>` to
+`uiLanguages` in the private app.json. Refresh the page. Both files are read
+at runtime, so neither change needs a frontend build. Public locale JSON files
+are intentionally readable by anonymous users. Do not put secrets in them.
+
+The normal deployment package does **not** delete unknown translation JSON
+files on the host; SFTP synchronization must likewise avoid `--delete`.
+Bundled English and Czech files are refreshed on release deployment.

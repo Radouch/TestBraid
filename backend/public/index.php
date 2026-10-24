@@ -59,7 +59,7 @@ $app->get('/api/health', static function (Request $request, Response $response):
 // Expose only public branding, never the private app.json or upload settings.
 $app->get('/api/public/config', static function (Request $request, Response $response) use ($root): Response {
     try {
-        return JsonResponse::send($response, ['site' => InstallationConfig::publicSite($root)])
+        return JsonResponse::send($response, InstallationConfig::publicConfiguration($root))
             ->withHeader('Cache-Control', 'no-store');
     } catch (ApiProblem $problem) {
         return JsonResponse::error($response, $problem->status, $problem->errorCode, $problem->getMessage())

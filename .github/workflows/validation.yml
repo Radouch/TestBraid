@@ -37,6 +37,9 @@ jobs:
       - name: Multilingual installation branding regression
         run: npm run test:branding
         working-directory: frontend
+      - name: Runtime translation loading and locale allowlist
+        run: npm run test:locales
+        working-directory: frontend
       - name: Build
         run: npm run build
         working-directory: frontend
@@ -48,6 +51,8 @@ jobs:
           test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
           test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
+          test -f deployment-package/www/locales/en.json
+          test -f deployment-package/www/locales/cs.json
           test -f deployment-package/testbraid-backend/.htaccess
           test ! -e deployment-package/testbraid-backend/config
           test ! -e deployment-package/testbraid-backend/config/authors.json
@@ -86,6 +91,9 @@ jobs:
         run: composer run test:schemas
         working-directory: backend
       # Uses an isolated loopback PHP server and disposable credentials.
+      - name: Installation UI language configuration validation
+        run: composer run test:ui-languages
+        working-directory: backend
       - name: HTTP authentication smoke test
         run: composer run test:auth
         working-directory: backend
