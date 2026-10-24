@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import arrowUp from 'bootstrap-icons/icons/arrow-up.svg?raw'
 import arrowDown from 'bootstrap-icons/icons/arrow-down.svg?raw'
+import arrowLeft from 'bootstrap-icons/icons/arrow-left.svg?raw'
 import arrowLeftRight from 'bootstrap-icons/icons/arrow-left-right.svg?raw'
 import arrowCounterclockwise from 'bootstrap-icons/icons/arrow-counterclockwise.svg?raw'
 import boxArrowUpRight from 'bootstrap-icons/icons/box-arrow-up-right.svg?raw'
@@ -27,7 +28,7 @@ import upload from 'bootstrap-icons/icons/upload.svg?raw'
 import x from 'bootstrap-icons/icons/x-lg.svg?raw'
 
 const icons = {
-  'arrow-up': arrowUp, 'arrow-down': arrowDown, 'arrow-left-right': arrowLeftRight,
+  'arrow-up': arrowUp, 'arrow-down': arrowDown, 'arrow-left': arrowLeft, 'arrow-left-right': arrowLeftRight,
   'arrow-counterclockwise': arrowCounterclockwise, 'box-arrow-up-right': boxArrowUpRight,
   'check-lg': checkLg, 'check2-circle': checkCircle, 'chevron-up': chevronUp, 'chevron-down': chevronDown,
   copy, eye, 'file-earmark-plus': filePlus, 'folder-plus': folderPlus, image,

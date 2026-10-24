@@ -2,6 +2,10 @@ import assert from 'node:assert/strict'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { NOT_FOUND_PATH, navigationSection, retainExplicitLanguage } from '../src/navigation'
 import { setAvailableUiLanguages } from '../src/ui-locale'
+import {
+  fetchPublicCatalog, publicCatalogLocation, publicLessonAnchor, publicLessonForHash, publicLessonForTest, publicLessonHash,
+  type PublicLesson,
+} from '../src/public-catalog'
 
 assert.equal(navigationSection('/'), 'home')
 assert.equal(navigationSection('/tests/any-test'), 'home')
@@ -15,7 +19,7 @@ const dummy = { render: () => null }
 const router = createRouter({
   history: createMemoryHistory(),
   routes: [
-    { path: '/', component: dummy },
+    { path: '/', name: 'home', component: dummy },
     { path: '/admin', component: dummy },
     { path: '/admin/media', component: dummy },
     { path: '/tests/:id', name: 'test', component: dummy },
@@ -76,4 +80,52 @@ await router.push('/admin')
 assert.equal(router.currentRoute.value.query.lang, undefined)
 setAvailableUiLanguages(['en', 'cs'])
 
-console.log('PASS: active navigation sections and explicit language URL propagation')
+const lessons: PublicLesson[] = [
+  { id: 'lesson-a', name: 'Family', tests: [{ id: 'test-a', title: 'Signs', language: 'en' }] },
+  { id: 'lesson-b', name: 'Daily life', tests: [{ id: 'test-b', title: 'Pairs', language: 'cs' }] },
+]
+// Directly shared test URLs can resolve their lesson without browser history.
+assert.equal(publicLessonForTest(lessons, { id: 'test-b', groupId: 'lesson-b' }), lessons[1])
+assert.equal(publicLessonForTest(lessons, { id: 'test-b', groupId: 'lesson-a' }), undefined)
+assert.equal(publicLessonForTest(lessons, { id: 'withdrawn-test', groupId: 'lesson-a' }), undefined)
+assert.equal(publicLessonForTest([], { id: 'test-b', groupId: 'lesson-b' }), undefined)
+assert.equal(publicLessonAnchor('lesson-b'), 'lesson-lesson-b')
+assert.equal(publicLessonForHash(lessons, publicLessonHash('lesson-b')), lessons[1])
+assert.equal(publicLessonForHash(lessons, '#lesson-removed'), undefined)
+assert.equal(publicLessonForHash(lessons, '#unrelated'), undefined)
+assert.equal(publicLessonForHash(lessons, '#lesson-%E0%A4%A'), undefined)
+
+await router.push('/tests/test-b?lang=cs')
+await router.push(publicCatalogLocation('lesson-b'))
+assert.equal(router.currentRoute.value.fullPath, '/?lang=cs#lesson-lesson-b')
+await router.push('/tests/withdrawn-test?lang=cs')
+await router.push(publicCatalogLocation())
+assert.equal(router.currentRoute.value.fullPath, '/?lang=cs#public-catalog-heading')
+
+const previousFetch = globalThis.fetch
+const controller = new AbortController()
+let payload: unknown = { groups: lessons }
+let responseStatus = 200
+globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+  assert.equal(String(url), '/training/api/public/catalog')
+  assert.equal(init?.credentials, 'omit', 'Author cookies must not be sent to the public catalog.')
+  assert.equal(init?.cache, 'no-store')
+  assert.equal(init?.signal, controller.signal)
+  return new Response(JSON.stringify(payload), { status: responseStatus })
+}) as typeof fetch
+try {
+  assert.deepEqual(await fetchPublicCatalog('/training/', controller.signal), lessons)
+  payload = { groups: [] }
+  assert.deepEqual(await fetchPublicCatalog('/training/', controller.signal), [])
+  for (const malformed of [null, {}, { groups: null }, { groups: [null] },
+    { groups: [{ id: 'lesson', name: 'Lesson', tests: [{}] }] }]) {
+    payload = malformed
+    await assert.rejects(fetchPublicCatalog('/training/', controller.signal), /Invalid public catalog/)
+  }
+  responseStatus = 503
+  await assert.rejects(fetchPublicCatalog('/training/', controller.signal), /Public catalog unavailable/)
+} finally {
+  globalThis.fetch = previousFetch
+}
+
+console.log('PASS: section navigation, language propagation, public lesson lookup and catalog return anchors')

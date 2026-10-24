@@ -51,9 +51,14 @@ watch(() => props.test, restart, { immediate: true })
 </script>
 
 <template>
-  <article class="py-2">
-    <h1 class="h3">{{ test.title }}</h1>
-    <p v-if="test.description" class="mb-3" style="white-space: pre-wrap">{{ test.description }}</p>
+  <article>
+    <header class="card mb-4">
+      <div class="card-body p-md-4">
+        <slot name="context" />
+        <h1 class="h3" :class="{ 'mb-0': !test.description }">{{ test.title }}</h1>
+        <p v-if="test.description" class="mb-0" style="white-space: pre-wrap">{{ test.description }}</p>
+      </div>
+    </header>
     <div v-if="privatePreview" class="alert alert-info" role="status">
       {{ t('runnerPreviewBanner') }}
     </div>

@@ -1,55 +1,60 @@
 <script setup lang="ts">
 import AppIcon from '../components/AppIcon.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { localizeSiteText, siteIdentity } from '../site-identity'
-
-interface PublicTestSummary {
-  id: string
-  title: string
-  language: string
-}
-interface PublicLesson {
-  id: string
-  name: string
-  tests: PublicTestSummary[]
-}
+import {
+  fetchPublicCatalog, publicLessonAnchor, publicLessonForHash, publicLessonHash,
+  PUBLIC_CATALOG_ANCHOR, type PublicLesson,
+} from '../public-catalog'
 
 const { t, locale } = useI18n()
+const route = useRoute()
 const introduction = computed(() => localizeSiteText(siteIdentity.value.description, locale.value))
 const groups = ref<PublicLesson[]>([])
 const loading = ref(true)
 const error = ref('')
+let activeRequest: AbortController | undefined
 
 async function loadCatalog(): Promise<void> {
+  activeRequest?.abort()
+  const request = new AbortController()
+  activeRequest = request
   loading.value = true
   error.value = ''
   try {
-    // Do not send author session cookies for the public catalog. The PHP
-    // endpoint is solely responsible for hiding draft tests and lessons.
-    const response = await fetch(import.meta.env.BASE_URL + 'api/public/catalog', {
-      credentials: 'omit',
-      cache: 'no-store',
-    })
-    if (!response.ok) throw new Error(t('publicCatalogUnavailable'))
-    const payload = await response.json() as { groups?: PublicLesson[] }
-    if (!Array.isArray(payload.groups)) throw new Error(t('publicCatalogUnavailable'))
-    groups.value = payload.groups
+    const loaded = await fetchPublicCatalog(import.meta.env.BASE_URL, request.signal)
+    if (!request.signal.aborted) groups.value = loaded
   } catch {
+    if (request.signal.aborted) return
     error.value = t('publicCatalogUnavailable')
     groups.value = []
   } finally {
-    loading.value = false
+    if (!request.signal.aborted) loading.value = false
   }
 }
 
+watch([loading, () => route.hash], async ([pending]) => {
+  const hash = route.hash
+  if (pending || !hash) return
+  const lesson = publicLessonForHash(groups.value, hash)
+  // The destination does not exist until the asynchronous catalog is rendered.
+  await nextTick()
+  if (activeRequest?.signal.aborted || route.hash !== hash) return
+  const heading = document.getElementById(lesson ? publicLessonAnchor(lesson.id) : PUBLIC_CATALOG_ANCHOR)
+  heading?.scrollIntoView({ block: 'start' })
+  heading?.focus({ preventScroll: true })
+}, { flush: 'post' })
+
 onMounted(() => void loadCatalog())
+onBeforeUnmount(() => activeRequest?.abort())
 </script>
 
 <template>
   <section aria-labelledby="public-catalog-heading">
     <p v-if="introduction" class="lead text-secondary mb-4">{{ introduction }}</p>
-    <h1 id="public-catalog-heading" class="h2">{{ t('publicCatalogHeading') }}</h1>
+    <h1 :id="PUBLIC_CATALOG_ANCHOR" class="h2 public-catalog-heading" tabindex="-1">{{ t('publicCatalogHeading') }}</h1>
     <p v-if="loading" role="status">{{ t('publicCatalogLoading') }}</p>
     <div v-else-if="error" class="alert alert-warning" role="alert">
       <p class="mb-2">{{ error }}</p>
@@ -61,10 +66,11 @@ onMounted(() => void loadCatalog())
       {{ t('publicCatalogEmpty') }}
     </p>
     <div v-else class="d-grid gap-4">
-      <section v-for="group in groups" :key="group.id" class="card"
-        :aria-labelledby="'lesson-' + group.id">
+      <section v-for="group in groups" :key="group.id" class="card public-lesson"
+        :class="{ 'public-lesson-current': route.hash === publicLessonHash(group.id) }"
+        :aria-labelledby="publicLessonAnchor(group.id)">
         <div class="card-body">
-          <h2 :id="'lesson-' + group.id" class="h4">{{ group.name }}</h2>
+          <h2 :id="publicLessonAnchor(group.id)" class="h4 public-lesson-heading" tabindex="-1">{{ group.name }}</h2>
           <ul class="list-group list-group-flush">
             <li v-for="test in group.tests" :key="test.id"
               class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 px-0">
@@ -86,3 +92,8 @@ onMounted(() => void loadCatalog())
     </div>
   </section>
 </template>
+
+<style scoped>
+.public-lesson-current { border-color: var(--bs-primary-border-subtle); }
+.public-lesson-heading, .public-catalog-heading { scroll-margin-block-start: 1.5rem; }
+</style>
