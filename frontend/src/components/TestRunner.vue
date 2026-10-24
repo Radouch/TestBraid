@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
 import MatchingQuestionRunner from './MatchingQuestionRunner.vue'
 import { createMatchingOrder } from '../learner/presentation'
-import type { DraftTest, Question } from '../editor/model'
+import { showsOverallScore, type DraftTest, type Question } from '../editor/model'
 import {
   freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer,
   type Answers, type QuestionResult,
@@ -24,9 +24,15 @@ const result = computed(() => grade(props.test.questions, answers.value))
 const resultsById = computed(() =>
   new Map(result.value.results.map(item => [item.questionId, item])))
 const incompleteDraft = computed(() => props.privatePreview && props.test.questions.length === 0)
+const scoreVisible = computed(() => showsOverallScore(props.test))
 
 function resultFor(question: Question): QuestionResult | undefined {
   return resultsById.value.get(question.id)
+}
+function questionFeedback(question: Question): string {
+  const feedback = resultFor(question)
+  const state = feedback?.correct ? 'Correct' : feedback?.answered ? 'Incorrect' : 'Unanswered'
+  return t('runnerQuestion' + state + (scoreVisible.value ? '' : 'NoScore'))
 }
 function choose(question: Extract<Question, { type: 'choice' }>, id: string, checked: boolean): void {
   if (!submitted.value) answers.value = setChoiceAnswer(answers.value, question, id, checked)
@@ -104,8 +110,7 @@ watch(() => props.test, restart, { immediate: true })
         <p v-if="submitted && (!privatePreview || hasValidAnswerKey(question))" class="mt-3 mb-0"
           :class="resultFor(question)?.correct ? 'text-success' : 'text-danger'"
           role="status">
-          {{ t(resultFor(question)?.correct ? 'runnerQuestionCorrect'
-            : resultFor(question)?.answered ? 'runnerQuestionIncorrect' : 'runnerQuestionUnanswered') }}
+          {{ questionFeedback(question) }}
         </p>
       </section>
 
@@ -116,7 +121,7 @@ watch(() => props.test, restart, { immediate: true })
         </button>
       </div>
     </form>
-    <div v-if="submitted" class="alert alert-primary mt-3" role="status">
+    <div v-if="submitted && scoreVisible" class="alert alert-primary mt-3" role="status">
       <strong>{{ t('runnerScore', { score: result.correct, total: result.total }) }}</strong>
       <p class="mb-0">{{ t('runnerResultsHint') }}</p>
     </div>
