@@ -79,13 +79,13 @@ try {
         check(\TestBraid\Config\InstallationConfig::publicSite($directory)['name'] === 'TestBraid',
             'Legacy installation lost its default branding.');
         $legacy = UploadLimits::fromBackendRoot($directory);
-        check($legacy->maxBytes('image') === 25 * 1048576, 'Legacy upload limits were not preserved.');
+        check($legacy->asResponse()['configuredImageMaxBytes'] === 25 * 1048576, 'Legacy upload limits were not preserved.');
 
         file_put_contents($directory . '/config/app.json', '{"site":{"name":"My Tests","description":"Hello"},"uploads":{"maxImageSizeMiB":15,"maxVideoSizeMiB":90}}');
         check(\TestBraid\Config\InstallationConfig::publicSite($directory)['name'] === 'My Tests',
             'New branding did not replace default.');
         $current = UploadLimits::fromBackendRoot($directory);
-        check($current->maxBytes('image') === 15 * 1048576, 'app.json should take precedence over uploads.json.');
+        check($current->asResponse()['configuredImageMaxBytes'] === 15 * 1048576, 'app.json should take precedence over uploads.json.');
     } finally {
         unlink($directory . '/config/uploads.json');
         if (is_file($directory . '/config/app.json')) unlink($directory . '/config/app.json');
