@@ -363,8 +363,8 @@ instead of reverting to old limits.
 For local verification run `composer run test:upload-limits` and
 `composer run test:media-http`; use `npm run test:branding` for the
 frontend locale fallback checks. Release tags should match the version
-compiled from `frontend/package.json` (initial development version
-`0.1.0`; stable `1.0.0` is reserved for the first stable release).
+compiled from `frontend/package.json` (current development version
+`0.2.0`; stable `1.0.0` is reserved for the first stable release).
 
 ## 7. Test the web deployment (initial foundation smoke test passed)
 
