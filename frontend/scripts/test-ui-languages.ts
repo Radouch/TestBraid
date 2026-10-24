@@ -21,14 +21,14 @@ try {
   assert.equal(explicitUiLocale('en'), null)
   assert.equal(explicitUiLocale('cs'), 'cs')
   assert.equal(resolveUiLocale('cs'), 'cs')
-  assert.equal(i18n.global.getLocaleMessage('en').home, 'Home', 'Hidden English remains fallback.')
+  assert.equal((i18n.global.getLocaleMessage('en') as Record<string, unknown>).home, 'Home', 'Hidden English remains fallback.')
 
   await loadInterfaceTranslations(['cs', 'de', 'missing'], '/')
   assert.deepEqual(availableUiLanguages.value, ['cs', 'de'])
   assert.equal(explicitUiLocale('de'), 'de')
   assert.equal(languageOptions.value[1]?.label, 'Deutsch')
-  assert.equal(i18n.global.getLocaleMessage('de').home, 'Startseite')
-  assert.equal(i18n.global.getLocaleMessage('en').home, 'Home')
+  assert.equal((i18n.global.getLocaleMessage('de') as Record<string, unknown>).home, 'Startseite')
+  assert.equal((i18n.global.getLocaleMessage('en') as Record<string, unknown>).home, 'Home')
   setAvailableUiLanguages(['cs'])
   assert.equal(explicitUiLocale('de'), null)
 } finally {
