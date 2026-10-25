@@ -30,6 +30,8 @@ const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
 const success = ref('')
+const publicationError = ref('')
+const publicationAction = ref<'publish' | 'unpublish' | ''>('')
 const activeQuestionId = ref('')
 const scrollOffset = ref(100)
 const questionEditors = new Map<string, { expand: () => void }>()
@@ -37,6 +39,7 @@ const questions = computed(() => draft.value?.questions ?? [])
 const editable = computed(() => test.value?.status === 'draft')
 const dirty = computed(() => editable.value && JSON.stringify(draft.value) !== originalEdits.value)
 const problems = computed(() => publicationProblems(questions.value))
+const publicationIncomplete = computed(() => problems.value.length > 0 || Boolean(invalidMediaReference(questions.value)))
 const activeTab = computed(() => route.query.tab === 'settings' ? 'settings' : 'questions')
 const languageQuery = computed(() => {
   const lang = explicitUiLocale(route.query.lang)
@@ -46,7 +49,8 @@ const lessonName = computed(() => lessons.value.find(lesson => lesson.id === dra
 const catalogLocation = computed(() => ({ name: 'admin', query: { ...languageQuery.value, lesson: draft.value?.groupId || undefined } }))
 const previewLocation = computed(() => ({ name: 'test-preview', params: { id: test.value?.id },
   query: { ...languageQuery.value, editorTab: activeTab.value } }))
-const saveState = computed(() => t(busy.value ? 'editorSaving' : dirty.value ? 'editorUnsaved' : 'editorAllSaved'))
+const saveState = computed(() => t(publicationAction.value ? 'editorChangingPublication'
+  : busy.value ? 'editorSaving' : dirty.value ? 'editorUnsaved' : 'editorAllSaved'))
 const api = (path: string) => import.meta.env.BASE_URL + 'api/' + path
 let request: AbortController | undefined
 let observer: ResizeObserver | undefined
@@ -87,6 +91,7 @@ async function load(id: string): Promise<void> {
   loading.value = true
   error.value = ''
   success.value = ''
+  publicationError.value = ''
   test.value = null
   draft.value = null
   originalEdits.value = ''
@@ -181,6 +186,7 @@ async function save(): Promise<void> {
   if (page.value?.querySelector('dialog[open]')) return
   error.value = ''
   success.value = ''
+  publicationError.value = ''
   const titleInput = form.value?.querySelector<HTMLInputElement>('#test-settings-title')
   titleInput?.setCustomValidity(draft.value.title.trim() ? '' : t('editorTitleRequired'))
   // The invalid setting may be in the hidden tab. Reveal it before invoking
@@ -227,20 +233,45 @@ async function save(): Promise<void> {
     busy.value = false
   }
 }
-async function unpublishAndEdit(): Promise<void> {
-  if (!test.value || editable.value || busy.value || !window.confirm(t('publicationConfirmUnpublish', { title: test.value.title }))) return
+async function changePublication(action: 'publish' | 'unpublish'): Promise<void> {
+  if (!test.value || busy.value || (action === 'publish' ? !editable.value || dirty.value || publicationIncomplete.value : editable.value)
+    || page.value?.querySelector('dialog[open]')) return
+  if (!window.confirm(t(action === 'publish' ? 'publicationConfirmPublish' : 'publicationConfirmUnpublish', { title: test.value.title }))) return
+  const currentTest = test.value
   busy.value = true
+  publicationAction.value = action
   error.value = ''
+  success.value = ''
+  publicationError.value = ''
   try {
-    const response = await fetch(api('admin/tests/' + encodeURIComponent(test.value.id) + '/unpublish'), {
+    // Publish only the saved version the author reviewed. As with saves, this
+    // preflight detects intervening edits but is not an atomic server condition.
+    const current = await fetch(api('admin/tests/' + encodeURIComponent(currentTest.id)), {
+      credentials: 'same-origin', cache: 'no-store',
+    })
+    if (!current.ok) throw new Error(t('editorLoadFailed'))
+    const server = await current.json() as DraftTest
+    if (server.status !== currentTest.status || server.updatedAt !== currentTest.updatedAt) throw new Error(t('editorStaleTest'))
+    const response = await fetch(api('admin/tests/' + encodeURIComponent(currentTest.id) + '/' + action), {
       method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'X-CSRF-Token': csrfToken.value },
     })
-    if (!response.ok) throw new Error(t('publicationOperationFailed'))
-    await load(test.value.id)
-    success.value = t('publicationUnpublished')
-  } catch {
-    error.value = t('publicationOperationFailed')
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({})) as { error?: { code?: string } }
+      const code = result.error?.code
+      if (['NOT_PUBLISHABLE', 'VALIDATION_FAILED', 'MEDIA_MISSING'].includes(code ?? '')) throw new Error(t('publicationNotReady'))
+      if (code === 'ALREADY_PUBLISHED' || code === 'NOT_PUBLISHED') throw new Error(t('editorStaleTest'))
+      throw new Error(t('publicationOperationFailed') + ' (' + (code ?? response.status) + ')')
+    }
+    const saved = await response.json() as DraftTest
+    if (saved.id !== currentTest.id || saved.status !== (action === 'publish' ? 'published' : 'draft')) {
+      throw new Error(t('publicationUnexpectedResponse'))
+    }
+    applySaved(saved)
+    success.value = t(action === 'publish' ? 'publicationPublished' : 'publicationUnpublished')
+  } catch (cause) {
+    publicationError.value = cause instanceof Error ? cause.message : t('publicationOperationFailed')
   } finally {
+    publicationAction.value = ''
     busy.value = false
   }
 }
@@ -296,6 +327,7 @@ onBeforeUnmount(() => {
   <section ref="page" class="test-editor" :style="{ '--editor-scroll-offset': scrollOffset + 'px' }">
     <p v-if="loading" role="status">{{ t('loading') }}</p>
     <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
+    <p v-if="publicationError && activeTab !== 'settings'" class="alert alert-danger" role="alert">{{ publicationError }}</p>
     <p v-if="success" class="alert alert-success" role="status">{{ success }}</p>
     <template v-if="test && draft && !loading">
       <nav class="editor-breadcrumbs mb-3" :aria-label="t('editorBreadcrumbs')">
@@ -314,7 +346,7 @@ onBeforeUnmount(() => {
       </header>
       <div v-if="!editable" class="alert alert-warning d-flex flex-wrap gap-3 justify-content-between align-items-center">
         <span>{{ t('adminPublishedReadonly') }}</span>
-        <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="unpublishAndEdit">
+        <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="changePublication('unpublish')">
           <AppIcon name="pencil-square" />{{ t('adminUnpublishEdit') }}
         </button>
       </div>
@@ -343,14 +375,46 @@ onBeforeUnmount(() => {
         <p v-if="editable && dirty" class="small text-secondary px-3 pb-2 mb-0">{{ t('runnerSavedVersion') }}</p>
       </div>
       <form id="test-editor-form" ref="form" novalidate @submit.prevent="save">
-        <fieldset :disabled="busy || !editable" class="editor-fields">
-          <!-- Keep both tabs mounted: switching tabs must not destroy media,
-               composer dialogs or in-progress question expansion state. -->
-          <div v-show="activeTab === 'settings'" id="editor-panel-settings" role="tabpanel" aria-labelledby="editor-tab-settings">
+        <!-- Keep both tabs mounted: switching tabs must not destroy media,
+             composer dialogs or in-progress question expansion state. -->
+        <div v-show="activeTab === 'settings'" id="editor-panel-settings" role="tabpanel" aria-labelledby="editor-tab-settings">
+          <fieldset :disabled="busy || !editable" class="editor-fields">
             <p v-if="lessonsUnavailable" class="small text-secondary" role="status">{{ t('editorLessonsUnavailable') }}</p>
             <TestSettingsFields :settings="draft" :lessons="lessons" :lessons-unavailable="lessonsUnavailable || lessonsLoading" />
-          </div>
-          <div v-show="activeTab === 'questions'" id="editor-panel-questions" role="tabpanel" aria-labelledby="editor-tab-questions">
+          </fieldset>
+          <!-- Publication stays operable while published settings are locked. -->
+          <section class="editor-publication card mt-3" aria-labelledby="test-settings-publication" :aria-busy="Boolean(publicationAction)">
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <h2 id="test-settings-publication" class="h6 mb-0">{{ t('editorPublication') }}</h2>
+              <span class="badge border" :class="editable ? 'text-body-secondary bg-body-tertiary' : 'text-success-emphasis bg-success-subtle'">
+                {{ t(editable ? 'editorDraftStatus' : 'catalogPublished') }}
+              </span>
+            </div>
+            <div class="card-body">
+              <p id="editor-publication-description">{{ t(editable ? 'editorPublicationDraftHint' : 'editorPublicationPublishedHint') }}</p>
+              <p v-if="editable && dirty" id="editor-publication-unsaved" class="small text-secondary">{{ t('editorPublicationSaveFirst') }}</p>
+              <div v-if="editable && publicationIncomplete" id="editor-publication-incomplete" class="small mb-3">
+                <p class="mb-1">{{ t('publicationReadinessHint') }}</p>
+                <ul v-if="problems.length" class="mb-1"><li v-for="code in problems" :key="code">{{ t('editorProblem_' + code) }}</li></ul>
+                <p v-if="invalidMediaReference(questions)" class="mb-1">{{ t('editorIncompleteMedia') }}</p>
+                <button type="button" class="btn btn-link btn-sm p-0" @click="switchTab('questions')">{{ t('editorQuestionsTab', { count: questions.length }) }}</button>
+              </div>
+              <p v-if="publicationError" class="alert alert-danger" role="alert">{{ publicationError }}</p>
+              <div class="d-flex flex-wrap gap-2">
+                <button id="editor-publication-action" type="button" class="btn" :class="editable ? 'btn-outline-primary' : 'btn-outline-warning'"
+                  :disabled="busy || (editable && (dirty || publicationIncomplete))"
+                  :aria-describedby="['editor-publication-description', editable && dirty ? 'editor-publication-unsaved' : '', editable && publicationIncomplete ? 'editor-publication-incomplete' : ''].filter(Boolean).join(' ')"
+                  @click="changePublication(editable ? 'publish' : 'unpublish')">
+                  <AppIcon :name="editable ? 'upload' : 'arrow-counterclockwise'" />{{ t(publicationAction ? 'editorChangingPublication' : editable ? 'publicationPublish' : 'publicationUnpublish') }}
+                </button>
+                <RouterLink v-if="!editable" class="btn btn-outline-secondary" target="_blank" rel="noopener"
+                  :to="{ name: 'test', params: { id: test.id }, query: languageQuery }"><AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}</RouterLink>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div v-show="activeTab === 'questions'" id="editor-panel-questions" role="tabpanel" aria-labelledby="editor-tab-questions">
+          <fieldset :disabled="busy || !editable" class="editor-fields">
             <div v-if="editable" class="editor-questions-layout">
               <aside v-if="questions.length" class="editor-question-map card" :aria-label="t('runnerOverview')">
                 <h2 class="h6 card-header mb-0">{{ t('runnerOverview') }}</h2>
@@ -395,8 +459,8 @@ onBeforeUnmount(() => {
             <div v-else>
               <PublishedQuestionView v-for="(question, index) in questions" :key="question.id" :question="question" :index="index" />
             </div>
-          </div>
-        </fieldset>
+          </fieldset>
+        </div>
       </form>
     </template>
     <RouterLink v-else-if="!loading" :to="catalogLocation">{{ t('editorBack') }}</RouterLink>
@@ -411,6 +475,8 @@ onBeforeUnmount(() => {
 .editor-toolbar .btn { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; }
 .editor-primary-actions { flex-wrap: wrap; }
 .editor-fields { min-width: 0; border: 0; padding: 0; margin: 0; }
+.editor-publication { max-width: 48rem; }
+.editor-publication .btn { min-height: 2.75rem; }
 .editor-questions-layout { display: grid; grid-template-columns: 12.5rem minmax(0, 1fr); gap: 1.25rem; align-items: start; }
 .editor-questions-layout:not(:has(.editor-question-map)) { grid-template-columns: minmax(0, 1fr); }
 .editor-question-content { min-width: 0; }

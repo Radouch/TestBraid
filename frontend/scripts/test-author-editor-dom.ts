@@ -36,6 +36,9 @@ let holdSave = false
 let finishSave: (() => void) | undefined
 let failRename = false
 let failLessons = false
+let failPublication = ''
+let holdPublication = false
+let finishPublication: (() => void) | undefined
 let heldTestId = ''
 let resolveTest: ((response: Response) => void) | undefined
 let revision = 0
@@ -71,7 +74,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
     stored.created = created
     return Response.json(created)
   }
-  const match = path.match(/^admin\/tests\/([^/]+)(?:\/(unpublish|duplicate))?$/)
+  const match = path.match(/^admin\/tests\/([^/]+)(?:\/(publish|unpublish|duplicate))?$/)
   if (match) {
     const id = match[1]!
     if (method === 'PUT') {
@@ -85,9 +88,17 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
       stored[id] = { ...stored[id]!, ...body, updatedAt: 'saved-' + (++revision) } as DraftTest
       return Response.json(stored[id])
     }
-    if (match[2] === 'unpublish') {
-      stored[id] = { ...stored[id]!, status: 'draft', publishedAt: null, updatedAt: 'unpublished' }
-      return Response.json(stored[id])
+    if (match[2] === 'publish' || match[2] === 'unpublish') {
+      assert.equal(method, 'POST')
+      if (failPublication) return Response.json({ error: { code: failPublication } }, { status: failPublication === 'MEDIA_MISSING' ? 422 : 503 })
+      const transition = () => {
+        const published = match[2] === 'publish'
+        stored[id] = { ...stored[id]!, status: published ? 'published' : 'draft', publishedAt: published ? 'published' : null,
+          updatedAt: 'publication-' + (++revision) }
+        return Response.json(stored[id])
+      }
+      if (holdPublication) return new Promise<Response>(resolve => { finishPublication = () => resolve(transition()) })
+      return transition()
     }
     if (match[2] === 'duplicate') {
       stored.copy = { ...structuredClone(stored[id]!), id: 'copy', title: 'Copy', status: 'draft' }
@@ -146,6 +157,8 @@ async function submit(form: HTMLFormElement): Promise<void> {
 const save = () => submit(find<HTMLFormElement>('#test-editor-form'))
 const puts = () => calls.filter(call => call.method === 'PUT' && call.path === 'admin/tests/draft')
 const back = () => find<HTMLAnchorElement>('.editor-back')
+const publicationButton = () => find<HTMLButtonElement>('#editor-publication-action')
+const publicationCalls = () => calls.filter(call => call.method === 'POST' && /\/(publish|unpublish)$/.test(call.path))
 
 try {
   await settle()
@@ -318,18 +331,117 @@ try {
   assert.equal(calls.filter(call => call.method === 'POST' && call.path === 'admin/groups').length, 1)
   console.log('PASS AUTHOR DOM: duplication preserves questions/scoring and new lessons use the same focused dialog')
 
-  await router.push('/elsewhere')
-  stored.draft!.status = 'published'
+  await router.push('/admin/tests/created/questions?tab=settings&lang=cs')
+  await settle()
+  assert.ok(publicationButton().disabled, 'An empty saved draft cannot be published')
+  assert.ok(find('.editor-publication').textContent?.includes(cs.editorProblem_noQuestions!))
+  const beforeIncomplete = publicationCalls().length
+  const beforeIncompleteConfirmation = confirmations
+  await click(publicationButton())
+  assert.equal(publicationCalls().length, beforeIncomplete)
+  assert.equal(confirmations, beforeIncompleteConfirmation, 'A disabled publication attempt must not ask for confirmation')
+  await click(find('.editor-publication button.btn-link'))
+  assert.equal(find('#editor-tab-questions').getAttribute('aria-selected'), 'true')
   await router.push('/admin/tests/draft/questions?tab=settings&lang=cs')
   await settle()
+  assert.equal(publicationButton().disabled, false)
+  await fill('#test-settings-title', 'Ready after saving')
+  assert.ok(publicationButton().disabled, 'Unsaved settings block publication')
+  assert.ok(find('.editor-publication').textContent?.includes(cs.editorPublicationSaveFirst!))
+  await click(publicationButton())
+  assert.equal(publicationCalls().length, beforeIncomplete)
+  await save()
+  await click(find('#editor-tab-questions'))
+  await fill('#text-prompt', 'Question changed before publication')
+  await click(find('#editor-tab-settings'))
+  assert.ok(publicationButton().disabled, 'Unsaved questions also block publication from settings')
+  await save()
+  allowExit = false
+  const beforeCancel = publicationCalls().length
+  const beforeCancelConfirmation = confirmations
+  await click(publicationButton())
+  assert.equal(confirmations, beforeCancelConfirmation + 1)
+  assert.equal(publicationCalls().length, beforeCancel, 'Cancelling confirmation must not write')
+  allowExit = true
+  failPublication = 'MEDIA_MISSING'
+  await click(publicationButton())
+  assert.equal(stored.draft!.status, 'draft')
+  assert.ok(find('[role=alert]', find('.editor-publication')).textContent?.includes(cs.publicationNotReady!))
+  assert.equal(find<HTMLInputElement>('#test-settings-title').value, 'Ready after saving')
+  assert.equal(publicationButton().disabled, false, 'Rejected publication can be retried without losing the draft')
+  failPublication = ''
+  stored.draft!.updatedAt = 'intervening-edit-before-publication'
+  const beforeStalePublication = publicationCalls().length
+  await click(publicationButton())
+  assert.equal(publicationCalls().length, beforeStalePublication, 'An intervening server edit prevents publication')
+  assert.ok(find('[role=alert]', find('.editor-publication')).textContent?.includes(cs.editorStaleTest!))
+  await router.push('/elsewhere')
+  await router.push('/admin/tests/draft/questions?tab=settings&lang=cs')
+  await settle()
+  holdPublication = true
+  const beforePublish = publicationCalls().length
+  const beforePublishPuts = puts().length
+  await click(publicationButton())
+  await click(publicationButton())
+  await save()
+  assert.equal(publicationCalls().length, beforePublish + 1, 'Repeated publication clicks must not start a second transition')
+  assert.equal(puts().length, beforePublishPuts, 'Publishing must not trigger a separate test save')
+  assert.ok(publicationButton().disabled)
+  assert.ok([...host.querySelectorAll<HTMLFieldSetElement>('.editor-fields')].every(fieldset => fieldset.disabled))
+  assert.equal(find('.editor-save-state').textContent, cs.editorChangingPublication)
+  await router.push('/elsewhere')
+  assert.equal(router.currentRoute.value.name, 'test-questions', 'An in-flight publication blocks leaving')
+  finishPublication!()
+  holdPublication = false
+  await settle()
+  assert.equal(stored.draft!.status, 'published')
+  assert.equal(router.currentRoute.value.query.tab, 'settings')
+  assert.equal(router.currentRoute.value.query.lang, 'cs')
+  assert.ok(back().href.includes('lesson=b'))
+  assert.equal(publicationButton().textContent?.trim(), cs.publicationUnpublish)
+  assert.equal(publicationButton().disabled, false, 'Read-only settings must not disable the unpublish action')
+  assert.equal(publicationButton().closest('fieldset'), null)
+  assert.ok(find('.editor-publication').textContent?.includes(cs.catalogPublished!))
+  const publicLink = find<HTMLAnchorElement>('.editor-publication a')
+  assert.equal(publicLink.getAttribute('href'), '/training/tests/draft?lang=cs')
+  assert.equal(publicLink.target, '_blank')
+  assert.equal(publicLink.rel, 'noopener')
   assert.equal(host.querySelector('button[form=test-editor-form]'), null)
   assert.ok(find<HTMLFieldSetElement>('.editor-fields').disabled)
   const beforePublished = puts().length
   await save()
   assert.equal(puts().length, beforePublished)
+  // Reload a published test directly: publication controls remain outside the
+  // locked settings fieldset even without a preceding transition in this view.
+  await router.push('/elsewhere')
+  await router.push('/admin/tests/draft/questions?tab=settings&lang=cs')
+  await settle()
+  assert.equal(publicationButton().disabled, false)
+  allowExit = false
+  const beforeUnpublish = publicationCalls().length
+  await click(publicationButton())
+  assert.equal(publicationCalls().length, beforeUnpublish)
+  allowExit = true
+  failPublication = 'UNAVAILABLE'
+  await click(publicationButton())
+  assert.equal(stored.draft!.status, 'published')
+  assert.ok(find<HTMLFieldSetElement>('.editor-fields').disabled)
+  assert.ok(find('[role=alert]', find('.editor-publication')).textContent?.includes(cs.publicationOperationFailed!))
+  failPublication = ''
+  await click(publicationButton())
+  assert.equal(stored.draft!.status, 'draft')
+  assert.equal(router.currentRoute.value.query.tab, 'settings')
+  assert.equal(find<HTMLFieldSetElement>('.editor-fields').disabled, false)
+  assert.equal(publicationButton().textContent?.trim(), cs.publicationPublish)
+  assert.ok(find('button[form=test-editor-form]'))
+  console.log('PASS AUTHOR DOM: settings publication, unsaved/incomplete guards, confirmation, server readiness, stale/busy transitions, public link and failure retry')
+
+  await click(publicationButton())
+  await click(find('#editor-tab-questions'))
   const unpublish = [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes(cs.adminUnpublishEdit!))!
   await click(unpublish)
   assert.equal(stored.draft!.status, 'draft')
+  assert.equal(router.currentRoute.value.query.tab, undefined, 'The existing question-tab unpublish shortcut is retained')
   assert.ok(find('button[form=test-editor-form]'))
   await router.push('/elsewhere')
   failLessons = true

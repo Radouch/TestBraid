@@ -35,7 +35,21 @@ questions. It is still not atomic optimistic concurrency control.
   cards and focus the question heading. Existing questions may remain open
   together. Overview completion is structural readiness, not learner grading.
 - Published tests expose read-only questions **and** settings. The existing
-  confirmed **Unpublish and edit** action remains required for editing.
+  confirmed **Unpublish and edit** action remains available for editing.
+
+The **Test settings** tab includes a separate **Publication** card with the
+current status, a confirmed Publish/Unpublish action and, for published tests,
+a public test link. It remains usable when the other settings are read-only.
+Publishing requires a clean saved draft with no client-detected incomplete
+questions or invalid media references. The card explains disabled actions and
+links back to questions; it never silently saves or publishes an older version
+while local changes remain. The server remains authoritative for readiness,
+including private media availability. Failed transitions show an error beside
+the action and preserve the current editor state. Successful transitions apply
+the canonical returned test without changing the active tab or lesson context.
+Both actions use the existing CSRF-protected endpoints and the same best-effort
+status/`updatedAt` preflight as saving. They block concurrent writes and leaving
+while in flight; the preflight is not an atomic server-side condition.
 
 Lesson names load independently after authentication. A delayed/failed lesson
 list does not block the test, clear edits or remove its existing assignment.
@@ -69,7 +83,9 @@ and isolated authenticated API responses. It covers direct settings URLs,
 delayed/failed lesson metadata, combined saves, tab/media preservation, busy and
 unsaved-change guards, invalid hidden settings, failed/stale saves, preview return,
 question jumps/focus, lesson filter/base/language links, rename error/retry/focus,
-creation handoff, read-only published tests, explicit unpublishing, route races
+creation handoff, read-only published tests, publication from settings,
+unsaved/incomplete publication guards, cancellation, errors/retry, stale state,
+busy transitions, explicit unpublishing, route races
 and authentication before protected reads. GitHub Actions runs this alongside
 the existing suites, production build and deployment-package audits.
 
@@ -87,8 +103,12 @@ device-keyboard behavior. Before accepting deployment, use disposable drafts:
    controls and return from saved-version preview to the same editor tab.
 5. Rename/create a lesson and create/duplicate a test from a selected lesson.
    Verify selected context, focus restoration, cancellation and errors.
-6. Confirm published settings/questions are locked and only the existing
-   explicit unpublish action enables editing. Verify private media access.
+6. From Test settings, cancel and confirm publication, open the public link,
+   and unpublish again. Confirm settings/questions lock and unlock with the
+   canonical status while the active tab and lesson context remain unchanged.
+   Check that unsaved/incomplete drafts cannot be published, errors stay beside
+   the action and publication also remains available in the catalog. Verify
+   private media access.
 
 Deploy frontend build output including the updated Czech/English locale JSON.
 There is no backend, schema or content migration in this increment.
