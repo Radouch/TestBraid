@@ -3,6 +3,7 @@ import { appBaseUrl } from '../deployment-base'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminCatalog from '../components/AdminCatalog.vue'
+import SecurityDiagnostics from '../components/SecurityDiagnostics.vue'
 import { authorSession } from '../auth'
 
 interface Author {
@@ -128,6 +129,7 @@ onMounted(() => void readSession())
     <template v-if="!loading && session">
       <template v-if="session.authenticated && session.user">
         <AdminCatalog :csrf-token="session.csrfToken" />
+        <SecurityDiagnostics />
 </template>
       <form v-else-if="session.setupState === 'ready'" class="d-grid gap-3" @submit.prevent="createFirstAuthor">
         <p>{{ t('setupIntroduction') }}</p>

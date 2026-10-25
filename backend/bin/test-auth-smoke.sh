@@ -55,6 +55,7 @@ assert_json() {
 assert_status 200 "$HOST/api/health"
 assert_json '.status == "ok"'
 assert_status 401 "$HOST/api/admin/ping"
+assert_status 401 "$HOST/api/admin/installation/security"
 assert_json '.error.code == "AUTH_REQUIRED"'
 assert_status 200 "$HOST/api/auth/session"
 assert_json '.authenticated == false and (.csrfToken | length) == 64'
@@ -77,6 +78,8 @@ assert_status 200 "$HOST/api/auth/login" -X POST -H 'Content-Type: application/j
 assert_json '.authenticated == true and .user.username == "alice"'
 NEW_CSRF="$(jq -r '.csrfToken' "$TEMP/body")"
 [[ "$NEW_CSRF" != "$CSRF" ]] || { echo 'CSRF token did not rotate' >&2; exit 1; }
+assert_status 200 "$HOST/api/admin/installation/security"
+assert_json '.backendPlacement != null and .denyFilePresent != null'
 assert_status 200 "$HOST/api/admin/ping"
 assert_json '.status == "ok" and .user.username == "alice"'
 
