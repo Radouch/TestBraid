@@ -396,7 +396,7 @@
   "securityProbeMissing": "Chybí; pro HTTP test nahrajte security-probe.txt z distribučního balíčku.",
   "securityInconclusive": "Tyto kontroly nejsou důkazem úplného zabezpečení. Apache může používat aliasy a ignorovat .htaccess.",
   "securityProbeUrl": "Možná veřejná URL kontrolního souboru",
-  "securityProbeExplanation": "Zadejte pouze cestu na této doméně, např. /tichotesty-backend/security-probe.txt. Otestuje se jen zadaná adresa; jiné možné URL nemusí být odhaleny.",
+  "securityProbeExplanation": "Zadejte pouze cestu na této doméně, např. /private-backend/security-probe.txt. Otestuje se jen zadaná adresa; jiné možné URL nemusí být odhaleny.",
   "securityTestHttp": "Ověřit přístup přes HTTP",
   "securityProbe_exposed": "RIZIKO: kontrolní soubor je veřejně dostupný. Backend je potřeba zabezpečit.",
   "securityProbe_blocked": "Na zadané adrese server vrátil 403 nebo 404. Jiné adresy mohou být stále přístupné.",

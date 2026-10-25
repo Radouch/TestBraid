@@ -134,7 +134,7 @@ async function checkProbe(): Promise<void> {
         <div class="border-top pt-3">
           <label class="form-label" for="security-probe-url">{{ t('securityProbeUrl') }}</label>
           <input id="security-probe-url" v-model="probePath" class="form-control"
-            autocomplete="off" placeholder="/tichotesty-backend/security-probe.txt" />
+            autocomplete="off" placeholder="/private-backend/security-probe.txt" />
           <p class="form-text">{{ t('securityProbeExplanation') }}</p>
           <button type="button" class="btn btn-outline-secondary" :disabled="probing" @click="checkProbe">
             {{ probing ? t('loading') : t('securityTestHttp') }}
