@@ -66,3 +66,25 @@ Deploy `deployment-package/www/.htaccess` with hidden files intact in the public
 7. Before upgrades back up private `config/`, `storage/` and published media. Preserve them during upload; do not use a destructive mirror.
 
 This feature does **not** promise support for PHP hosts that provide only a publicly served filesystem and no private directory. That requires a separate, security-reviewed hosting mode.
+
+## Two installations on the same domain (example: /tichotesty)
+
+When another TestBraid already lives at the domain root, do not overwrite its existing `www/index.html`, root `www/.htaccess`, `www/api/`, or existing private `testbraid-backend/`. Use a **new** public subdirectory `www/tichotesty/` and a distinct private sibling of `www/`, for example `tichotesty-backend/`. Copy the archive's public `www/` **contents** into `www/tichotesty/`, and its private backend **contents** into `tichotesty-backend/`. Configure `basePath: "/tichotesty"` in the new backend config only.
+
+The application-relative default private path used by the new public bootstraps does **not** point to a sibling of the host document root in this nested layout. Configure `TESTBRAID_BACKEND_ENTRY` for both PHP entry points or, if the hosting provider cannot make this environment variable visible to PHP-FPM, adjust only the deployed public bootstrap fallbacks:
+
+- In `www/tichotesty/index.php` use `dirname(__DIR__, 2) . '/tichotesty-backend/public/index.php'` as the fallback `$backendEntry`.
+- In `www/tichotesty/api/index.php` use `dirname(__DIR__, 3) . '/tichotesty-backend/public/index.php'` as the fallback `$privateEntry`.
+
+These relative directory depths apply to the shown layout (`www/tichotesty` inside the domain's document root); inspect the actual paths before editing. They don't require a frontend rebuild. Keep both pointers identical in their resolved destination.
+
+**Parent Apache rewrite:** The current *root application* `www/.htaccess` rewrites unknown paths to the root `index.html` using `[END]`. That can capture `/tichotesty/admin` before the nested application's rules run. Add an exception to the root app's *last SPA fallback* so it does not rewrite URLs whose path starts with `/tichotesty`; for example, alongside existing `!-f` and `!-d` conditions:
+
+```apache
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/tichotesty(/|$)
+RewriteRule ^ index.html [END]
+```
+
+Do **not** use a parent `[END]` rule as an exclusion for `tichotesty`, because it can prevent rewrite processing in the child directory. Existing root app behavior should remain unchanged. Check direct reload of `/tichotesty/admin`.
