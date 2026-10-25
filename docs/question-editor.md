@@ -120,6 +120,10 @@ A published test must still be unpublished before editing either tab.
   application-owned uploader and its kind restrictions remain mounted. Native
   file selection/playback and frontend upload acceptance require a real browser;
   backend upload transport has separate HTTP integration coverage.
+- `npm run test:upload`: the installed FilePond multipart serializer plus the
+  mounted application uploader's request/response hooks. It checks binary-only
+  `file` parts, lesson assignment, credentials/CSRF and a newly uploaded JPG after
+  existing answer text. Only the layout widget and XHR network are isolated.
 - `npm run test:schemas`, `npm run test:learner`, `npm run test:navigation`:
   existing regression suites, including deterministic coverage of all three-item
   shuffle permutations and ID-based scoring after reordering.

@@ -40,6 +40,9 @@ jobs:
       - name: Question composition and private media interaction regression
         run: npm run test:content
         working-directory: frontend
+      - name: FilePond multipart upload and answer attachment regression
+        run: npm run test:upload
+        working-directory: frontend
       - name: Navigation and UI language URL regression
         run: npm run test:navigation
         working-directory: frontend

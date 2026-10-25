@@ -138,6 +138,26 @@ Author-only endpoints:
 - `PATCH /api/admin/media/{id}` accepts JSON `{"groupId": "<lesson-uuid>"}`
   or `{"groupId": null}` to move an asset to unassigned.
 
+The multipart contract is one **binary** `file` part and optional text `groupId`.
+FilePond's default transport also produces a text `file` part containing its JSON
+metadata. `MediaUploader.ondata` removes that widget metadata by rebuilding the
+request from binary file parts and the application's lesson assignment. Without
+this adapter, PHP exposes the extra part in parsed-body fields and the strict
+allowlist returns `Unsupported upload fields.` The same adapter serves the
+question editor and standalone library; the backend field allowlist is unchanged.
+
+`npm run test:upload` runs the installed FilePond multipart serializer with the
+actual mounted uploader configuration, captures its request at the XHR boundary
+and round-trips the multipart bytes. It covers the default metadata part, binary
+contents, filename/MIME, optional lesson assignment, credentials/CSRF and a new
+JPG attachment after existing answer text. The third-party layout widget and
+network are isolated, while transport serialization and response callbacks are
+real. `composer run test:media-http` separately checks strict field rejection,
+JPEG upload/private preview and mixed text/JPG draft persistence against PHP.
+
+The multipart adapter fix requires only rebuilt frontend files to be deployed;
+it does not change PHP routes, schemas or existing media.
+
 The server checks group IDs against existing lessons under the same lock used
 by lesson deletion and test writes. Removing an empty lesson detaches any
 associated media; it never deletes media files or modifies test references.

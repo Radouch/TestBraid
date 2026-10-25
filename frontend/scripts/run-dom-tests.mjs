@@ -23,6 +23,15 @@ try {
     entryPoints: [entry], outfile: output, bundle: true, platform: 'node', format: 'esm', packages: 'external',
     define: { 'import.meta.env.BASE_URL': JSON.stringify('/training/') },
     plugins: [{ name: 'vue-dom-tests', setup(plugin) {
+      // Exercise the installed FilePond multipart serializer independently of
+      // its native-layout widget. This test-only export never enters Vite output.
+      plugin.onResolve({ filter: /^filepond-transport-test$/ }, () => ({
+        path: require.resolve('filepond/package.json'), namespace: 'filepond-transport-test',
+      }))
+      plugin.onLoad({ filter: /.*/, namespace: 'filepond-transport-test' }, args => {
+        const entry = resolve(dirname(args.path), JSON.parse(readFileSync(args.path, 'utf8')).module)
+        return { contents: readFileSync(entry, 'utf8') + '\nexport { createFileProcessorFunction };', loader: 'js', resolveDir: dirname(entry) }
+      })
       // FilePond relies on native layout/file APIs unavailable in Happy DOM.
       // Keep the application-owned MediaUploader real and isolate only that
       // third-party engine; real upload transport is covered by HTTP integration.
