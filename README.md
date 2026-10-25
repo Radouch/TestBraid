@@ -46,7 +46,8 @@ See [deployment details](docs/deployment.md#6d-installation-branding-version-and
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
 - [PoC-A acceptance evidence and runbook](docs/poc-a-acceptance.md) — tested CI/hosting behavior, repeatable deploy checks and confirmed PHP/cookie/quota configuration.
-- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
+- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting and public/private directories.
+- [Runtime subdirectory installation](docs/runtime-subdirectory-installation.md) — install the same prebuilt frontend under `/` or any nested URL without rebuilding.
 - [Shared JSON schemas](schemas/) — versioned contracts and common structural/publication validation fixtures.
 
 ## Status
