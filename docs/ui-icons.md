@@ -29,9 +29,10 @@ link retains its translated visible label or an explicit accessible name.
 | More actions / expand / collapse | `three-dots` (vertical in catalog) / chevrons |
 | Assign / unpair / paired connection | `link-45deg` / `x-lg` / `arrow-left-right` |
 
-Standalone icon buttons have at least 40 × 40 CSS pixels and 20 px icons. Inline
-insertion controls use a compact 32 × 32 target; menus have 40 px-high actions.
-Block tools stay horizontal, moving above content in narrow editors. Preserve
+Standalone icon buttons have at least 40 × 40 CSS pixels and 20 px icons. Shared
+author-menu triggers and action rows have at least 44 px targets. Block insertion,
+movement and removal share the block's local disclosure rather than repeated
+standalone controls. Preserve
 disabled states, focus indicators, keyboard operation and translated titles.
 Retain text for less obvious actions; a selected learner card's check means
 selection, never correctness before submission.

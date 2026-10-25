@@ -10,35 +10,48 @@ The sticky toolbar is available on desktop and mobile, and question jumps accoun
 for its measured height. See [the author workspace](author-workspace.md) for tabs,
 lesson navigation, dialogs and combined save/unsaved-change behavior.
 
-Each question has a collapsible card showing its number, type, a local completeness
-hint and, when collapsed, a text summary. The first question and newly added or
+Each question has a neutral gray collapsible header showing its number, type,
+local completeness and, when collapsed, a text summary. Completeness describes
+publication readiness and is visually separate from the answer key. The first question and newly added or
 duplicated questions start expanded. Question actions include moving, duplicating
 and removing. Duplicating regenerates question/item/block IDs and remaps answer-key
 references; media references retain the existing private files. It does not copy or
 publish media. A question's collapse state is presentation state and is not saved.
+Composers mount on first expansion and stay mounted afterward. Collapsing pauses
+native video playback while retaining its position and the existing media nodes.
 
-Choice answers use a compact radio/checkbox next to the answer label and a visible
-**Correct** badge. Single/multiple choice switching and scoring semantics are
+The prompt has a neutral background and a visible heading. Answers form a
+separate section, with an explicit **Correct answer** radio/checkbox and a subtle
+success background for each marked answer. Video controls are outside those labels.
+Single/multiple choice switching and scoring semantics are
 unchanged. Answer movement and deletion are available in the answer's action menu.
 Menus close after selection, outside click or Escape and support keyboard access.
+Removing an answer or matching pair focuses the next remaining item, or its Add
+button when the list is empty.
 
 ## Composing content
 
 The same application-owned editor composes question prompts, choice answers and
-both sides of matching pairs. There are no nested "Answer content / Block 1" frames.
-Text is edited directly in an automatically growing textarea. Every content list
+both sides of matching pairs. Each block has a restrained frame, a visible
+Text/Image/Video label and one persistent local action disclosure. Text is edited
+directly in an automatically growing textarea. Every content list
 supports arbitrary repeated text/image/video blocks, including media-only content.
 
 - **Add content** appends a text, image or video block to that content list.
-- The **+** separator before each block inserts content at that position.
-- A horizontal row of outlined up/down and **Remove** buttons moves or removes
-  whole blocks directly. On narrow screens the row sits above the full-width
-  content; it never becomes a vertical rail that sets a short text block's height.
+- A block's **…** menu offers Text/Image/Video insertion before that block,
+  followed by Move up, Move down and Remove block. This retains every insertion
+  position without repeated separator rows or standalone destructive controls.
+  Movement retains stable block IDs and disables unavailable boundaries.
 - **Add answer** creates a distinct answer option, rather than a content block.
 
 Actions use bundled Bootstrap Icons with translated text or accessible names.
-Standalone block arrows and menu toggles have 40 px targets; see
+Shared menu triggers and action rows have at least 44 px targets; see
 [`ui-icons.md`](ui-icons.md) for the shared icon vocabulary and sizing.
+Open menus are positioned using available viewport space, with bounded scrolling
+for long lists. Their DOM remains inside the surrounding fieldset, preserving
+the native busy/published edit lock. Text insertion focuses the new textarea;
+removal focuses the next block or the append control. A media action keeps focus
+inside the native dialog and returns it to a persistent trigger on close.
 
 Selecting Image or Video opens a modal with existing files of the selected kind
 and the FilePond-backed `MediaUploader`. The uploader accepts only that kind in
@@ -53,12 +66,17 @@ Pending media operations target stable block IDs, including an insertion anchor,
 rather than mutable array indices. Closing the modal or unmounting the editor
 aborts an outstanding library request. Wrong-kind uploads are not attached.
 Private image/video previews use only the existing author-only API endpoints.
+They reuse the learner's `ContentMedia` orientation detection: portrait images
+and videos can reach 560 px, landscape previews 360 px, both capped by available
+viewport height and width. Aspect ratio and the whole frame are retained. Source
+replacement resets orientation until intrinsic dimensions arrive. Dialog lesson
+selectors use unique IDs across all mounted composers.
 
 ## Compatibility and boundaries
 
 The editor still uses `schemaVersion: 1`. No schema, backend endpoint, publication
 or learner rendering change is required. Text can remain empty in saved drafts;
-any media block must reference a valid private file before saving. Readiness badges
+any media block must reference a valid private file before saving. Completeness hints
 and the test-level summary are advisory; server publication validation remains the
 authority. The existing `updatedAt` save preflight is best effort, not transaction-safe
 concurrency control. Unsaved-change navigation warnings remain active.
@@ -67,7 +85,9 @@ Matching now uses direct **correct pair** rows: each row contains the associated
 left and right content, with no answer-key dropdown. Adding a pair creates both
 items and their assignment. Removing a pair removes those exact IDs, even if an
 older draft stored a crossed mapping or a different right-item order. The row
-stacks left above right in narrow layouts, keeping the pair together.
+stacks left above right in narrow layouts, keeping the pair together on one
+neutral surface. Both sides retain explicit labels at every width. Pair removal
+is in the row's local action menu.
 
 Opening existing questions is read-only with respect to their data: rows are
 projected from saved match IDs. Unassigned legacy items remain visible in suggested,
@@ -90,6 +110,16 @@ A published test must still be unpublished before editing either tab.
 - `npm run test:editor`: schema compatibility, answer keys, matching invariants,
   mixed media, ordering, duplication with fresh IDs/remapped references, crossed-pair
   projection/removal and deliberate legacy-pair confirmation.
+- `npm run test:content`: actual question/composer DOM interaction, insertion at
+  every position, movement/removal focus, single/multiple answer keys, crossed and
+  legacy matching rows, private kind/lesson-aware media selection and cancellation,
+  portrait detection/source reset, retained collapsed media, unique control IDs,
+  menu keyboard behavior and the native edit lock. API responses are isolated;
+  this suite does not save, publish, upload or delete live content.
+  Only the third-party FilePond engine uses a DOM test boundary; the actual
+  application-owned uploader and its kind restrictions remain mounted. Native
+  file selection/playback and frontend upload acceptance require a real browser;
+  backend upload transport has separate HTTP integration coverage.
 - `npm run test:schemas`, `npm run test:learner`, `npm run test:navigation`:
   existing regression suites, including deterministic coverage of all three-item
   shuffle permutations and ID-based scoring after reordering.
@@ -114,7 +144,11 @@ Before accepting a deployment, use a disposable draft to check:
    completed pairs and feedback must show the actual associated content.
    Try again must clear responses and draw a new permutation (a repeat is allowed).
 7. Check Czech/English labels, keyboard navigation, Escape/outside-click dismissal,
-   desktop/mobile layout and a published test's edit lock.
+   desktop/mobile layout, a published test's edit lock and the taller portrait
+   previews. At 320/390/768/1024/1440 px, open block menus near each viewport edge,
+   verify their actions remain reachable and check matching rows and text fields
+   for horizontal overflow. DOM tests do not establish real-browser pixel layout
+   or native playback acceptance.
 
 Only frontend build output is needed for this UI increment. Real-host upload and
 acceptance are separate from local validation; do not overwrite private storage or

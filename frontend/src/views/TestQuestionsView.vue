@@ -450,7 +450,7 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="card p-3 mt-3">
                   <h2 class="h6">{{ t('editorReadiness') }}</h2>
-                  <p v-if="!problems.length" class="text-success mb-1">{{ t('editorLooksComplete') }}</p>
+                  <p v-if="!problems.length" class="text-secondary mb-1">{{ t('editorLooksComplete') }}</p>
                   <ul v-else class="small mb-1"><li v-for="code in problems" :key="code">{{ t('editorProblem_' + code) }}</li></ul>
                   <p class="text-secondary small mb-0">{{ t('editorServerValidates') }}</p>
                 </div>

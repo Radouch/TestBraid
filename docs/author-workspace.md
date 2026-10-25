@@ -1,9 +1,9 @@
 # Shared author test workspace
 
-This is the first approved author-design increment after v0.4.0. It implements
-the unified-editor direction from #42 and the lesson/navigation scope of #68.
-Individual content-block controls and their media-preview styling are a later
-increment; their editing behavior is unchanged here.
+The approved author-design work after v0.4.0 implements the unified-editor
+direction from #42, the lesson/navigation scope of #68 and the question-composition
+design from #70. See [the question editor](question-editor.md) for local block
+actions, neutral completeness, correct-answer controls and portrait media previews.
 
 ## Test editing
 
@@ -87,7 +87,8 @@ creation handoff, read-only published tests, publication from settings,
 unsaved/incomplete publication guards, cancellation, errors/retry, stale state,
 busy transitions, explicit unpublishing, route races
 and authentication before protected reads. GitHub Actions runs this alongside
-the existing suites, production build and deployment-package audits.
+the focused `npm run test:content` composition suite, existing regressions,
+production build and deployment-package audits.
 
 The DOM tests do not establish real-browser pixel layout, native playback or
 device-keyboard behavior. Before accepting deployment, use disposable drafts:

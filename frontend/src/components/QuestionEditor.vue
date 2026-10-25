@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppIcon from './AppIcon.vue'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksEditor from './ContentBlocksEditor.vue'
 import EditorMenu from './EditorMenu.vue'
@@ -14,11 +14,17 @@ import {
 const props = defineProps<{ question: Question; csrfToken: string; groupId: string; index: number; total: number; initiallyExpanded: boolean }>()
 const emit = defineEmits<{ remove: []; move: [direction: -1 | 1]; duplicate: [] }>()
 const { t } = useI18n()
+const root = ref<HTMLElement | null>(null)
 const choice = computed<ChoiceQuestion | null>(() => props.question.type === 'choice' ? props.question : null)
 const matching = computed<MatchingQuestion | null>(() => props.question.type === 'matching' ? props.question : null)
 
 const pairs = computed(() => matching.value ? matchingRows(matching.value) : [])
 const expanded = ref(props.initiallyExpanded)
+const bodyMounted = ref(props.initiallyExpanded)
+watch(expanded, value => {
+  if (value) bodyMounted.value = true
+  else root.value?.querySelectorAll('video').forEach(video => video.pause())
+})
 // The surrounding test overview can open a collapsed question without
 // remounting its composers or discarding another question's expansion state.
 defineExpose({ expand: () => { expanded.value = true } })
@@ -36,8 +42,12 @@ function toggleCorrect(id: string, checked: boolean): void {
 function addOption(): void {
   if (choice.value) choice.value.options = [...choice.value.options, blankItem()]
 }
-function removeOption(id: string): void {
-  if (choice.value) removeChoiceOption(choice.value, id)
+async function removeOption(id: string): Promise<void> {
+  if (!choice.value) return
+  const index = choice.value.options.findIndex(option => option.id === id)
+  removeChoiceOption(choice.value, id)
+  await nextTick()
+  focusRemaining('.answer-editor', index, '.add-answer')
 }
 function orderOption(index: number, direction: -1 | 1): void {
   if (choice.value) choice.value.options = move(choice.value.options, index, direction)
@@ -45,8 +55,18 @@ function orderOption(index: number, direction: -1 | 1): void {
 function addPair(): void {
   if (matching.value) addMatchingPair(matching.value)
 }
-function removePair(row: MatchingRow): void {
-  if (matching.value) removeMatchingPair(matching.value, row.left?.id ?? null, row.right?.id ?? null)
+async function removePair(row: MatchingRow): Promise<void> {
+  if (!matching.value) return
+  const index = pairs.value.findIndex(pair => pair.id === row.id)
+  removeMatchingPair(matching.value, row.left?.id ?? null, row.right?.id ?? null)
+  await nextTick()
+  focusRemaining('.matching-pair', index, '.add-pair')
+}
+function focusRemaining(selector: string, index: number, fallback: string): void {
+  const rows = Array.from(root.value?.querySelectorAll<HTMLElement>(selector) ?? [])
+  const next = rows[Math.min(index, rows.length - 1)]
+  const target = next?.querySelector<HTMLElement>('input, textarea, summary, button') ?? root.value?.querySelector<HTMLElement>(fallback)
+  target?.focus()
 }
 function confirmPair(row: MatchingRow): void {
   if (matching.value) confirmMatchingRow(matching.value, row)
@@ -57,18 +77,21 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
 </script>
 
 <template>
-  <section class="card question-card my-3" :aria-label="t('editorQuestionNumber', { index: index + 1 })">
-    <div class="question-header d-flex gap-2 align-items-center p-3">
-      <button type="button" class="question-toggle btn p-0 text-start flex-grow-1"
+  <section ref="root" class="card question-card my-3" :aria-label="t('editorQuestionNumber', { index: index + 1 })">
+    <div class="question-header card-header d-flex gap-2 align-items-center p-2 p-sm-3">
+      <button type="button" class="question-toggle btn p-0 text-start flex-grow-1 d-flex align-items-center gap-2"
         :aria-expanded="expanded" :aria-controls="'question-body-' + question.id" @click="expanded = !expanded">
-        <span class="d-flex flex-wrap align-items-center gap-2">
-          <span class="h5 mb-0">{{ t('editorQuestionNumber', { index: index + 1 }) }}</span>
-          <span class="small text-secondary">{{ question.type === 'choice' ? t('editorChoice') : t('editorMatching') }}</span>
-          <span class="badge rounded-pill" :class="complete ? 'text-bg-success' : 'text-bg-light text-secondary border'">
-            {{ complete ? t('editorComplete') : t('editorIncomplete') }}
+        <AppIcon :name="expanded ? 'chevron-up' : 'chevron-down'" />
+        <span class="question-heading-content">
+          <span class="d-flex flex-wrap align-items-center gap-2">
+            <span class="h5 mb-0">{{ t('editorQuestionNumber', { index: index + 1 }) }}</span>
+            <span class="small text-secondary">{{ question.type === 'choice' ? t('editorChoice') : t('editorMatching') }}</span>
           </span>
+          <span class="question-state small text-secondary" :title="t('editorCompletenessHelp')">
+            <AppIcon :name="complete ? 'check2-circle' : 'circle-half'" /> {{ complete ? t('editorComplete') : t('editorIncomplete') }}
+          </span>
+          <span v-if="!expanded" class="question-summary d-block text-secondary small mt-1">{{ summary }}</span>
         </span>
-        <span v-if="!expanded" class="question-summary d-block text-secondary small mt-2">{{ summary }}</span>
       </button>
       <EditorMenu :label="t('editorQuestionActions', { index: index + 1 })">
         <button type="button" class="btn btn-sm" :disabled="index === 0" @click="emit('move', -1)"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
@@ -76,17 +99,19 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
         <button type="button" class="btn btn-sm" @click="emit('duplicate')"><AppIcon name="copy" />{{ t('editorDuplicateQuestion') }}</button>
         <button type="button" class="btn btn-sm text-danger" @click="emit('remove')"><AppIcon name="trash3" />{{ t('editorRemoveQuestion') }}</button>
       </EditorMenu>
-      <button type="button" class="btn btn-sm icon-button" :title="expanded ? t('editorCollapseQuestion') : t('editorExpandQuestion')" :aria-label="expanded ? t('editorCollapseQuestion') : t('editorExpandQuestion')"
-        :aria-expanded="expanded" :aria-controls="'question-body-' + question.id" @click="expanded = !expanded">
-        <AppIcon :name="expanded ? 'chevron-up' : 'chevron-down'" />
-      </button>
     </div>
 
-    <div v-if="expanded" :id="'question-body-' + question.id" class="px-3 pb-3">
-      <ContentBlocksEditor v-model="question.prompt" :csrf-token="csrfToken" :group-id="groupId" :label="t('editorPrompt')" />
-      <template v-if="choice">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 mb-2">
-          <h4 class="h6 mb-0">{{ t('editorAnswers') }}</h4>
+    <!-- Mount lazily, then retain composers/media while collapsed. Pausing on
+         collapse keeps hidden playback silent without discarding its position. -->
+    <div v-if="bodyMounted" v-show="expanded" :id="'question-body-' + question.id" class="question-body p-2 p-sm-3">
+      <section class="question-prompt rounded p-2 p-sm-3" :aria-labelledby="'prompt-heading-' + question.id">
+        <h2 :id="'prompt-heading-' + question.id" class="h6 mb-3">{{ t('editorPrompt') }}</h2>
+        <ContentBlocksEditor v-model="question.prompt" :csrf-token="csrfToken" :group-id="groupId" :label="t('editorPrompt')"
+          :add-label="t('editorAddPromptContent')" hide-label />
+      </section>
+      <section v-if="choice" class="question-answers" :aria-labelledby="'answers-heading-' + question.id">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+          <h2 :id="'answers-heading-' + question.id" class="h6 mb-0">{{ t('editorAnswers') }}</h2>
           <div class="choice-mode-control d-flex flex-wrap align-items-center gap-2">
             <label class="small text-secondary" :for="'mode-' + question.id">{{ t('editorChoiceMode') }}</label>
             <select :id="'mode-' + question.id" class="form-select form-select-sm choice-mode"
@@ -98,16 +123,18 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
         </div>
         <p class="small text-secondary mb-2">{{ t('editorCorrectHint') }}</p>
         <p v-if="!choice.correctOptionIds.length" class="small text-warning-emphasis" role="status">{{ t('editorNoCorrectCompact') }}</p>
-        <div v-for="(option, optionIndex) in choice.options" :key="option.id" class="answer-editor rounded p-2 p-md-3 mb-2"
+        <div v-for="(option, optionIndex) in choice.options" :key="option.id" class="answer-editor rounded p-2 p-md-3 mb-3" :data-option-id="option.id"
           :class="{ 'answer-correct': choice.correctOptionIds.includes(option.id) }">
-          <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-            <input :id="'correct-' + option.id" class="form-check-input m-0"
-              :type="choice.mode === 'single' ? 'radio' : 'checkbox'" :name="'correct-' + choice.id"
-              :checked="choice.correctOptionIds.includes(option.id)" :aria-label="t('editorMarkOptionCorrect', { index: optionIndex + 1 })"
-              @change="toggleCorrect(option.id, ($event.target as HTMLInputElement).checked)" />
-            <label :for="'correct-' + option.id" class="fw-semibold">{{ t('editorOptionNumber', { index: optionIndex + 1 }) }}</label>
-            <span v-if="choice.correctOptionIds.includes(option.id)" class="badge bg-success-subtle text-success-emphasis"><AppIcon name="check-lg" /> {{ t('editorCorrectBadge') }}</span>
-            <EditorMenu class="ms-auto" :label="t('editorAnswerActions', { index: optionIndex + 1 })">
+          <div class="answer-heading mb-2">
+            <span class="fw-semibold">{{ t('editorOptionNumber', { index: optionIndex + 1 }) }}</span>
+            <label :for="'correct-' + option.id" class="answer-correct-control small">
+              <input :id="'correct-' + option.id" class="form-check-input m-0"
+                :type="choice.mode === 'single' ? 'radio' : 'checkbox'" :name="'correct-' + choice.id"
+                :checked="choice.correctOptionIds.includes(option.id)" :aria-label="t('editorMarkOptionCorrect', { index: optionIndex + 1 })"
+                @change="toggleCorrect(option.id, ($event.target as HTMLInputElement).checked)" />
+              <span>{{ t('editorCorrectAnswer') }}</span>
+            </label>
+            <EditorMenu class="answer-actions" :label="t('editorAnswerActions', { index: optionIndex + 1 })">
               <button type="button" class="btn btn-sm" :disabled="optionIndex === 0" @click="orderOption(optionIndex, -1)"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
               <button type="button" class="btn btn-sm" :disabled="optionIndex === choice.options.length - 1" @click="orderOption(optionIndex, 1)"><AppIcon name="arrow-down" />{{ t('editorMoveDown') }}</button>
               <button type="button" class="btn btn-sm text-danger" @click="removeOption(option.id)"><AppIcon name="trash3" />{{ t('editorRemoveOption') }}</button>
@@ -116,25 +143,23 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
           <ContentBlocksEditor :model-value="option.content" :csrf-token="csrfToken" :group-id="groupId"
             :label="t('editorOptionNumber', { index: optionIndex + 1 })" hide-label @update:model-value="updateContent(option, $event)" />
         </div>
-        <button class="btn btn-outline-primary btn-sm mt-2" type="button" @click="addOption"><AppIcon name="plus-lg" />{{ t('editorAddOption') }}</button>
-      </template>
+        <button class="btn btn-outline-primary btn-sm add-answer" type="button" @click="addOption"><AppIcon name="plus-lg" />{{ t('editorAddOption') }}</button>
+      </section>
 
-      <template v-if="matching">
-        <h4 class="h6 mt-4 mb-1">{{ t('editorCorrectPairs') }}</h4>
+      <section v-if="matching" class="question-answers" :aria-labelledby="'pairs-heading-' + question.id">
+        <h2 :id="'pairs-heading-' + question.id" class="h6 mb-1">{{ t('editorCorrectPairs') }}</h2>
         <p class="text-secondary small mb-3">{{ t('editorDirectPairsHelp') }}</p>
-        <div class="row mb-2 small fw-semibold text-secondary d-none d-md-flex" aria-hidden="true">
-          <div class="col-md-6">{{ t('editorLeftItem') }}</div>
-          <div class="col-md-6">{{ t('editorRightItem') }}</div>
-        </div>
         <section v-for="(pair, pairIndex) in pairs" :key="pair.id" class="matching-pair border rounded mb-3"
-          :aria-label="t('editorPairNumber', { index: pairIndex + 1 })">
+          :aria-label="t('editorPairNumber', { index: pairIndex + 1 })" :data-pair-id="pair.id">
           <div class="pair-header d-flex align-items-center justify-content-between gap-2 px-2 py-2 border-bottom">
-            <h5 class="h6 mb-0">{{ t('editorPairNumber', { index: pairIndex + 1 }) }}</h5>
-            <button type="button" class="btn btn-outline-danger btn-sm" @click="removePair(pair)"><AppIcon name="trash3" />{{ t('editorRemovePair') }}</button>
+            <h3 class="h6 mb-0">{{ t('editorPairNumber', { index: pairIndex + 1 }) }}</h3>
+            <EditorMenu :label="t('editorPairActions', { index: pairIndex + 1 })">
+              <button type="button" class="btn btn-sm text-danger" @click="removePair(pair)"><AppIcon name="trash3" />{{ t('editorRemovePair') }}</button>
+            </EditorMenu>
           </div>
-          <div class="row g-3 p-2">
-            <div class="col-md-6">
-              <p class="small text-secondary mb-1 d-md-none">{{ t('editorLeftItem') }}</p>
+          <div class="pair-items p-2 p-sm-3">
+            <div class="pair-item">
+              <p class="small text-secondary mb-2">{{ t('editorLeftItem') }}</p>
               <ContentBlocksEditor v-if="pair.left" :model-value="pair.left.content" :csrf-token="csrfToken" :group-id="groupId"
                 :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorLeftItem')" hide-label
                 @update:model-value="updateContent(pair.left!, $event)" />
@@ -142,8 +167,9 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
                 <AppIcon name="plus-lg" />{{ t('editorCompleteLeft') }}
               </button>
             </div>
-            <div class="col-md-6">
-              <p class="small text-secondary mb-1 d-md-none">{{ t('editorRightItem') }}</p>
+            <span class="pair-connection text-secondary" aria-hidden="true"><AppIcon name="link-45deg" /></span>
+            <div class="pair-item">
+              <p class="small text-secondary mb-2">{{ t('editorRightItem') }}</p>
               <ContentBlocksEditor v-if="pair.right" :model-value="pair.right.content" :csrf-token="csrfToken" :group-id="groupId"
                 :label="t('editorPairNumber', { index: pairIndex + 1 }) + ': ' + t('editorRightItem')" hide-label
                 @update:model-value="updateContent(pair.right!, $event)" />
@@ -158,21 +184,48 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
             <button type="button" class="btn btn-outline-primary btn-sm" @click="confirmPair(pair)"><AppIcon name="check-lg" />{{ t('editorConfirmPair') }}</button>
           </div>
         </section>
-        <button class="btn btn-outline-primary btn-sm" type="button" @click="addPair"><AppIcon name="plus-lg" />{{ t('editorAddPair') }}</button>
+        <button class="btn btn-outline-primary btn-sm add-pair" type="button" @click="addPair"><AppIcon name="plus-lg" />{{ t('editorAddPair') }}</button>
         <p class="small text-secondary mt-2 mb-0">{{ t('editorMatchingShuffle') }}</p>
-      </template>
+      </section>
     </div>
   </section>
 </template>
 
 <style scoped>
-.question-card { border-color: var(--bs-border-color); box-shadow: 0 .1rem .3rem rgb(0 0 0 / .025); }
-.question-toggle { min-width: 0; border: 0; }
+.question-card { min-width: 0; border-color: var(--bs-border-color); container-type: inline-size; }
+.question-card:has(.editor-menu[open]) { z-index: 45; }
+.question-header { background: var(--bs-tertiary-bg); }
+.question-toggle { min-width: 0; min-height: 2.75rem; border: 0; }
+.question-toggle > .app-icon { flex-shrink: 0; margin: 0; }
+.question-heading-content { min-width: 0; }
+.question-state { display: block; margin-top: .25rem; }
+.question-body { display: grid; gap: 1.5rem; }
+.question-prompt { background: var(--bs-tertiary-bg); }
+.question-prompt:has(.editor-menu[open]) { position: relative; z-index: 45; }
 .question-toggle:focus-visible { box-shadow: 0 0 0 .2rem rgb(13 110 253 / .25); }
 .question-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65ch; }
 .choice-mode { width: auto; max-width: 100%; }
 .choice-mode-control { min-width: 0; max-width: 100%; }
-.answer-editor { border: 1px solid var(--bs-border-color); border-left-width: 3px; }
-.pair-header { background: var(--bs-tertiary-bg); }
-.answer-correct { border-left-color: var(--bs-primary); background: rgb(13 110 253 / .025); }
+.answer-editor { min-width: 0; border: 1px solid var(--bs-border-color); container-type: inline-size; }
+.answer-editor:has(.editor-menu[open]), .matching-pair:has(.editor-menu[open]) { position: relative; z-index: 45; }
+.answer-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .5rem .75rem; }
+.answer-correct-control { display: flex; align-items: center; justify-self: end; gap: .5rem; min-height: 2.75rem; color: var(--bs-secondary-color); }
+.answer-correct-control input { flex-shrink: 0; }
+.answer-correct { background: color-mix(in srgb, var(--bs-success-bg-subtle) 50%, var(--bs-body-bg)); }
+.answer-correct .answer-correct-control { color: var(--bs-success-text-emphasis); }
+.answer-correct .form-check-input:checked { background-color: var(--bs-success); border-color: var(--bs-success); }
+.matching-pair, .pair-header { background: var(--bs-tertiary-bg); }
+.pair-items { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: .75rem; align-items: start; }
+.pair-item { min-width: 0; }
+.pair-connection { align-self: center; }
+.add-answer, .add-pair { min-height: 2.75rem; }
+@container (max-width: 40rem) {
+  .pair-items { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+  .pair-connection { justify-self: center; }
+}
+@container (max-width: 26rem) {
+  .answer-heading { grid-template-columns: minmax(0, 1fr) auto; }
+  .answer-correct-control { grid-column: 1 / -1; grid-row: 2; justify-self: start; }
+  .answer-actions { grid-column: 2; grid-row: 1; }
+}
 </style>

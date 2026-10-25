@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, type ObjectDirective } from 'vue'
+import { computed, nextTick, onUnmounted, ref, useId, type ObjectDirective } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader, { type UploadedMedia } from './MediaUploader.vue'
 import EditorMenu from './EditorMenu.vue'
 import AppIcon from './AppIcon.vue'
+import ContentMedia from './ContentMedia.vue'
 import { createBlock, move, uuidPattern, type BlockKind, type ContentBlock } from '../editor/model'
 
 const props = withDefaults(defineProps<{
-  modelValue: ContentBlock[]; csrfToken: string; label: string; hideLabel?: boolean; groupId: string
+  modelValue: ContentBlock[]; csrfToken: string; label: string; hideLabel?: boolean; groupId: string; addLabel?: string
 }>(), { hideLabel: false })
 const emit = defineEmits<{ 'update:modelValue': [blocks: ContentBlock[]] }>()
 const { t } = useI18n()
 const root = ref<HTMLElement | null>(null)
 const pickerDialog = ref<HTMLDialogElement | null>(null)
+const pickerLessonId = 'media-picker-lesson-' + useId()
+let pickerOrigin: HTMLElement | null = null
 const mediaChoices = ref<Array<{ id: string; kind: 'image' | 'video'; originalName: string; groupId: string | null }>>([])
 const lessons = ref<Array<{ id: string; name: string }>>([])
 const lessonFilter = ref('__all__')
@@ -80,7 +83,14 @@ async function openPicker(kind: 'image' | 'video', target: NonNullable<typeof pi
   mediaChoices.value = []
   lessonFilter.value = props.groupId
   pickerLoading.value = true
+  const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  // Insertion actions live in a transient menu panel. Restore its persistent
+  // trigger when the picker closes, rather than a button removed on selection.
+  pickerOrigin = focused?.closest('details.editor-menu')?.querySelector<HTMLElement>('summary') ?? focused
   pickerDialog.value?.showModal()
+  await nextTick()
+  if (request.signal.aborted) return
+  pickerDialog.value?.querySelector<HTMLButtonElement>('button')?.focus()
   try {
     const [response, groupsResponse] = await Promise.all([
       fetch(import.meta.env.BASE_URL + 'api/admin/media', {
@@ -131,13 +141,18 @@ function onUploaded(media: UploadedMedia): void {
 function closePicker(): void {
   libraryRequest?.abort()
   pickerTarget.value = null
+  const origin = pickerOrigin
+  pickerOrigin = null
+  void nextTick(() => { if (origin?.isConnected) origin.focus() })
 }
 async function remove(index: number): Promise<void> {
   update(props.modelValue.filter((_, i) => i !== index))
   await nextTick()
   const blocks = root.value?.querySelectorAll<HTMLElement>('.content-block')
   const nextBlock = blocks?.[Math.min(index, blocks.length - 1)]
-  nextBlock?.querySelector<HTMLElement>('textarea, .block-content button, .block-tools button:not(:disabled)')?.focus()
+  const target = nextBlock?.querySelector<HTMLElement>('textarea')
+    ?? nextBlock?.querySelector<HTMLElement>('.replace-media, .block-header summary')
+  target?.focus()
   if (!nextBlock) root.value?.querySelector<HTMLElement>('.append-content summary')?.focus()
 }
 function preview(mediaId: string): string {
@@ -149,51 +164,46 @@ onUnmounted(() => libraryRequest?.abort())
 <template>
   <div ref="root" class="content-composer" role="group" :aria-label="label">
     <p :class="hideLabel ? 'visually-hidden' : 'fw-semibold mb-2'">{{ label }}</p>
-    <div v-for="(block, index) in modelValue" :key="block.id" class="content-block">
-      <div class="block-insertion">
-        <EditorMenu :label="t('editorInsertContent', { index: index + 1 })" align="start">
-          <template #trigger><AppIcon name="plus-lg" /></template>
-          <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind"
-            type="button" class="btn btn-sm" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
+    <div v-for="(block, index) in modelValue" :key="block.id" class="content-block border rounded p-2 p-sm-3" :data-block-id="block.id">
+      <div class="block-header d-flex align-items-center justify-content-between gap-2 mb-2">
+        <label v-if="block.type === 'text'" :for="'text-' + block.id" class="small text-secondary">{{ t('editorKind_text') }}</label>
+        <span v-else class="small text-secondary">{{ t('editorKind_' + block.type) }}</span>
+        <EditorMenu class="block-actions" :label="label + ' · ' + t('editorBlockActions', { index: index + 1 })">
+          <p class="small text-secondary px-2 pt-1 mb-1">{{ t('editorInsertContent', { index: index + 1 }) }}</p>
+          <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind" type="button" class="btn btn-sm insert-block"
+            :data-insert-kind="kind" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
+          <hr class="my-1" />
+          <button type="button" class="btn btn-sm move-block-up" :disabled="index === 0"
+            :aria-label="t('editorMoveBlockUp', { index: index + 1 })" @click="update(move(modelValue, index, -1))"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
+          <button type="button" class="btn btn-sm move-block-down" :disabled="index === modelValue.length - 1"
+            :aria-label="t('editorMoveBlockDown', { index: index + 1 })" @click="update(move(modelValue, index, 1))"><AppIcon name="arrow-down" />{{ t('editorMoveDown') }}</button>
+          <button type="button" class="btn btn-sm text-danger remove-block" @click="remove(index)"><AppIcon name="trash3" />{{ t('editorRemoveBlock') }}</button>
         </EditorMenu>
       </div>
-      <div class="block-row">
-        <div class="block-content">
-          <template v-if="block.type === 'text'">
-            <label :for="'text-' + block.id" class="visually-hidden">{{ label }} · {{ t('editorText') }} {{ index + 1 }}</label>
-            <textarea :id="'text-' + block.id" v-grow class="form-control block-text" :value="block.text"
-              :placeholder="t('editorTextPlaceholder')" maxlength="100000" rows="1"
-              @input="setText(block.id, ($event.target as HTMLTextAreaElement).value)" />
-          </template>
-          <template v-else>
-            <img v-if="block.type === 'image' && uuidPattern.test(block.mediaId)" :src="preview(block.mediaId)"
-              class="media-preview" :alt="t('editorImagePreview')" />
-            <video v-else-if="block.type === 'video' && uuidPattern.test(block.mediaId)" :src="preview(block.mediaId)"
-              controls preload="metadata" class="media-preview" />
-            <p v-else class="text-warning-emphasis small mb-2">{{ t('editorChooseMedia') }}</p>
-            <button type="button" class="btn btn-link btn-sm px-0"
-              @click="openPicker(block.type, { blockId: block.id })">
-              <AppIcon :name="uuidPattern.test(block.mediaId) ? 'pencil-square' : block.type === 'image' ? 'image' : 'play-btn'" />
-              {{ uuidPattern.test(block.mediaId) ? t('editorReplaceMedia') : t('mediaChooseFromLibrary') }}
-            </button>
-          </template>
-        </div>
-        <div class="block-tools" role="group" :aria-label="t('editorBlockActions', { index: index + 1 })">
-          <button type="button" class="btn btn-outline-secondary btn-sm icon-button" :disabled="index === 0"
-            :aria-label="t('editorMoveBlockUp', { index: index + 1 })" :title="t('editorMoveUp')"
-            @click="update(move(modelValue, index, -1))"><AppIcon name="arrow-up" /></button>
-          <button type="button" class="btn btn-outline-secondary btn-sm icon-button" :disabled="index === modelValue.length - 1"
-            :aria-label="t('editorMoveBlockDown', { index: index + 1 })" :title="t('editorMoveDown')"
-            @click="update(move(modelValue, index, 1))"><AppIcon name="arrow-down" /></button>
-          <button type="button" class="btn btn-outline-danger btn-sm" :aria-label="t('editorRemoveBlock')"
-            @click="remove(index)"><AppIcon name="trash3" />{{ t('editorRemove') }}</button>
+      <div class="block-content">
+        <template v-if="block.type === 'text'">
+          <textarea :id="'text-' + block.id" v-grow class="form-control block-text" :value="block.text"
+            :aria-label="label + ' · ' + t('editorText') + ' ' + (index + 1)"
+            :placeholder="t('editorTextPlaceholder')" maxlength="100000" rows="1"
+            @input="setText(block.id, ($event.target as HTMLTextAreaElement).value)" />
+        </template>
+        <div v-else class="block-media">
+          <div v-if="uuidPattern.test(block.mediaId)" class="block-media-preview">
+            <ContentMedia :kind="block.type" :src="preview(block.mediaId)" :label="t(block.type === 'image' ? 'editorImagePreview' : 'editorVideoPreview')" />
+          </div>
+          <p v-else class="text-warning-emphasis small mb-2">{{ t('editorChooseMedia') }}</p>
+          <button type="button" class="btn btn-outline-secondary btn-sm replace-media"
+            @click="openPicker(block.type, { blockId: block.id })">
+            <AppIcon :name="uuidPattern.test(block.mediaId) ? 'pencil-square' : block.type === 'image' ? 'image' : 'play-btn'" />
+            {{ uuidPattern.test(block.mediaId) ? t('editorReplaceMedia') : t('mediaChooseFromLibrary') }}
+          </button>
         </div>
       </div>
     </div>
-    <EditorMenu class="append-content mt-1" :label="t('editorAddContent')" align="start">
-      <template #trigger><span class="text-primary"><AppIcon name="plus-lg" /> {{ t('editorAddContent') }}</span></template>
+    <EditorMenu class="append-content mt-1" :label="addLabel ?? t('editorAddContent')" align="start">
+      <template #trigger><span class="text-primary"><AppIcon name="plus-lg" /> {{ addLabel ?? t('editorAddContent') }}</span></template>
       <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind"
-        type="button" class="btn btn-sm" @click="insert(kind, modelValue.length)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
+        type="button" class="btn btn-sm" :data-insert-kind="kind" @click="insert(kind, modelValue.length)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
     </EditorMenu>
 
     <dialog ref="pickerDialog" class="media-dialog border rounded shadow p-3 p-md-4"
@@ -202,8 +212,8 @@ onUnmounted(() => libraryRequest?.abort())
         <h2 class="h5 mb-0">{{ t('editorSelectMedia_' + pickerKind) }}</h2>
         <button class="btn btn-outline-secondary icon-button" type="button" :aria-label="t('catalogCancel')" :title="t('catalogCancel')" @click="pickerDialog?.close()"><AppIcon name="x-lg" /></button>
       </div>
-      <label for="media-picker-lesson" class="form-label">{{ t('mediaHomeLesson') }}</label>
-      <select id="media-picker-lesson" v-model="lessonFilter" class="form-select mb-3">
+      <label :for="pickerLessonId" class="form-label">{{ t('mediaHomeLesson') }}</label>
+      <select :id="pickerLessonId" v-model="lessonFilter" class="form-select mb-3">
         <option value="__all__">{{ t('mediaAllLessons') }}</option>
         <option v-for="lesson in lessons" :key="lesson.id" :value="lesson.id">{{ lesson.name }}</option>
         <option value="__unassigned__">{{ t('mediaUnassigned') }}</option>
@@ -232,26 +242,20 @@ onUnmounted(() => libraryRequest?.abort())
 </template>
 
 <style scoped>
-.content-composer { min-width: 0; container-type: inline-size; }
-.block-row { display: flex; align-items: flex-start; gap: .5rem; }
-.block-content { flex: 1; min-width: 0; }
+.content-composer { min-width: 0; position: relative; }
+.content-composer:has(.editor-menu[open]) { z-index: 45; }
+.content-block { min-width: 0; background: var(--bs-body-bg); margin-bottom: .65rem; }
+.block-content { min-width: 0; }
 .block-text { min-height: 2.5rem; max-height: 24rem; overflow-y: auto; resize: vertical; }
-.block-tools { display: flex; flex-shrink: 0; align-items: center; gap: .25rem; }
-.block-tools > button { min-width: 2.5rem; min-height: 2.5rem; }
-.block-insertion { display: flex; align-items: center; gap: .4rem; margin: .15rem 0; }
-.block-insertion::before, .block-insertion::after { content: ''; height: 1px; background: var(--bs-border-color); flex: 1; opacity: .5; }
-.block-insertion :deep(summary) { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; min-height: 2rem; padding: .25rem; }
-.content-block:first-of-type .block-insertion { margin-top: -.25rem; }
-.media-preview { display: block; max-width: 100%; max-height: 240px; border-radius: .25rem; }
-video.media-preview { width: 100%; background: var(--bs-tertiary-bg); }
+.block-media { display: grid; gap: .75rem; }
+.block-media-preview {
+  display: grid; justify-items: center; min-width: 0;
+  --content-media-landscape-height: 360px;
+  --content-media-portrait-height: 560px;
+}
+.block-media-preview :deep(.content-media) { border-radius: .25rem; }
+.replace-media { justify-self: start; min-height: 2.75rem; }
 .append-content { width: fit-content; }
 .media-dialog { width: min(92vw, 780px); max-height: 85vh; }
 .media-dialog::backdrop { background: rgb(0 0 0 / .35); }
-/* Keep a short text block as short as its content. On narrow screens the same
-   horizontal controls move above it rather than squeezing the editable area. */
-@container (max-width: 24rem) {
-  .block-row { flex-direction: column; gap: .25rem; }
-  .block-content { width: 100%; }
-  .block-tools { order: -1; align-self: flex-end; }
-}
 </style>

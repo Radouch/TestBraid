@@ -23,6 +23,12 @@ try {
     entryPoints: [entry], outfile: output, bundle: true, platform: 'node', format: 'esm', packages: 'external',
     define: { 'import.meta.env.BASE_URL': JSON.stringify('/training/') },
     plugins: [{ name: 'vue-dom-tests', setup(plugin) {
+      // FilePond relies on native layout/file APIs unavailable in Happy DOM.
+      // Keep the application-owned MediaUploader real and isolate only that
+      // third-party engine; real upload transport is covered by HTTP integration.
+      plugin.onResolve({ filter: /^vue-filepond$/ }, () => ({
+        path: resolve(frontend, 'scripts/filepond-dom-boundary.ts'),
+      }))
       // DOM interaction tests do not render CSS. FilePond's stylesheet is a
       // browser asset and cannot be imported by Node's ESM loader.
       plugin.onResolve({ filter: /\.css$/ }, args => ({ path: args.path, namespace: 'dom-css' }))
