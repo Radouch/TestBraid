@@ -115,6 +115,9 @@ jobs:
       - name: Runtime base path validation and private-root regression
         run: php bin/test-subdirectory-config.php
         working-directory: backend
+      - name: Dynamic SPA HTML base for root and nested installations
+        run: php bin/test-runtime-spa.php
+        working-directory: backend
       - name: Installation UI language configuration validation
         run: composer run test:ui-languages
         working-directory: backend

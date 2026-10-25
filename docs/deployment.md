@@ -109,7 +109,7 @@ deployment-package/
 
 Upload the **contents** of each directory to the corresponding server directory via SFTP, overwriting matching *code* files only. Ordinary upgrade packages exclude `config/`, `storage/`, and `vendor/`: **keep those existing server directories and their contents unchanged**. The explicitly selected `--initial-install` package includes only the ready-to-use private default `config/app.json` for first-time deployments. Do not use synchronization with `--delete` or wipe the remote backend. Run Composer on the server as described below. The committed `backend/composer.lock` is required and always included in the private deployment package.
 
-The staging command fails if the frontend build or essential schema fixtures are missing; CI verifies the staged paths too. Unlike earlier releases, the public folder has `index.php` instead of `index.html`: the compiled HTML is staged under private `templates/`. No Composer or database is required on your computer.
+The staging command fails if the frontend build or essential schema fixtures are missing; CI verifies the staged paths too. Unlike earlier releases, the public folder has `index.php` instead of `index.html`: the compiled HTML is staged under private `templates/`. After upgrading, remove the **obsolete public** `index.html` file specifically; never delete private `config/`, `storage/` or uploaded media. No Composer or database is required on your computer.
 
 ### Manual SFTP/rsync alternative
 

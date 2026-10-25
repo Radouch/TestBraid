@@ -53,7 +53,7 @@ Check that your hosting allows setting that environment variable **for web reque
 
 ## Apache routing
 
-Deploy `deployment-package/www/.htaccess` with hidden files intact in the public app directory and ensure `mod_rewrite` and `.htaccess` rules are honored. Unknown client routes go to the PHP HTML shell. API requests go to Slim; missing `media/` or `assets/` files are real HTTP 404s rather than Vue HTML. The static `index.html` **must not be placed in the public app directory**; it is the private template in `testbraid-backend/templates/`.
+Deploy `deployment-package/www/.htaccess` with hidden files intact in the public app directory and ensure `mod_rewrite` and `.htaccess` rules are honored. Unknown client routes go to the PHP HTML shell. API requests go to Slim; missing `media/` or `assets/` files are real HTTP 404s rather than Vue HTML. The static `index.html` **must not be placed in the public app directory**; it is the private template in `testbraid-backend/templates/`. On an upgrade, remove an obsolete public `index.html` **specifically** (do not delete any private config/storage or uploaded media). The rewrite rules also route any leftover `/index.html` URL through the dynamic `index.php`.
 
 ## Checks before accepting deployment
 
