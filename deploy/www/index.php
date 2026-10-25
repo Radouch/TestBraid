@@ -29,10 +29,18 @@ try {
     $base = htmlspecialchars(($basePath === '' ? '' : $basePath) . '/', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     $shell = str_replace('<head>', '<head>' . "\n    <base data-testbraid-base href=\"" . $base . "\">", $shell);
 } catch (Throwable $error) {
-    error_log('TestBraid SPA bootstrap failed: ' . $error->getMessage());
+    // Show a bounded, documented error *code* when hosting exposes no PHP logs.
+    // Never disclose absolute paths, stack traces, private settings or error text.
+    $code = $error instanceof \TestBraid\Http\ApiProblem
+        ? $error->errorCode : 'BOOTSTRAP_UNAVAILABLE';
+    if (!in_array($code, ['APP_CONFIG_INVALID', 'APP_BASE_PATH_INVALID',
+        'APP_BASE_PATH_MISMATCH', 'PRIVATE_ROOT_UNVERIFIED', 'PRIVATE_ROOT_UNSAFE'], true)) {
+        $code = 'BOOTSTRAP_UNAVAILABLE';
+    }
     http_response_code(503);
     header('Content-Type: text/plain; charset=utf-8');
-    echo 'TestBraid installation configuration is unavailable.';
+    header('Cache-Control: no-store');
+    echo 'TestBraid installation unavailable (' . $code . ').';
     exit;
 }
 
