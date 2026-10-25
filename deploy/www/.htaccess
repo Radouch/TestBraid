@@ -2,14 +2,14 @@
 # The PHP HTML entry injects the configured base before loading static assets.
 RewriteEngine On
 
-RewriteRule ^api/index\\.php$ - [END]
+RewriteRule ^api/index\.php$ - [END]
 RewriteRule ^api(/.*)?$ api/index.php [END]
 # Missing media and built static assets must stay real 404s, not SPA HTML.
 RewriteRule ^(media|assets|locales)(/|$) - [END]
 
 # Old deployments may still have a static index.html; never serve it.
-RewriteRule ^index\\.html$ index.php [END]
-RewriteRule ^index\\.php$ - [END]
+RewriteRule ^index\.html$ index.php [END]
+RewriteRule ^index\.php$ - [END]
 RewriteRule ^$ index.php [END]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
