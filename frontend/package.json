@@ -1,6 +1,6 @@
 {
   "name": "testbraid-frontend",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,9 @@
     "test:published": "tsx scripts/test-published-readonly.ts",
     "test:learner": "tsx scripts/test-learner-scoring.ts",
     "test:runner": "node scripts/run-dom-tests.mjs",
+    "test:author": "node scripts/run-dom-tests.mjs scripts/test-author-editor-dom.ts",
+    "test:content": "node scripts/run-dom-tests.mjs scripts/test-content-editor-dom.ts",
+    "test:upload": "node scripts/run-dom-tests.mjs scripts/test-upload-dom.ts",
     "test:navigation": "tsx scripts/test-navigation.ts",
     "test:branding": "tsx scripts/test-site-identity.ts",
     "test:locales": "tsx scripts/test-ui-languages.ts"

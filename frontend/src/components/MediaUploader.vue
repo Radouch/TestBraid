@@ -116,8 +116,15 @@ const server = computed(() => ({
     withCredentials: true,
     onload: uploaded,
     ondata: (data: FormData) => {
-      if (props.groupId !== undefined) data.append('groupId', props.groupId ?? '')
-      return data
+      // FilePond adds JSON metadata as a text part named "file", alongside
+      // the binary part. PHP exposes that text in parsed-body fields, where
+      // our API allows only groupId. Send the application's exact contract.
+      const upload = new FormData()
+      for (const file of data.getAll('file')) {
+        if (typeof file !== 'string') upload.append('file', file, file.name)
+      }
+      if (props.groupId !== undefined) upload.append('groupId', props.groupId ?? '')
+      return upload
     },
     onerror: serverError,
   },

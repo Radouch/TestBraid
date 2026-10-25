@@ -38,6 +38,7 @@ printf '%s\n' 'Only-A-Test-Password-456' | php "$ROOT/bin/create-author.php" ali
 printf '%s\n' 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGNkYPjPwMDAxMDAwMDAAAALHwEDmIWXfgAAAABJRU5ErkJggg==' | base64 -d > "$TEMP/blue.png"
 base64 -d "$ROOT/bin/fixtures/tiny.mp4.b64" > "$TEMP/clip.mp4"
 base64 -d "$ROOT/bin/fixtures/tiny.webm.b64" > "$TEMP/clip.webm"
+base64 -d "$ROOT/bin/fixtures/tiny.jpg.b64" > "$TEMP/photo.jpg"
 printf '<?php echo "danger";' > "$TEMP/evil.php"
 printf 'not a video' > "$TEMP/invalid.mp4"
 
@@ -171,6 +172,39 @@ check '.error.code == "NOT_FOUND"'
 expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: $CSRF" -d '{"name":"Shared media draft"}'
 GROUP="$(jq -r '.id' "$TEMP/body")"
+# The adapter must remove FilePond's text metadata part before POSTing. Keep
+# rejecting that raw protocol and unknown fields rather than loosening the API.
+expect 422 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
+  -F 'file={}' -F "file=@$TEMP/photo.jpg;filename=Pozdrav.JPG;type=image/jpeg" -F "groupId=$GROUP"
+check '.error.code == "INVALID_UPLOAD" and .error.message == "Unsupported upload fields."'
+expect 422 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
+  -F "file=@$TEMP/photo.jpg;type=image/jpeg" -F 'unexpected=value'
+check '.error.code == "INVALID_UPLOAD"'
+# Canonical JPEG upload stays private and can follow text in a draft answer.
+expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
+  -F "file=@$TEMP/photo.jpg;filename=Pozdrav.JPG;type=image/jpeg" -F "groupId=$GROUP"
+check --arg group "$GROUP" '.kind == "image" and .mimeType == "image/jpeg" and .originalName == "Pozdrav.JPG" and .groupId == $group'
+JPG_ID="$(jq -r '.mediaId' "$TEMP/body")"
+test -f "$TEMP/private-storage/media-files/$JPG_ID.jpg"
+expect 200 "$HOST/api/admin/media/$JPG_ID/preview"
+cmp "$TEMP/body" "$TEMP/photo.jpg"
+jq -n --arg group "$GROUP" --arg image "$JPG_ID" '{
+  groupId:$group, language:"en", title:"Text and JPG answer", description:"",
+  questions:[{id:"jpg-question",type:"choice",mode:"single",
+    prompt:[{id:"jpg-prompt",type:"text",text:"Choose the picture"}],
+    options:[
+      {id:"jpg-answer",content:[{id:"jpg-text",type:"text",text:"Answer text"},{id:"jpg-image",type:"image",mediaId:$image}]},
+      {id:"other-answer",content:[{id:"other-text",type:"text",text:"Other answer"}]}
+    ], correctOptionIds:["jpg-answer"]
+  }]
+}' > "$TEMP/jpg-answer-test.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' --data-binary "@$TEMP/jpg-answer-test.json"
+JPG_TEST_ID="$(jq -r '.id' "$TEMP/body")"
+check --arg image "$JPG_ID" '.status == "draft" and .questions[0].options[0].content[0].text == "Answer text"
+  and .questions[0].options[0].content[1].mediaId == $image and .questions[0].correctOptionIds == ["jpg-answer"]'
+expect 200 "$HOST/api/admin/tests/$JPG_TEST_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/media/$JPG_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
 # Virtual home folders are independent of references and static publication.
 expect 403 "$HOST/api/admin/media/$MP4_ID" -X PATCH -H 'Content-Type: application/json' -d '{"groupId":null}'
 check '.error.code == "INVALID_CSRF"'

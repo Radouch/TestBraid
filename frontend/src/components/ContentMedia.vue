@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 
-const props = defineProps<{ kind: 'image' | 'video'; src: string }>()
+const props = defineProps<{ kind: 'image' | 'video'; src: string; label?: string }>()
 const media = ref<HTMLImageElement | HTMLVideoElement | null>(null)
 const portrait = ref(false)
 
@@ -21,9 +21,9 @@ onMounted(measure)
 </script>
 
 <template>
-  <img v-if="kind === 'image'" ref="media" :src="src" alt="" class="content-media"
+  <img v-if="kind === 'image'" ref="media" :src="src" :alt="label ?? ''" class="content-media"
     :class="{ 'media-portrait': portrait }" @load="measure" @error="portrait = false" />
-  <video v-else ref="media" :src="src" controls preload="metadata" class="content-media"
+  <video v-else ref="media" :src="src" :aria-label="label" controls preload="metadata" class="content-media"
     :class="{ 'media-portrait': portrait }" @loadedmetadata="measure" @resize="measure" @error="portrait = false" />
 </template>
 

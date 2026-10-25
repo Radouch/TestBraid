@@ -34,6 +34,15 @@ jobs:
       - name: Continuous learner page interaction regression
         run: npm run test:runner
         working-directory: frontend
+      - name: Shared author editor and lesson dialogs regression
+        run: npm run test:author
+        working-directory: frontend
+      - name: Question composition and private media interaction regression
+        run: npm run test:content
+        working-directory: frontend
+      - name: FilePond multipart upload and answer attachment regression
+        run: npm run test:upload
+        working-directory: frontend
       - name: Navigation and UI language URL regression
         run: npm run test:navigation
         working-directory: frontend
