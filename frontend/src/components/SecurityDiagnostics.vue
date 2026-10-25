@@ -71,12 +71,34 @@ async function checkProbe(): Promise<void> {
       if (!reader) {
         probeResult.value = 'unverified'
       } else {
-        const chunk = await reader.read()
+        const parts: Uint8Array[] = []
+        let totalBytes = 0
+        let finished = false
+        for (;;) {
+          const chunk = await reader.read()
+          if (chunk.done) {
+            finished = true
+            break
+          }
+          if (chunk.value) {
+            totalBytes += chunk.value.byteLength
+            if (totalBytes > 128) break
+            parts.push(chunk.value)
+          }
+        }
         await reader.cancel()
-        const text = new TextDecoder().decode(chunk.value ?? new Uint8Array())
-        probeResult.value = chunk.done || text.length < 128
-          ? (text.trim() === 'TESTBRAID_PRIVATE_BACKEND_PROBE_V1' ? 'exposed' : 'unverified')
-          : 'unverified'
+        if (!finished || totalBytes > 128) {
+          probeResult.value = 'unverified'
+        } else {
+          const content = new Uint8Array(totalBytes)
+          let offset = 0
+          for (const part of parts) {
+            content.set(part, offset)
+            offset += part.byteLength
+          }
+          probeResult.value = new TextDecoder().decode(content).trim() === 'TESTBRAID_PRIVATE_BACKEND_PROBE_V1'
+            ? 'exposed' : 'unverified'
+        }
       }
     }
   } catch {
