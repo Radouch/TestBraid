@@ -17,6 +17,7 @@
     "test:content": "node scripts/run-dom-tests.mjs scripts/test-content-editor-dom.ts",
     "test:upload": "node scripts/run-dom-tests.mjs scripts/test-upload-dom.ts",
     "test:navigation": "tsx scripts/test-navigation.ts",
+    "test:base": "tsx scripts/test-deployment-base.ts",
     "test:branding": "tsx scripts/test-site-identity.ts",
     "test:locales": "tsx scripts/test-ui-languages.ts"
   },

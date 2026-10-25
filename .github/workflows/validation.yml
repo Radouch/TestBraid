@@ -46,6 +46,9 @@ jobs:
       - name: Navigation and UI language URL regression
         run: npm run test:navigation
         working-directory: frontend
+      - name: Runtime deployment URL base regression
+        run: npm run test:base
+        working-directory: frontend
       - name: Multilingual installation branding regression
         run: npm run test:branding
         working-directory: frontend
@@ -100,7 +103,10 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
         working-directory: backend
       - name: Lint PHP
-        run: composer run lint
+        run: |
+          composer run lint
+          php -l ../deploy/www/index.php
+          php -l ../deploy/www/api/index.php
         working-directory: backend
       - name: Shared schema fixtures (Opis)
         run: composer run test:schemas
