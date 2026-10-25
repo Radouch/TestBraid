@@ -34,4 +34,23 @@ if (!is_file($privateEntry) || !is_readable($privateEntry) || !is_file($autoload
     exit;
 }
 
-require $privateEntry;
+try {
+    require $privateEntry;
+} catch (Throwable $error) {
+    // Shared hosting may not expose PHP error logs to its users.
+    // Return only a predefined safe diagnosis, never exception messages.
+    $code = $error instanceof \TestBraid\Http\ApiProblem
+        ? $error->errorCode : 'BOOTSTRAP_UNAVAILABLE';
+    if (!in_array($code, ['APP_CONFIG_INVALID', 'APP_BASE_PATH_INVALID',
+        'APP_BASE_PATH_MISMATCH', 'PRIVATE_ROOT_UNVERIFIED', 'PRIVATE_ROOT_UNSAFE'], true)) {
+        $code = 'BOOTSTRAP_UNAVAILABLE';
+    }
+    http_response_code(503);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['error' => [
+        'code' => $code,
+        'message' => 'TestBraid installation is unavailable.',
+    ]], JSON_THROW_ON_ERROR);
+    exit;
+}
