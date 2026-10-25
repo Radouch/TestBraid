@@ -30,6 +30,8 @@ Example safe layout for `https://example.org/courses/testbraid/`:
 
 An unsafe layout would be `/home/account/public_html/testbraid-backend/`, **even when the app is deployed in `/public_html/courses/testbraid/`**. Apache may expose that backend under its own URL.
 
+On shared PHP-FPM hosts, CGI `DOCUMENT_ROOT` may report a wider ancestor than the actual served `www/`. TestBraid validates the physical public PHP entry and its configured URL path, deriving the site's served root (for `/courses/testbraid`, remove those two directory segments). The private backend must be outside that inferred served root. This avoids incorrect rejections from broad CGI metadata, but cannot independently rule out an Apache alias exposing the backend elsewhere: **verify the hosting's public-directory mapping and inaccessible private storage**. If the URL path does not match its physical installation path, the safety check fails closed.
+
 ## Set the URL base
 
 Edit **private** `testbraid-backend/config/app.json`:

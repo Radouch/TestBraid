@@ -10,6 +10,7 @@ mkdir($root . '/public', 0700, true);
 mkdir($root . '/templates', 0700, true);
 mkdir($root . '/config', 0700, true);
 mkdir($docRoot . '/courses/testbraid', 0700, true);
+mkdir($docRoot . '/testbraid', 0700, true);
 if (!symlink(dirname(__DIR__) . '/vendor', $root . '/vendor')) {
     throw new RuntimeException('Cannot link test Composer vendor.');
 }
@@ -31,8 +32,11 @@ try {
         '/courses/testbraid' => '/courses/testbraid/'] as $setting => $expected) {
         $config['basePath'] = $setting;
         file_put_contents($root . '/config/app.json', json_encode($config, JSON_THROW_ON_ERROR));
+        // __DIR__ of the actual PHP entry must match its public URL directory.
+        $site = $setting === '/' ? $docRoot : $docRoot . $setting;
+        copy(dirname(__DIR__, 2) . '/deploy/www/index.php', $site . '/index.php');
         ob_start();
-        require dirname(__DIR__, 2) . '/deploy/www/index.php';
+        require $site . '/index.php';
         $html = (string) ob_get_clean();
         $baseTag = '<base data-testbraid-base href="' . $expected . '">';
         if (substr_count($html, $baseTag) !== 1
@@ -54,6 +58,10 @@ try {
     @rmdir($root . '/templates');
     @rmdir($root . '/public');
     @rmdir($root);
+    @unlink($docRoot . '/index.php');
+    @unlink($docRoot . '/testbraid/index.php');
+    @unlink($docRoot . '/courses/testbraid/index.php');
+    @rmdir($docRoot . '/testbraid');
     @rmdir($docRoot . '/courses/testbraid');
     @rmdir($docRoot . '/courses');
     @rmdir($docRoot);

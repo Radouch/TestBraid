@@ -56,27 +56,30 @@ try {
     expectInvalid(fn() => InstallationConfig::basePath(dirname(__DIR__)), 'APP_BASE_PATH_MISMATCH');
     putenv('TESTBRAID_BASE_PATH');
 
-    // Nested installs must not treat a sibling of the app as private
-    // if both directories are actually under the hosting document root.
-    mkdir($tmp . '/public_html/testbraid', 0700, true);
-    mkdir($tmp . '/public_html/testbraid-backend', 0700, true);
+    // CGI may report a parent of the real web-served directory on shared hosts.
+    mkdir($tmp . '/public_html/tichotesty', 0700, true);
+    mkdir($tmp . '/public_html/tichotesty-backend', 0700, true);
     mkdir($tmp . '/private-backend', 0700, true);
-    $_SERVER['DOCUMENT_ROOT'] = $tmp . '/public_html';
+    $_SERVER['DOCUMENT_ROOT'] = $tmp; // intentionally too broad
+    InstallationConfig::assertPrivateBackend(
+        $tmp . '/private-backend', '/tichotesty', $tmp . '/public_html/tichotesty');
     expectInvalid(fn() => InstallationConfig::assertPrivateBackend(
-        $tmp . '/public_html/testbraid-backend', '/testbraid'), 'PRIVATE_ROOT_UNSAFE');
-    InstallationConfig::assertPrivateBackend($tmp . '/private-backend', '/testbraid');
-    InstallationConfig::assertPrivateBackend($tmp . '/public_html/testbraid-backend', '');
-    unset($_SERVER['DOCUMENT_ROOT']);
-    expectInvalid(fn() => InstallationConfig::assertPrivateBackend($tmp . '/private-backend', '/testbraid'),
+        $tmp . '/public_html/tichotesty-backend', '/tichotesty',
+        $tmp . '/public_html/tichotesty'), 'PRIVATE_ROOT_UNSAFE');
+    expectInvalid(fn() => InstallationConfig::assertPrivateBackend(
+        $tmp . '/private-backend', '/wrong', $tmp . '/public_html/tichotesty'),
         'PRIVATE_ROOT_UNVERIFIED');
+    expectInvalid(fn() => InstallationConfig::assertPrivateBackend(
+        $tmp . '/private-backend', '/tichotesty'), 'PRIVATE_ROOT_UNVERIFIED');
+    InstallationConfig::assertPrivateBackend($tmp . '/private-backend', '');
     echo "PASS: configurable runtime URL path, strict validation and private root checks\n";
 } finally {
     $originalConfig === false ? putenv('TESTBRAID_APP_CONFIG_FILE') : putenv('TESTBRAID_APP_CONFIG_FILE=' . $originalConfig);
     $originalBase === false ? putenv('TESTBRAID_BASE_PATH') : putenv('TESTBRAID_BASE_PATH=' . $originalBase);
     if ($originalRoot === null) unset($_SERVER['DOCUMENT_ROOT']); else $_SERVER['DOCUMENT_ROOT'] = $originalRoot;
     @unlink($file);
-    @rmdir($tmp . '/public_html/testbraid-backend');
-    @rmdir($tmp . '/public_html/testbraid');
+    @rmdir($tmp . '/public_html/tichotesty-backend');
+    @rmdir($tmp . '/public_html/tichotesty');
     @rmdir($tmp . '/public_html');
     @rmdir($tmp . '/private-backend');
     @rmdir($tmp);
