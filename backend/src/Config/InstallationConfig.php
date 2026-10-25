@@ -115,7 +115,7 @@ final class InstallationConfig
     private static function parseBasePath(mixed $value, string $errorCode): string
     {
         if ($value === '/') return '';
-        if (!is_string($value) || !preg_match('~^/[A-Za-z0-9._~-]+(?:/[A-Za-z0-9._~-]+)*/?$~D', $value)) {
+        if (!is_string($value) || !preg_match('#^/[A-Za-z0-9._~-]+(?:/[A-Za-z0-9._~-]+)*/?$#D', $value)) {
             throw new ApiProblem(503, $errorCode, 'Invalid installation base path.');
         }
         foreach (explode('/', trim($value, '/')) as $segment) {

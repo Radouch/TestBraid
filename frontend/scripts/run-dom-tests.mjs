@@ -11,6 +11,11 @@ const require = createRequire(import.meta.url)
 const entry = resolve(frontend, process.argv[2] ?? 'scripts/test-runner-dom.ts')
 const output = resolve(frontend, 'node_modules/.cache/' + basename(entry, '.ts') + '.mjs')
 const window = new Window({ url: 'https://runner.invalid/training/tests/example', width: 1280, height: 800 })
+const base = window.document.createElement('base')
+base.setAttribute('data-testbraid-base', '')
+base.setAttribute('href', '/training/')
+window.document.head.prepend(base)
+
 // Vue's runtime captures document at import time. Install the DOM before
 // importing the compiled tests; keep Vue external so every SFC shares it.
 for (const name of ['window', 'document', 'navigator', 'Element', 'HTMLElement', 'HTMLInputElement',
