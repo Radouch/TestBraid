@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -37,13 +38,13 @@ async function load(id: string): Promise<void> {
   groups.value = []
   // Lesson lookup is independent of test availability. A failed catalog must
   // not block a valid test or its return link, including on direct visits.
-  void fetchPublicCatalog(import.meta.env.BASE_URL, request.signal).then(loaded => {
+  void fetchPublicCatalog(appBaseUrl(), request.signal).then(loaded => {
     if (!request.signal.aborted) groups.value = loaded
   }).catch(() => { /* The test remains usable without optional lesson metadata. */ })
   try {
     // No session or author cookies are required. Drafts are inaccessible
     // through this endpoint, even if the viewer is also an author.
-    const response = await fetch(import.meta.env.BASE_URL + 'api/public/tests/' + encodeURIComponent(id), {
+    const response = await fetch(appBaseUrl() + 'api/public/tests/' + encodeURIComponent(id), {
       credentials: 'omit', cache: 'no-store', signal: request.signal,
     })
     if (response.status === 404) throw new Error(t('runnerNotFound'))

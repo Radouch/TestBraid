@@ -1,3 +1,4 @@
+import { appBaseUrl } from './deployment-base'
 import { ref } from 'vue'
 
 /**
@@ -38,7 +39,7 @@ function isLocalizedText(value: unknown): value is LocalizedText {
 
 export async function loadSiteIdentity(): Promise<void> {
   try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/public/config', {
+    const response = await fetch(appBaseUrl() + 'api/public/config', {
       credentials: 'omit',
       cache: 'no-store',
       // Avoid leaving the entire application unrendered on a stalled host.

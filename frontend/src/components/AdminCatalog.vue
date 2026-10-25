@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import AppIcon from './AppIcon.vue'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -104,7 +105,7 @@ async function openLessonDialog(group?: Group, event?: MouseEvent): Promise<void
 }
 
 function api(path: string): string {
-  return import.meta.env.BASE_URL + 'api/admin/' + path
+  return appBaseUrl() + 'api/admin/' + path
 }
 
 /** Shared typed admin request: only mutating operations carry CSRF tokens. */

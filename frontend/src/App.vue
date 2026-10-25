@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from './deployment-base'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
@@ -18,7 +19,7 @@ const authError = ref('')
 const activeSection = computed(() => route.name === 'not-found' ? null : navigationSection(route.path))
 const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
 const appVersion = APP_VERSION
-const brandMarkUrl = `${import.meta.env.BASE_URL}testbraid-mark.svg`
+const brandMarkUrl = `${appBaseUrl()}testbraid-mark.svg`
 
 watch([siteName, locale, () => route.name], ([name, , page]) => {
   document.title = page === 'not-found' ? `${t('notFoundTitle')} | ${name}` : name
@@ -45,7 +46,7 @@ async function signOut(): Promise<void> {
   signingOut.value = true
   authError.value = ''
   try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/auth/logout', {
+    const response = await fetch(appBaseUrl() + 'api/auth/logout', {
       method: 'POST',
       credentials: 'same-origin',
       cache: 'no-store',

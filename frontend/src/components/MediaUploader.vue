@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import vueFilePond from 'vue-filepond'
@@ -38,7 +39,7 @@ const phpMiB = (bytes: number | null) => bytes === null ? t('mediaUnlimited') : 
 // same private JSON file on every load, without a Vite rebuild.
 onMounted(async () => {
   try {
-    const response = await fetch(`${import.meta.env.BASE_URL}api/admin/media/limits`, {
+    const response = await fetch(`${appBaseUrl()}api/admin/media/limits`, {
       credentials: 'same-origin', cache: 'no-store',
     })
     if (!response.ok) throw new Error('Unavailable')
@@ -110,7 +111,7 @@ function serverError(raw: string): string {
 // components see a stable, typed mediaId-based upload event.
 const server = computed(() => ({
   process: {
-    url: `${import.meta.env.BASE_URL}api/admin/media`,
+    url: `${appBaseUrl()}api/admin/media`,
     method: 'POST',
     headers: { 'X-CSRF-Token': props.csrfToken },
     withCredentials: true,

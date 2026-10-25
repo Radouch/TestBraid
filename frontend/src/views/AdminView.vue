@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminCatalog from '../components/AdminCatalog.vue'
@@ -26,7 +27,7 @@ const setupKey = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
-const api = (route: string): string => `${import.meta.env.BASE_URL}api/${route}`
+const api = (route: string): string => `${appBaseUrl()}api/${route}`
 
 async function readSession(): Promise<void> {
   loading.value = true
