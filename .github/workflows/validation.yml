@@ -118,6 +118,9 @@ jobs:
         run: composer run test:schemas
         working-directory: backend
       # Uses an isolated loopback PHP server and disposable credentials.
+      - name: One-file backend bootstrap path configuration
+        run: php bin/test-bootstrap-path.php
+        working-directory: backend
       - name: Runtime base path validation and private-root regression
         run: php bin/test-subdirectory-config.php
         working-directory: backend

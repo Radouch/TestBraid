@@ -62,7 +62,7 @@ This establishes working frontend/API routing on the selected host; the author-o
 
 The `www/index.php` file renders the compiled HTML template with a validated runtime URL base. The `www/api/index.php` file is only a public API bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. The bootstrap also identifies its actual served `www/` parent for the storage isolation guard, because `DOCUMENT_ROOT` supplied by Apache can be too broad on shared hosting. Author password hashes and the login throttling state must remain **private and writable by the PHP process as appropriate**.
 
-## 3. Build once, deploy at any URL path
+**New in PR #74:** Arbitrary private backend paths are configured with a single public `bootstrap.local.php` (created from `bootstrap.local.example.php`). The backend's filesystem placement is **not a hard startup gate**; optional author-only diagnostics can report risks and test a harmless HTTP probe. See [runtime subdirectory installation](runtime-subdirectory-installation.md).\n\n## 3. Build once, deploy at any URL path
 
 Release builds compile Vue only **once**, with Vite `base: './'`. There is no per-site Node.js build. Each request for the SPA page is answered by the lightweight public `index.php`, which loads the built `index.html` template from the **private** backend and injects a validated HTML `<base href=".../">` ahead of CSS/JS. Static chunks, images, localization JSON and published media still stream directly from Apache. This supports deep-link reloads.
 
@@ -118,7 +118,7 @@ Use the **assembled deployment-package tree** as the upload source, not `fronten
 - Copy the **contents** of `deployment-package/www/` to the public app directory, such as `public_html/testbraid/`.
 - Copy the **contents** of `deployment-package/testbraid-backend/` to a truly private backend directory outside the host's entire served document root. This is particularly important on nested installations.
 - Preserve operator-owned `config/`, `storage/` and public uploaded `media/` during upgrades. **Do not mirror with deletion.**
-- If the backend is not the default sibling of the application directory, supply `TESTBRAID_BACKEND_ENTRY` pointing to its private `public/index.php`, for both the public SPA and API entry points. PHP/webserver environment propagation must be verified on the real host.
+- If the backend is not the default sibling of the public app, copy `www/bootstrap.local.example.php` to **unversioned** `www/bootstrap.local.php` and set `backendPath` once. Both PHP entry points resolve it through `backend-path.php`; environment settings are optional.
 - Do not expose private backend source, `vendor/`, credentials, uploaded drafts or `config/app.json` over HTTP.
 
 ## 5. Install PHP dependencies over SSH

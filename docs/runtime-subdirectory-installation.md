@@ -1,92 +1,98 @@
-# Runtime subdirectory deployment (Apache)
+# Instalace TestBraidu do kořene i podadresáře (Apache / PHP hosting)
 
-TestBraid supports deployment at `https://example.org/`, `https://example.org/testbraid/`, or `https://example.org/courses/testbraid/` using the **same frontend build**. No per-installation Node.js build is required.
+Jednou sestavený frontend funguje na `/`, `/tichotesty/` i `/courses/prasopes/`. Na cílovém hostingu se Vue znovu nebuildí. Tento návod platí pro větev PR #74; vydaný release ZIP zatím není k dispozici.
 
-## What the two deployment-package folders mean
+## 1. Dvě části instalace
 
-- `www/`: the **public app** files. Upload its **contents** into whatever directory maps to the chosen URL. Its name on the server may be `www`, `html`, `public_html` or a nested folder; it does not have to be `www`.
-- `testbraid-backend/`: the private PHP/backend files, config, schemas and compiled HTML template. Place it **outside the whole host document root**.
+Výstup `node scripts/prepare-deployment.mjs --initial-install` obsahuje:
 
-Example safe layout for `https://example.org/courses/testbraid/`:
+- `deployment-package/www/`: **obsah** nahraj do požadované veřejné složky (např. `www/tichotesty/`).
+- `deployment-package/testbraid-backend/`: **obsah** nahraj do soukromé složky podle svého výběru (např. `tichotesty-backend/` mimo veřejné `www/`).
+
+Pro současné dvě nezávislé instalace na jedné doméně:
 
 ```text
 /home/account/
-├── public_html/                      # Apache DOCUMENT_ROOT for example.org
-│   └── courses/
-│       └── testbraid/                # Application public directory
-│           ├── .htaccess
-│           ├── index.php             # Injects URL base into HTML
-│           ├── api/index.php         # Private backend API bootstrap
-│           ├── assets/
-│           ├── locales/
-│           └── media/.htaccess
-└── testbraid-backend/                # Must be outside public_html/
+├── www/                              # veřejný kořen domény
+│   ├── index.html                    # původní instalace; ponechat
+│   ├── .htaccess
+│   └── tichotesty/
+│       ├── .htaccess
+│       ├── index.php
+│       ├── backend-path.php          # sdílený aplikační resolver; nepřepisovat ručně
+│       ├── bootstrap.local.php       # nastavení správce; mimo distribuční ZIP
+│       ├── bootstrap.local.example.php
+│       ├── api/index.php
+│       ├── assets/
+│       └── locales/
+├── testbraid-backend/                # původní backend; ponechat
+└── tichotesty-backend/               # backend nové instalace
     ├── config/app.json
     ├── src/
-    ├── templates/index.html
     ├── public/index.php
-    └── vendor/                       # Installed by Composer or included in release
+    ├── templates/index.html
+    ├── vendor/
+    ├── .htaccess
+    └── security-probe.txt
 ```
 
-An unsafe layout would be `/home/account/public_html/testbraid-backend/`, **even when the app is deployed in `/public_html/courses/testbraid/`**. Apache may expose that backend under its own URL.
+Při běžné aktualizaci je nutné zachovat existující `bootstrap.local.php`, `config/`, `storage/`, `vendor/` a nahraná média. **Nesynchronizuj s mazáním** a nepřepisuj soukromý `authors.json`.
 
-On shared PHP-FPM hosts, CGI `DOCUMENT_ROOT` may report a wider ancestor than the actual served `www/`. TestBraid validates the physical public PHP entry and its configured URL path, deriving the site's served root (for `/courses/testbraid`, remove those two directory segments). The private backend must be outside that inferred served root. This avoids incorrect rejections from broad CGI metadata, but cannot independently rule out an Apache alias exposing the backend elsewhere: **verify the hosting's public-directory mapping and inaccessible private storage**. If the URL path does not match its physical installation path, the safety check fails closed.
+## 2. Jediné nastavení cesty k backendu
 
-## Set the URL base
+V veřejném adresáři TestBraidu vytvoř z `bootstrap.local.example.php` soubor `bootstrap.local.php` a nastav v něm `backendPath`:
 
-Edit **private** `testbraid-backend/config/app.json`:
+```php
+<?php
+return [
+    'backendPath' => '../../tichotesty-backend',
+];
+```
+
+Cesta se vyhodnocuje **vzhledem k adresáři veřejné instalace** (zde `www/tichotesty/`), nikoli k `api/`. Lze uvést také absolutní cestu na serveru, pokud ji hosting zpřístupňuje PHP. Název backendového adresáře je libovolný. **Není nutné měnit `index.php`, `api/index.php` ani nastavovat systémovou proměnnou.** Oba soubory čtou stejnou konfiguraci přes `backend-path.php`.
+
+Soubor `bootstrap.local.php` není součástí distribučního balíčku ani repozitáře; při aktualizaci se nepřepisuje. Jde o místní PHP konfiguraci: přístup přes HTTP zakazuje dodávaný `.htaccess` a samotné `return` bez výstupu údaje nezveřejňuje při správně fungujícím PHP. Do souboru nevkládej hesla.
+
+Pro starší instalaci bez `bootstrap.local.php` zůstává kompatibilní původní výchozí cesta `../testbraid-backend` vzhledem k veřejné složce a volitelná proměnná `TESTBRAID_BACKEND_ENTRY`. Pokud existuje `bootstrap.local.php`, má přednost.
+
+## 3. URL podadresář v soukromém app.json
+
+V `tichotesty-backend/config/app.json` nastav:
 
 ```json
-{
-  "site": { "name": { "en": "TestBraid", "cs": "TestBraid" }, "description": "" },
-  "uploads": { "maxImageSizeMiB": 10, "maxVideoSizeMiB": 64 },
-  "uiLanguages": ["en", "cs"],
-  "basePath": "/courses/testbraid"
-}
+"basePath": "/tichotesty"
 ```
 
-Use `"/"` for a domain-root installation. The property is optional for older configurations (implicit root). Do not set a full URL or query string. The preexisting `TESTBRAID_BASE_PATH` environment override still works for configurations without `basePath`; if both are explicit, they must match.
+Pro doménový kořen použij `"/"`; cesta nesmí obsahovat hostname. Zachovej ostatní položky `site`, `uploads` a `uiLanguages`. Případná explicitní proměnná `TESTBRAID_BASE_PATH` musí mít stejnou hodnotu jako nastavení.
 
-## Point the public entry points at the private backend
+## 4. Apache a první instalace
 
-By default both public bootstrap files resolve `../testbraid-backend/public/index.php` relative to the application directory. This only suits a domain-root layout with a sibling private folder. For a subdirectory install, set `TESTBRAID_BACKEND_ENTRY` in the PHP/webserver environment to the **absolute private** backend entry path, e.g. `/home/account/testbraid-backend/public/index.php`. Both `index.php` and `api/index.php` read it.
+- Ve veřejném adresáři musí být dodávaný `.htaccess`, `index.php`, `backend-path.php`, `api/index.php`, `assets/` a `locales/`. **Nekopíruj tam** statický `frontend/dist/index.html`: šablona patří soukromě do `templates/index.html`.
+- V backendu spusť `composer install --no-dev --optimize-autoloader`, pokud `vendor/` není součástí připraveného balíčku; ověř, že funguje `vendor/autoload.php`.
+- Je-li v kořeni domény **jiná Vue instalace** s pravidlem typu `RewriteRule ^ index.html [END]`, přidej k jejímu poslednímu SPA pravidlu výjimku pro `/tichotesty`, například `RewriteCond %{REQUEST_URI} !^/tichotesty(/|$)`. Nezastavuj zpracování pravidel v podadresáři pravidlem `[END]` v rodičovském `.htaccess`.
+- Pro novou instalaci obsahuje `--initial-install` soukromé `config/app.json`. Při aktualizacích používej balíček **bez** tohoto přepínače.
 
-Check that your hosting allows setting that environment variable **for web requests** (PHP-FPM may not inherit shell variables). If it does not, the default layout must be adjusted by the operator or host; do not relocate private storage into `public_html/` as a workaround.
+## 5. Dobrovolná diagnostika zabezpečení
 
-## Apache routing
+Ve správě testů je sekce **Zabezpečení instalace**, kde se tlačítkem spustí kontrola. Kontroluje fyzické umístění backendu a úložiště vůči odhadovanému veřejnému kořeni, přítomnost `.htaccess` a známého zákazového pravidla, a přítomnost neškodného `security-probe.txt`.
 
-Deploy `deployment-package/www/.htaccess` with hidden files intact in the public app directory and ensure `mod_rewrite` and `.htaccess` rules are honored. Unknown client routes go to the PHP HTML shell. API requests go to Slim; missing `media/` or `assets/` files are real HTTP 404s rather than Vue HTML. The static `index.html` **must not be placed in the public app directory**; it is the private template in `testbraid-backend/templates/`. On an upgrade, remove an obsolete public `index.html` **specifically** (do not delete any private config/storage or uploaded media). The rewrite rules also route any leftover `/index.html` URL through the dynamic `index.php`.
+Případný HTTP test provádí **prohlížeč** pouze vůči jedné správcem zadané cestě na téže doméně, například:
 
-## Checks before accepting deployment
+`/tichotesty-backend/security-probe.txt`
 
-1. Confirm the app homepage, admin login, media library, and a published test open on the configured URL.
-2. Refresh a **direct deep link** such as `/courses/testbraid/admin/media?lang=cs`: JavaScript/CSS/favicon/locale requests must resolve within `/courses/testbraid/`.
-3. Verify authenticated API calls, login/logout, a media upload and a draft preview.
-4. Confirm published MP4 playback including seeking/HTTP Range and verify an invalid media URL returns 404.
-5. Confirm an unknown URL gets the application's localized 404 page, not a blank view.
-6. Confirm the backend and private draft data are **not reachable** via HTTP; verify server mappings without requesting live credential files.
-7. Before upgrades back up private `config/`, `storage/` and published media. Preserve them during upload; do not use a destructive mirror.
+Pokud server vrátí přesný obsah kontrolního souboru, backend je na této adrese veřejně dostupný. HTTP 403/404 znamená pouze to, že **tato konkrétní URL** obsah nezpřístupňuje; jiné URL nebo Apache alias mohou stále existovat. `DOCUMENT_ROOT`, `.htaccess` ani tento jednorázový test nejsou samy o sobě definitivním důkazem zabezpečení.
 
-This feature does **not** promise support for PHP hosts that provide only a publicly served filesystem and no private directory. That requires a separate, security-reviewed hosting mode.
+**Kontrola je dobrovolná, její výsledek neblokuje instalaci ani API.** Rozhodnutí a odpovědnost za provoz jsou na správci. Doporučená varianta je umístění backendu mimo celý veřejný webový kořen. Alternativně může být chráněn pravidlem `.htaccess`, jehož skutečnou účinnost je potřeba ověřit. Pravidla nikdy nesmí být považována za účinná pouze proto, že soubor existuje.
 
-## Two installations on the same domain (example: /tichotesty)
+## 6. Ověření po nasazení
 
-When another TestBraid already lives at the domain root, do not overwrite its existing `www/index.html`, root `www/.htaccess`, `www/api/`, or existing private `testbraid-backend/`. Use a **new** public subdirectory `www/tichotesty/` and a distinct private sibling of `www/`, for example `tichotesty-backend/`. Copy the archive's public `www/` **contents** into `www/tichotesty/`, and its private backend **contents** into `tichotesty-backend/`. Configure `basePath: "/tichotesty"` in the new backend config only.
+1. `/tichotesty/api/health` vrátí `{"status":"ok","service":"testbraid-api"}`.
+2. Otevři `/tichotesty/`, `/tichotesty/admin` a obnov přímý odkaz klávesou F5.
+3. Ověř přihlášení, odhlášení a současné přihlášení do instalace v kořeni domény.
+4. Založ test, nahraj obrázek/video, publikuj a přehraj publikované MP4 včetně přeskakování.
+5. V administraci případně spusť **Zabezpečení instalace**; nikde se nezobrazují interní cesty ani soukromé soubory.
+6. Proveď zálohu soukromého `config/`, `storage/` a veřejných médií.
 
-The application-relative default private path used by the new public bootstraps does **not** point to a sibling of the host document root in this nested layout. Configure `TESTBRAID_BACKEND_ENTRY` for both PHP entry points or, if the hosting provider cannot make this environment variable visible to PHP-FPM, adjust only the deployed public bootstrap fallbacks:
+### Migrace z dočasné větve diagnostics/tichotesty-backend-path
 
-- In `www/tichotesty/index.php` use `dirname(__DIR__, 2) . '/tichotesty-backend/public/index.php'` as the fallback `$backendEntry`.
-- In `www/tichotesty/api/index.php` use `dirname(__DIR__, 3) . '/tichotesty-backend/public/index.php'` as the fallback `$privateEntry`.
-
-These relative directory depths apply to the shown layout (`www/tichotesty` inside the domain's document root); inspect the actual paths before editing. They don't require a frontend rebuild. Keep both pointers identical in their resolved destination.
-
-**Parent Apache rewrite:** The current *root application* `www/.htaccess` rewrites unknown paths to the root `index.html` using `[END]`. That can capture `/tichotesty/admin` before the nested application's rules run. Add an exception to the root app's *last SPA fallback* so it does not rewrite URLs whose path starts with `/tichotesty`; for example, alongside existing `!-f` and `!-d` conditions:
-
-```apache
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_URI} !^/tichotesty(/|$)
-RewriteRule ^ index.html [END]
-```
-
-Do **not** use a parent `[END]` rule as an exclusion for `tichotesty`, because it can prevent rewrite processing in the child directory. Existing root app behavior should remain unchanged. Check direct reload of `/tichotesty/admin`.
+Nynější dočasné `index.php` a `api/index.php` nahraď verzemi z `feature/runtime-subpath-installation`, společně s novým `backend-path.php` a ostatními soubory z distribučního balíčku. Před návštěvou webu vytvoř `www/tichotesty/bootstrap.local.php` s cestou `../../tichotesty-backend`. Oba vstupní soubory pak budou mít správnou cestu bez ručních úprav. Současně aktualizuj `tichotesty-backend/src/`, aby nová diagnostika fungovala. Původní data a konfiguraci zachovej.
