@@ -37,6 +37,7 @@ See [deployment details](docs/deployment.md#6d-installation-branding-version-and
 
 ## Documentation
 
+- [Author workspace](docs/author-workspace.md) — shared settings/questions editor, lesson context, dialogs and save behavior.
 - [Functional specification](docs/functional-specification.md) — agreed requirements, priorities and open questions.
 - [PoC 1 scope](docs/poc-scope.md) — agreed functionality, PoC-A/PoC-B increments, and acceptance criteria.
 - [Preliminary technical research](docs/technical-research.md) — reusable libraries, tradeoffs and hosting/security considerations.

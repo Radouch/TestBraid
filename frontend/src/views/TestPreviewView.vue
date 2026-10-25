@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import TestRunner from '../components/TestRunner.vue'
 import type { DraftTest } from '../editor/model'
 import { publicationProblems } from '../editor/model'
+import { explicitUiLocale } from '../ui-locale'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -12,6 +13,12 @@ const test = ref<DraftTest | null>(null)
 const loading = ref(true)
 const error = ref('')
 const warnings = ref<string[]>([])
+const languageQuery = computed(() => {
+  const lang = explicitUiLocale(route.query.lang)
+  return lang ? { lang } : {}
+})
+const editorLocation = computed(() => ({ name: 'test-questions', params: { id: test.value?.id },
+  query: { ...languageQuery.value, tab: route.query.editorTab === 'settings' ? 'settings' : undefined } }))
 
 async function loadTest(id: string): Promise<void> {
   loading.value = true
@@ -46,14 +53,14 @@ watch(() => String(route.params.id ?? ''), id => void loadTest(id), { immediate:
 
 <template>
   <section>
-    <RouterLink :to="{ name: 'admin' }" class="d-inline-block mb-3">{{ t('editorBack') }}</RouterLink>
+    <RouterLink :to="{ name: 'admin', query: { ...languageQuery, lesson: test?.groupId } }" class="d-inline-block mb-3">{{ t('editorBack') }}</RouterLink>
     <p v-if="loading" role="status">{{ t('loading') }}</p>
     <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
     <template v-if="test && !loading">
       <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
         <h2 class="h4 mb-0">{{ t('runnerPreviewHeading') }}</h2>
         <RouterLink v-if="test.status === 'draft'" class="btn btn-outline-primary ms-auto"
-          :to="{ name: 'test-questions', params: { id: test.id } }">
+          :to="editorLocation">
           {{ t('editorOpen') }}
         </RouterLink>
       </div>

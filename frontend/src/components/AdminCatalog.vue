@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import AppIcon from './AppIcon.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import TestSettingsFields from './TestSettingsFields.vue'
+import { explicitUiLocale } from '../ui-locale'
+import type { TestSettings } from '../editor/test-settings'
 import type { Question } from '../editor/model'
 
 interface Group {
@@ -26,11 +29,16 @@ interface ErrorPayload {
 const props = defineProps<{ csrfToken: string }>()
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const groups = ref<Group[]>([])
 const tests = ref<TestRecord[]>([])
 const readiness = ref<Record<string, { ready: boolean; issues: Array<{path: string; code: string; message: string}> }>>({})
-const showDraftForm = ref(false)
+const createDialog = ref<HTMLDialogElement | null>(null)
+const lessonDialog = ref<HTMLDialogElement | null>(null)
+const lessonInput = ref<HTMLInputElement | null>(null)
+const dialogError = ref('')
+let dialogOrigin: HTMLElement | null = null
 const fallbackLink = ref('')
 const dragLessonId = ref('')
 const dragTestId = ref('')
@@ -38,23 +46,62 @@ const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
 const notice = ref('')
-const groupName = ref('')
+
 const renamingId = ref('')
 const renameValue = ref('')
 const groupFilter = ref('')
-const selectedTestId = ref('')
-const draftGroupId = ref('')
-const draftTitle = ref('')
-const draftDescription = ref('')
-const draftShowOverallScore = ref(true)
-const draftLanguage = ref('cs')
-
-const filteredTests = computed(() =>
-  groupFilter.value ? tests.value.filter((test) => test.groupId === groupFilter.value) : tests.value,
-)
-const selectedDraft = computed(() =>
-  tests.value.find((test) => test.id === selectedTestId.value && test.status === 'draft') ?? null,
-)
+const newTest = ref<TestSettings>({ groupId: '', title: '', description: '', language: 'cs', showOverallScore: true })
+const filteredTests = computed(() => groupFilter.value ? tests.value.filter(test => test.groupId === groupFilter.value) : tests.value)
+const selectedGroup = computed(() => groups.value.find(group => group.id === groupFilter.value))
+const languageQuery = computed(() => {
+  const lang = explicitUiLocale(route.query.lang)
+  return lang ? { lang } : {}
+})
+watch(() => route.query.lesson, value => { groupFilter.value = typeof value === 'string' ? value : '' }, { immediate: true })
+async function selectGroup(id: string): Promise<void> {
+  await router.replace({ name: 'admin', query: { ...route.query, lesson: id || undefined } })
+}
+function editorLocation(test: TestRecord, settings = false) {
+  return { name: 'test-questions', params: { id: test.id }, query: { ...languageQuery.value, tab: settings ? 'settings' : undefined } }
+}
+function rememberOrigin(event?: MouseEvent): void {
+  const target = event?.currentTarget
+  dialogOrigin = target instanceof HTMLElement ? target.closest('details')?.querySelector<HTMLElement>('summary') ?? target : null
+}
+function restoreDialogFocus(): void {
+  // Successful requests can close a dialog while its trigger is still
+  // disabled. The busy watcher restores focus once that control is enabled.
+  if (busy.value) return
+  if (dialogOrigin?.isConnected) dialogOrigin.focus({ preventScroll: true })
+  dialogOrigin = null
+}
+watch(busy, value => {
+  if (!value && !lessonDialog.value?.open && !createDialog.value?.open) void nextTick(restoreDialogFocus)
+})
+function cancelDialog(event: Event, dialog: HTMLDialogElement | null): void {
+  event.preventDefault()
+  if (!busy.value) dialog?.close()
+}
+async function openCreate(event: MouseEvent): Promise<void> {
+  if (busy.value || !groups.value.length) return
+  rememberOrigin(event)
+  dialogError.value = ''
+  newTest.value = { groupId: groupFilter.value || groups.value[0]!.id, title: '', description: '', language: 'cs', showOverallScore: true }
+  await nextTick()
+  createDialog.value?.showModal()
+  createDialog.value?.querySelector<HTMLInputElement>('#test-settings-title')?.focus()
+}
+async function openLessonDialog(group?: Group, event?: MouseEvent): Promise<void> {
+  if (busy.value) return
+  rememberOrigin(event)
+  renamingId.value = group?.id ?? ''
+  renameValue.value = group?.name ?? ''
+  dialogError.value = ''
+  await nextTick()
+  lessonDialog.value?.showModal()
+  lessonInput.value?.focus()
+  lessonInput.value?.select()
+}
 
 function api(path: string): string {
   return import.meta.env.BASE_URL + 'api/admin/' + path
@@ -86,16 +133,6 @@ async function request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', p
   return payload
 }
 
-function resetForm(): void {
-  showDraftForm.value = true
-  selectedTestId.value = ''
-  draftTitle.value = ''
-  draftDescription.value = ''
-  draftShowOverallScore.value = true
-  draftLanguage.value = 'cs'
-  draftGroupId.value = groups.value[0]?.id ?? ''
-}
-
 function showError(cause: unknown): void {
   error.value = cause instanceof Error ? cause.message : t('catalogNetworkError')
 }
@@ -110,16 +147,7 @@ async function refresh(): Promise<void> {
   groups.value = groupResponse.groups
   tests.value = testResponse.tests
   readiness.value = readinessResponse.tests
-  if (!groups.value.some((group) => group.id === draftGroupId.value)) {
-    draftGroupId.value = groups.value[0]?.id ?? ''
-  }
-  if (groupFilter.value && !groups.value.some((group) => group.id === groupFilter.value)) {
-    groupFilter.value = ''
-  }
-  if (selectedTestId.value && !tests.value.some((test) =>
-    test.id === selectedTestId.value && test.status === 'draft')) {
-    resetForm()
-  }
+  if (groupFilter.value && !groups.value.some(group => group.id === groupFilter.value)) await selectGroup('')
 }
 
 async function load(): Promise<void> {
@@ -134,21 +162,22 @@ async function load(): Promise<void> {
   }
 }
 
-async function createGroup(): Promise<void> {
-  const name = groupName.value.trim()
+async function saveLesson(): Promise<void> {
+  const name = renameValue.value.trim()
   if (!name || busy.value) return
   busy.value = true
-  error.value = ''
+  dialogError.value = ''
   notice.value = ''
   try {
-    const group = await request<Group>('POST', 'groups', { name })
-    groupName.value = ''
+    const editing = !!renamingId.value
+    const group = await request<Group>(editing ? 'PATCH' : 'POST', editing ? 'groups/' + encodeURIComponent(renamingId.value) : 'groups', { name })
+    lessonDialog.value?.close()
     await refresh()
-    draftGroupId.value = group.id
-    groupFilter.value = group.id
-    notice.value = t('catalogGroupCreated')
+    if (!editing) await selectGroup(group.id)
+    notice.value = t(editing ? 'catalogGroupRenamed' : 'catalogGroupCreated')
   } catch (cause) {
-    showError(cause)
+    if (lessonDialog.value?.open) dialogError.value = cause instanceof Error ? cause.message : t('catalogNetworkError')
+    else showError(cause)
   } finally {
     busy.value = false
   }
@@ -165,32 +194,6 @@ function closeActionMenu(event: MouseEvent): void {
   const details = container.closest('details')
   if (details) details.open = false
 }
-
-function beginRename(group: Group): void {
-  renamingId.value = group.id
-  renameValue.value = group.name
-  error.value = ''
-}
-
-async function renameGroup(): Promise<void> {
-  const name = renameValue.value.trim()
-  if (!renamingId.value || !name || busy.value) return
-  busy.value = true
-  error.value = ''
-  notice.value = ''
-  try {
-    await request<Group>('PATCH', 'groups/' + encodeURIComponent(renamingId.value), { name })
-    renamingId.value = ''
-    renameValue.value = ''
-    await refresh()
-    notice.value = t('catalogGroupRenamed')
-  } catch (cause) {
-    showError(cause)
-  } finally {
-    busy.value = false
-  }
-}
-
 
 async function deleteGroup(group: Group): Promise<void> {
   if (busy.value || lessonHasTests(group.id) || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
@@ -220,7 +223,6 @@ async function deleteDraft(test: TestRecord): Promise<void> {
   notice.value = ''
   try {
     await request<{ deleted: true }>('DELETE', 'tests/' + encodeURIComponent(test.id))
-    if (selectedTestId.value === test.id) resetForm()
     await refresh()
     notice.value = t('catalogTestDeleted')
   } catch (cause) {
@@ -234,56 +236,26 @@ async function deleteDraft(test: TestRecord): Promise<void> {
   }
 }
 
-function editTest(test: TestRecord): void {
-  if (test.status !== 'draft') return
-  selectedTestId.value = test.id
-  draftGroupId.value = test.groupId
-  draftTitle.value = test.title
-  draftDescription.value = test.description
-  draftShowOverallScore.value = test.showOverallScore !== false
-  draftLanguage.value = test.language
-  error.value = ''
-  notice.value = ''
-  showDraftForm.value = true
-}
-
-async function saveDraft(): Promise<void> {
-  if (busy.value || !draftGroupId.value || !draftTitle.value.trim()) return
-  // Another author/tab may publish the selected draft while this form stays
-  // open. Do not silently turn a stale edit into a newly created test.
-  if (selectedTestId.value && !selectedDraft.value) {
-    error.value = t('catalogStaleDraft')
-    return
-  }
+async function createTest(): Promise<void> {
+  if (busy.value || !newTest.value.groupId || !newTest.value.title.trim()) return
   busy.value = true
-  error.value = ''
-  notice.value = ''
+  dialogError.value = ''
   try {
-    const body = {
-      groupId: draftGroupId.value,
-      language: draftLanguage.value,
-      title: draftTitle.value.trim(),
-      description: draftDescription.value,
-      showOverallScore: draftShowOverallScore.value,
-      // Re-submit the existing question array unchanged during metadata edits.
-      // Only the future question editor is allowed to change this payload.
-      ...(selectedDraft.value ? { questions: selectedDraft.value.questions } : {}),
-    }
-    const saved = selectedDraft.value
-      ? await request<TestRecord>('PUT', 'tests/' + encodeURIComponent(selectedDraft.value.id), body)
-      : await request<TestRecord>('POST', 'tests', body)
-    await refresh()
-    editTest(saved)
-    notice.value = t('catalogDraftSaved')
+    const saved = await request<TestRecord>('POST', 'tests', { ...newTest.value, title: newTest.value.title.trim() })
+    // Close after successful creation, even if navigation later fails; leaving
+    // a submit-ready dialog here would allow accidentally creating a second test.
+    createDialog.value?.close()
+    await router.push(editorLocation(saved))
   } catch (cause) {
-    showError(cause)
+    if (createDialog.value?.open) dialogError.value = cause instanceof Error ? cause.message : t('catalogNetworkError')
+    else showError(cause)
   } finally {
     busy.value = false
   }
 }
 
 function groupLabel(id: string): string {
-  return groups.value.find((group) => group.id === id)?.name ?? id
+  return groups.value.find((group) => group.id === id)?.name ?? t('editorCurrentLesson')
 }
 
 async function changePublication(test: TestRecord, action: 'publish' | 'unpublish'): Promise<void> {
@@ -308,9 +280,7 @@ async function duplicateTest(test: TestRecord): Promise<void> {
   try {
     const copy = await request<TestRecord>('POST', 'tests/' + encodeURIComponent(test.id) + '/duplicate')
     await refresh()
-    groupFilter.value = copy.groupId
-    editTest(copy)
-    notice.value = t('adminDuplicated')
+    await router.push(editorLocation(copy, true))
   } catch (cause) {
     showError(cause)
   } finally {
@@ -407,35 +377,43 @@ onMounted(() => void load())
     <p v-if="notice" class="alert alert-success" role="status">{{ notice }}</p>
     <p v-if="loading" role="status">{{ t('loading') }}</p>
 
-    <div v-else class="row g-4">
-      <aside class="col-12 col-lg-4" aria-labelledby="lessons-heading">
+    <div v-else>
+      <div class="card card-body d-lg-none mb-3">
+        <label class="form-label" for="catalog-lesson-select">{{ t('adminLessons') }}</label>
+        <select id="catalog-lesson-select" class="form-select mb-2" :value="groupFilter" :disabled="busy" @change="selectGroup(($event.target as HTMLSelectElement).value)">
+          <option value="">{{ t('adminAllTests') }} ({{ tests.length }})</option>
+          <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option>
+        </select>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy" @click="openLessonDialog(undefined, $event)"><AppIcon name="folder-plus" />{{ t('catalogAddGroup') }}</button>
+          <details v-if="selectedGroup" class="dropdown">
+            <summary class="btn btn-outline-secondary btn-sm icon-button" :aria-label="t('adminLessonActions')"><AppIcon name="three-dots-vertical" /></summary>
+            <div class="dropdown-menu show position-absolute" @click="closeActionMenu">
+              <button type="button" class="dropdown-item" :disabled="busy || groups[0]?.id === selectedGroup.id" @click="moveLesson(selectedGroup.id, -1)"><AppIcon name="arrow-up" />{{ t('adminMoveUp') }}</button>
+              <button type="button" class="dropdown-item" :disabled="busy || groups.at(-1)?.id === selectedGroup.id" @click="moveLesson(selectedGroup.id, 1)"><AppIcon name="arrow-down" />{{ t('adminMoveDown') }}</button>
+              <button type="button" class="dropdown-item text-danger" :disabled="busy || lessonHasTests(selectedGroup.id)" :title="lessonHasTests(selectedGroup.id) ? t('catalogGroupNotEmpty') : undefined" @click="deleteGroup(selectedGroup)"><AppIcon name="trash3" />{{ t('catalogDelete') }}</button>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="row g-4">
+      <aside class="col-lg-4 d-none d-lg-block" aria-labelledby="lessons-heading">
         <div class="card p-3">
           <h3 id="lessons-heading" class="h5">{{ t('adminLessons') }}</h3>
           <ul class="list-group mb-3">
-            <li class="list-group-item">
+            <li class="list-group-item" :class="{ 'catalog-lesson-current': !groupFilter }">
               <button type="button" class="btn btn-link text-start w-100 text-decoration-none"
-                :class="{ 'fw-bold': !groupFilter }" @click="groupFilter = ''">
+                :class="{ 'fw-bold': !groupFilter }" :aria-pressed="!groupFilter" :disabled="busy" @click="selectGroup('')">
                 {{ t('adminAllTests') }} <span class="text-secondary">({{ tests.length }})</span>
               </button>
             </li>
-            <li v-for="group in groups" :key="group.id" class="list-group-item"
-              draggable="true" @dragstart="dragLessonId = group.id"
+            <li v-for="group in groups" :key="group.id" class="list-group-item" :class="{ 'catalog-lesson-current': groupFilter === group.id }"
+              :draggable="!busy" @dragstart="dragLessonId = group.id"
               @dragover.prevent @drop.prevent="dropLesson(group.id)">
-              <form v-if="renamingId === group.id" class="d-flex gap-2" @submit.prevent="renameGroup">
-                <label class="visually-hidden" :for="'rename-' + group.id">{{ t('catalogRenameGroup') }}</label>
-                <input :id="'rename-' + group.id" v-model="renameValue" class="form-control"
-                  maxlength="250" required />
-                <button class="btn btn-primary btn-sm" type="submit" :disabled="busy || !renameValue.trim()">
-                  <AppIcon name="floppy" />{{ t('catalogSave') }}
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" type="button" @click="renamingId = ''">
-                  {{ t('catalogCancel') }}
-                </button>
-              </form>
-              <div v-else class="d-flex align-items-center gap-1">
+              <div class="d-flex align-items-center gap-1">
                 <button type="button" class="btn btn-link text-start text-decoration-none flex-grow-1"
-                  :class="{ 'fw-bold': groupFilter === group.id }"
-                  @click="groupFilter = group.id">
+                  :class="{ 'fw-bold': groupFilter === group.id }" :aria-pressed="groupFilter === group.id" :disabled="busy"
+                  @click="selectGroup(group.id)">
                   {{ group.name }} <span class="text-secondary">({{ tests.filter(test => test.groupId === group.id).length }})</span>
                 </button>
                 <details class="dropdown">
@@ -445,7 +423,7 @@ onMounted(() => void load())
                       @click="moveLesson(group.id, -1)"><AppIcon name="arrow-up" />{{ t('adminMoveUp') }}</button>
                     <button class="dropdown-item" type="button" :disabled="busy || groups[groups.length - 1]?.id === group.id"
                       @click="moveLesson(group.id, 1)"><AppIcon name="arrow-down" />{{ t('adminMoveDown') }}</button>
-                    <button class="dropdown-item" type="button" @click="beginRename(group)">
+                    <button class="dropdown-item" type="button" :disabled="busy" @click="openLessonDialog(group, $event)">
                       <AppIcon name="pencil-square" />{{ t('catalogRenameGroup') }}
                     </button>
                     <button class="dropdown-item text-danger" type="button"
@@ -457,23 +435,17 @@ onMounted(() => void load())
               </div>
             </li>
           </ul>
-          <form class="d-flex flex-wrap gap-2" @submit.prevent="createGroup">
-            <label class="visually-hidden" for="catalog-new-group">{{ t('catalogNewGroup') }}</label>
-            <input id="catalog-new-group" v-model="groupName" class="form-control flex-grow-1"
-              :placeholder="t('catalogNewGroup')" maxlength="250" required />
-            <button class="btn btn-outline-primary btn-sm" type="submit" :disabled="busy || !groupName.trim()">
-              <AppIcon name="folder-plus" />{{ t('catalogAddGroup') }}
-            </button>
-          </form>
+          <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy" @click="openLessonDialog(undefined, $event)"><AppIcon name="folder-plus" />{{ t('catalogAddGroup') }}</button>
         </div>
       </aside>
 
       <section class="col-12 col-lg-8" aria-labelledby="tests-heading">
         <div class="card p-3">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h3 id="tests-heading" class="h5 mb-0">{{ t('adminTests') }}</h3>
+            <h3 id="tests-heading" class="h5 mb-0">{{ selectedGroup?.name ?? t('adminAllTests') }} <span class="badge bg-body-secondary text-body-secondary">{{ filteredTests.length }}</span></h3>
+            <button v-if="selectedGroup" type="button" class="btn btn-outline-secondary btn-sm ms-md-auto" :disabled="busy" @click="openLessonDialog(selectedGroup, $event)"><AppIcon name="pencil-square" />{{ t('catalogRenameGroup') }}</button>
             <button type="button" class="btn btn-primary btn-sm" :disabled="busy || groups.length === 0"
-              @click="resetForm(); draftGroupId = groupFilter || (groups[0]?.id ?? '')">
+              @click="openCreate">
               <AppIcon name="file-earmark-plus" />{{ t('adminNewTest') }}
             </button>
           </div>
@@ -489,7 +461,7 @@ onMounted(() => void load())
               draggable="true" @dragstart="dragTestId = test.id"
               @dragover.prevent @drop.prevent="dropTest(test)">
               <div class="flex-grow-1">
-                <RouterLink :to="{ name: 'test-questions', params: { id: test.id } }" class="fw-semibold">
+                <RouterLink :to="editorLocation(test)" class="fw-semibold">
                   {{ test.title || t('catalogUntitled') }}
                 </RouterLink>
                 <p class="small text-secondary mb-1">{{ groupLabel(test.groupId) }} · {{ test.language }}</p>
@@ -516,12 +488,11 @@ onMounted(() => void load())
                     @click="moveTest(test, -1)"><AppIcon name="arrow-up" />{{ t('adminMoveUp') }}</button>
                   <button class="dropdown-item" type="button" :disabled="busy || tests.filter(t => t.groupId === test.groupId).slice(-1)[0]?.id === test.id"
                     @click="moveTest(test, 1)"><AppIcon name="arrow-down" />{{ t('adminMoveDown') }}</button>
-                  <RouterLink class="dropdown-item" :to="{ name: 'test-questions', params: { id: test.id } }">
+                  <RouterLink class="dropdown-item" :to="editorLocation(test)">
                     <AppIcon name="pencil-square" />{{ t('adminOpenEditor') }}
                   </RouterLink>
-                  <button v-if="test.status === 'draft'" class="dropdown-item" type="button"
-                    @click="editTest(test)"><AppIcon name="pencil-square" />{{ t('catalogEditMetadata') }}</button>
-                  <RouterLink class="dropdown-item" :to="{ name: 'test-preview', params: { id: test.id } }">
+                  <RouterLink v-if="test.status === 'draft'" class="dropdown-item" :to="editorLocation(test, true)"><AppIcon name="pencil-square" />{{ t('catalogEditMetadata') }}</RouterLink>
+                  <RouterLink class="dropdown-item" :to="{ name: 'test-preview', params: { id: test.id }, query: languageQuery }">
                     <AppIcon name="eye" />{{ t('runnerPreviewButton') }}
                   </RouterLink>
                   <button v-if="test.status === 'draft' && readiness[test.id]?.ready" type="button"
@@ -530,7 +501,7 @@ onMounted(() => void load())
                   </button>
                   <template v-if="test.status === 'published'">
                     <RouterLink class="dropdown-item" target="_blank" rel="noopener"
-                      :to="{ name: 'test', params: { id: test.id } }"><AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}</RouterLink>
+                      :to="{ name: 'test', params: { id: test.id }, query: languageQuery }"><AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}</RouterLink>
                     <button type="button" class="dropdown-item" @click="copyPublicLink(test)">
                       <AppIcon name="link-45deg" />{{ t('publicationCopyLink') }}
                     </button>
@@ -547,52 +518,44 @@ onMounted(() => void load())
           </ul>
         </div>
 
-        <section v-if="showDraftForm" aria-labelledby="draft-heading" class="card p-3 mt-3">
-          <div class="d-flex justify-content-between align-items-center gap-2">
-            <h3 id="draft-heading" class="h5">{{ selectedDraft ? t('catalogEditDraft') : t('catalogCreateDraft') }}</h3>
-            <button type="button" class="btn btn-outline-secondary icon-button" :aria-label="t('catalogCancel')" :title="t('catalogCancel')" @click="showDraftForm = false"><AppIcon name="x-lg" /></button>
-          </div>
-          <form class="d-grid gap-3" @submit.prevent="saveDraft">
-            <div>
-              <label for="draft-group" class="form-label">{{ t('adminLessons') }}</label>
-              <select id="draft-group" v-model="draftGroupId" class="form-select" required :disabled="busy">
-                <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option>
-              </select>
-            </div>
-            <div>
-              <label for="draft-title" class="form-label">{{ t('catalogTitle') }}</label>
-              <input id="draft-title" v-model="draftTitle" class="form-control" maxlength="250" required :disabled="busy" />
-            </div>
-            <div>
-              <label for="draft-description" class="form-label">{{ t('catalogDescription') }}</label>
-              <textarea id="draft-description" v-model="draftDescription" class="form-control" rows="3" maxlength="50000" />
-            </div>
-            <div class="form-check">
-              <input id="draft-show-overall-score" v-model="draftShowOverallScore" type="checkbox"
-                class="form-check-input" :disabled="busy" />
-              <label for="draft-show-overall-score" class="form-check-label">{{ t('catalogShowOverallScore') }}</label>
-              <div class="form-text">{{ t('catalogShowOverallScoreHelp') }}</div>
-            </div>
-            <div>
-              <label for="draft-language" class="form-label">{{ t('catalogContentLanguage') }}</label>
-              <input id="draft-language" v-model="draftLanguage" class="form-control" maxlength="35"
-                pattern="[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*" required />
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-              <button type="submit" class="btn btn-primary" :disabled="busy || !draftTitle.trim()">
-                <AppIcon name="floppy" />{{ t('catalogSaveDraft') }}
-              </button>
-              <RouterLink v-if="selectedDraft" class="btn btn-outline-secondary"
-                :to="{ name: 'test-questions', params: { id: selectedDraft.id } }"><AppIcon name="pencil-square" />{{ t('editorOpen') }}</RouterLink>
-            </div>
-          </form>
-        </section>
+
       </section>
+      </div>
     </div>
+    <dialog ref="lessonDialog" class="catalog-dialog border rounded shadow" aria-labelledby="lesson-dialog-heading" @cancel="cancelDialog($event, lessonDialog)" @close="restoreDialogFocus">
+      <form @submit.prevent="saveLesson">
+        <h2 id="lesson-dialog-heading" class="h5 mb-3">{{ t(renamingId ? 'adminRenameLesson' : 'catalogAddGroup') }}</h2>
+        <p v-if="dialogError" class="alert alert-danger" role="alert">{{ dialogError }}</p>
+        <label for="lesson-dialog-name" class="form-label">{{ t('adminLessonName') }}</label>
+        <input id="lesson-dialog-name" ref="lessonInput" v-model="renameValue" class="form-control" maxlength="250" required :disabled="busy" />
+        <div class="d-flex gap-2 flex-wrap justify-content-end mt-3">
+          <button type="button" class="btn btn-outline-secondary" :disabled="busy" @click="lessonDialog?.close()">{{ t('catalogCancel') }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="busy || !renameValue.trim()"><AppIcon name="floppy" />{{ t('catalogSave') }}</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog ref="createDialog" class="catalog-dialog catalog-create-dialog border rounded shadow" aria-labelledby="create-test-heading" @cancel="cancelDialog($event, createDialog)" @close="restoreDialogFocus">
+      <form @submit.prevent="createTest">
+        <h2 id="create-test-heading" class="h5 mb-3">{{ t('adminNewTest') }}</h2>
+        <p v-if="dialogError" class="alert alert-danger" role="alert">{{ dialogError }}</p>
+        <fieldset :disabled="busy" class="border-0 p-0 m-0"><TestSettingsFields :settings="newTest" :lessons="groups" /></fieldset>
+        <div class="d-flex gap-2 flex-wrap justify-content-end mt-3">
+          <button type="button" class="btn btn-outline-secondary" :disabled="busy" @click="createDialog?.close()">{{ t('catalogCancel') }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="busy || !newTest.title.trim()"><AppIcon name="file-earmark-plus" />{{ t('adminCreateTest') }}</button>
+        </div>
+      </form>
+    </dialog>
   </section>
 </template>
 
 <style scoped>
+.catalog-lesson-current { background: var(--bs-primary-bg-subtle); }
+.catalog-lesson-current .btn-link { color: var(--bs-primary-text-emphasis); }
+.catalog-dialog { width: min(32rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 1.25rem; background: var(--bs-body-bg); color: var(--bs-body-color); }
+.catalog-create-dialog { width: min(52rem, calc(100% - 2rem)); }
+.catalog-dialog::backdrop { background: rgb(0 0 0 / .35); }
+@media (max-width: 575.98px) { .catalog-dialog { padding: 1rem; } }
+
 /* Native disclosures do not use Bootstrap's Popper positioning. Keep the
    wider labelled icon menus inside the catalog at phone widths. */
 .dropdown-menu { right: 0; left: auto; min-width: min(15rem, calc(100vw - 2rem)); max-width: calc(100vw - 2rem); }

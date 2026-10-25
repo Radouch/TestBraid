@@ -13,6 +13,7 @@
     "test:published": "tsx scripts/test-published-readonly.ts",
     "test:learner": "tsx scripts/test-learner-scoring.ts",
     "test:runner": "node scripts/run-dom-tests.mjs",
+    "test:author": "node scripts/run-dom-tests.mjs scripts/test-author-editor-dom.ts",
     "test:navigation": "tsx scripts/test-navigation.ts",
     "test:branding": "tsx scripts/test-site-identity.ts",
     "test:locales": "tsx scripts/test-ui-languages.ts"

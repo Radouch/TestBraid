@@ -19,6 +19,9 @@ const matching = computed<MatchingQuestion | null>(() => props.question.type ===
 
 const pairs = computed(() => matching.value ? matchingRows(matching.value) : [])
 const expanded = ref(props.initiallyExpanded)
+// The surrounding test overview can open a collapsed question without
+// remounting its composers or discarding another question's expansion state.
+defineExpose({ expand: () => { expanded.value = true } })
 const complete = computed(() => !publicationProblems([props.question]).length && !invalidMediaReference([props.question]))
 const summary = computed(() => props.question.prompt
   .filter(block => block.type === 'text').map(block => block.text.trim()).filter(Boolean).join(' ')

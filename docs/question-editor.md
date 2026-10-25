@@ -2,12 +2,13 @@
 
 ## Authoring and saving
 
-Authors create a draft in the lesson/test catalog and select **Edit questions**
-(`/admin/tests/<uuid>/questions`). The editor loads the canonical JSON through the
-existing authenticated API. Changes remain local until **Save questions** sends a
-CSRF-protected `PUT /api/admin/tests/{id}`. Preview shows the last saved version.
-The toolbar keeps Save and Preview available while scrolling on desktop; on small
-screens it stays in normal document flow to avoid covering the editor.
+Authors create a draft in the lesson/test catalog and continue in the shared
+test workspace (`/admin/tests/<uuid>/questions`). **Questions** and **Test settings**
+edit one local draft. **Save changes** sends metadata and questions together in a
+CSRF-protected `PUT /api/admin/tests/{id}`; Preview shows the last saved version.
+The sticky toolbar is available on desktop and mobile, and question jumps account
+for its measured height. See [the author workspace](author-workspace.md) for tabs,
+lesson navigation, dialogs and combined save/unsaved-change behavior.
 
 Each question has a collapsible card showing its number, type, a local completeness
 hint and, when collapsed, a text summary. The first question and newly added or
@@ -80,8 +81,8 @@ cards, with completed pairs shown above the free items and editable until submis
 (see `docs/learner-matching.md`). Answer changes, submission and locale changes retain the order; Try again clears responses
 and samples a fresh permutation. Fisher–Yates permits any order, including the
 original or a previous order by chance. Canonical arrays and ID-based scoring are
-unchanged. Unified metadata editing (#42) and published read-only questions (#36)
-remain separate work. A published test must still be unpublished before editing.
+unchanged. Metadata and questions now share the workspace described above.
+A published test must still be unpublished before editing either tab.
 
 ## Validation
 
