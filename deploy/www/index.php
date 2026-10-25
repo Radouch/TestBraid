@@ -25,7 +25,7 @@ if (!is_file($autoload) || !is_file($template)) {
 try {
     require $autoload;
     $basePath = \TestBraid\Config\InstallationConfig::basePath($backendRoot);
-    \TestBraid\Config\InstallationConfig::assertPrivateBackend($backendRoot, $basePath);
+    \TestBraid\Config\InstallationConfig::assertPrivateBackend($backendRoot, $basePath, __DIR__);
     $shell = file_get_contents($template);
     if ($shell === false || substr_count($shell, '<head>') !== 1) {
         throw new RuntimeException('Invalid SPA HTML template.');
