@@ -28,11 +28,8 @@ $app = AppFactory::create();
 // Never infer Slim's public route prefix from CGI metadata: the default
 // deployment lives at the domain root and must remain independent of rewrites.
 // Subdirectory deployments opt in using TESTBRAID_BASE_PATH (e.g. /testbraid).
-$configuredBase = getenv('TESTBRAID_BASE_PATH');
-$basePath = is_string($configuredBase) ? rtrim($configuredBase, '/') : '';
-if ($basePath !== '' && !preg_match('~^/(?:[A-Za-z0-9._-]+)(?:/[A-Za-z0-9._-]+)*$~D', $basePath)) {
-    throw new RuntimeException('Invalid TESTBRAID_BASE_PATH deployment setting.');
-}
+$basePath = InstallationConfig::basePath($root);
+InstallationConfig::assertPrivateBackend($root, $basePath);
 if ($basePath !== '') {
     $app->setBasePath($basePath);
 }

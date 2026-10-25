@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace TestBraid\Publication;
 
+use TestBraid\Config\InstallationConfig;
+
 use RuntimeException;
 use stdClass;
 use TestBraid\Http\ApiProblem;
@@ -53,12 +55,7 @@ class PublicationService
         $this->media = new PrivateMediaService($backendRoot, $this->schemas);
         $this->publicDir = $canonicalPublic . '/media';
 
-        $configuredBase = getenv('TESTBRAID_BASE_PATH');
-        $this->basePath = is_string($configuredBase) ? rtrim($configuredBase, '/') : '';
-        if ($this->basePath !== '' &&
-            !preg_match('~^/(?:[A-Za-z0-9._-]+)(?:/[A-Za-z0-9._-]+)*$~D', $this->basePath)) {
-            throw new RuntimeException('Invalid application base path.');
-        }
+        $this->basePath = InstallationConfig::basePath($backendRoot);
     }
 
     /**

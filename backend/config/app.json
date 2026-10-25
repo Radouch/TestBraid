@@ -16,5 +16,6 @@
   "uiLanguages": [
     "en",
     "cs"
-  ]
+  ],
+  "basePath": "/"
 }
