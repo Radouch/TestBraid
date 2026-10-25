@@ -5,16 +5,20 @@ declare(strict_types=1);
 // Emit the trusted installation base before the browser resolves CSS/JS.
 $backendEntry = getenv('TESTBRAID_BACKEND_ENTRY');
 if (!is_string($backendEntry) || $backendEntry === '') {
-    $backendEntry = dirname(__DIR__) . '/testbraid-backend/public/index.php';
+    // Temporary host-specific layout: <domain>/www/tichotesty/ and <domain>/tichotesty-backend/.
+    $backendEntry = dirname(__DIR__, 2) . '/tichotesty-backend/public/index.php';
 }
 $backendRoot = dirname($backendEntry, 2);
 $autoload = $backendRoot . '/vendor/autoload.php';
 $template = $backendRoot . '/templates/index.html';
 if (!is_file($autoload) || !is_file($template)) {
-    error_log('TestBraid backend dependencies or SPA template missing.');
+    // Distinguish missing Composer dependencies from a missing SPA template
+    // without disclosing private paths on hosts without readable PHP logs.
+    $code = !is_file($autoload) ? 'COMPOSER_AUTOLOAD_MISSING' : 'SPA_TEMPLATE_MISSING';
     http_response_code(503);
     header('Content-Type: text/plain; charset=utf-8');
-    echo 'TestBraid is not installed correctly.';
+    header('Cache-Control: no-store');
+    echo 'TestBraid installation unavailable (' . $code . ').';
     exit;
 }
 
