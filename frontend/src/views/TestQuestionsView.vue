@@ -176,6 +176,9 @@ function removeQuestion(index: number): void {
 }
 async function save(): Promise<void> {
   if (busy.value || !test.value || !draft.value || !editable.value || !dirty.value) return
+  // A composer's native media dialog lives inside the shared form. Enter in
+  // that dialog must not submit/save the test behind the modal.
+  if (page.value?.querySelector('dialog[open]')) return
   error.value = ''
   success.value = ''
   const titleInput = form.value?.querySelector<HTMLInputElement>('#test-settings-title')

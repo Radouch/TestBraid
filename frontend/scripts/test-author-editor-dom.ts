@@ -176,6 +176,13 @@ try {
   await click(find('#editor-tab-settings'))
   await change('#test-settings-lesson', 'b')
   assert.ok(back().href.includes('lesson=b'))
+  await click(find('#editor-tab-questions'))
+  const contentDialog = find<HTMLDialogElement>('#editor-panel-questions dialog')
+  contentDialog.showModal()
+  await save()
+  assert.equal(puts().length, 0, 'A native content dialog must not submit the test behind it')
+  contentDialog.close()
+  await click(find('#editor-tab-settings'))
   await save()
   assert.equal(puts().length, 1)
   const body = puts()[0]!.body!

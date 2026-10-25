@@ -22,6 +22,7 @@ questions. It is still not atomic optimistic concurrency control.
 
 - Native settings validation reveals the settings tab before focusing an invalid
   field. Media-reference failures lead to the affected question instead.
+  Enter in a composer's open media dialog cannot submit the test behind it.
 - Both panels stay mounted when switching tabs, retaining question expansion,
   composer state and native media nodes. Failed/stale saves retain the draft.
 - Leaving the page or loading another test checks all unsaved changes. An
