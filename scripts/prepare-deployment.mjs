@@ -47,6 +47,9 @@ try {
     'deploy/www/.htaccess',
     'deploy/www/api/index.php',
     'deploy/www/index.php',
+    'deploy/www/backend-path.php',
+    'deploy/www/bootstrap.local.example.php',
+    'deploy/testbraid-backend/security-probe.txt',
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
@@ -74,6 +77,7 @@ try {
 
   const privateBackend = join(output, 'testbraid-backend')
   cpSync(join(root, 'deploy/testbraid-backend/.htaccess'), join(privateBackend, '.htaccess'))
+  cpSync(join(root, 'deploy/testbraid-backend/security-probe.txt'), join(privateBackend, 'security-probe.txt'))
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   // Release installations must use the reviewed Composer dependency versions.
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))

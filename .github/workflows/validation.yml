@@ -67,6 +67,10 @@ jobs:
           test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
           test -f deployment-package/www/index.php
+          test -f deployment-package/www/backend-path.php
+          test -f deployment-package/www/bootstrap.local.example.php
+          test ! -e deployment-package/www/bootstrap.local.php
+          test -f deployment-package/testbraid-backend/security-probe.txt
           test -f deployment-package/testbraid-backend/templates/index.html
           test ! -f deployment-package/www/index.html
           test -f deployment-package/www/locales/en.json
@@ -106,6 +110,8 @@ jobs:
         run: |
           composer run lint
           php -l ../deploy/www/index.php
+          php -l ../deploy/www/backend-path.php
+          php -l ../deploy/www/bootstrap.local.example.php
           php -l ../deploy/www/api/index.php
         working-directory: backend
       - name: Shared schema fixtures (Opis)

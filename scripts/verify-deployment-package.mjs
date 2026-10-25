@@ -47,6 +47,9 @@ try {
 
   for (const required of [
     'www/index.php',
+    'www/backend-path.php',
+    'www/bootstrap.local.example.php',
+    'testbraid-backend/security-probe.txt',
     'testbraid-backend/templates/index.html',
     'www/.htaccess',
     'www/api/index.php',
@@ -68,6 +71,7 @@ try {
     'testbraid-backend/storage',
     'testbraid-backend/vendor',
     'www/index.html',
+    'www/bootstrap.local.php',
     'www/config',
     'www/storage',
     'www/testbraid-backend',
@@ -110,7 +114,9 @@ try {
     for (const item of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, item.name)
       if (item.isDirectory()) checkWeb(path)
-      else if (/\.php[0-9]?$/i.test(item.name) && path !== join(web, 'api/index.php') && path !== join(web, 'index.php')) {
+      else if (/\.php[0-9]?$/i.test(item.name) && path !== join(web, 'api/index.php') && path !== join(web, 'index.php')
+        && path !== join(web, 'backend-path.php')
+        && path !== join(web, 'bootstrap.local.example.php')) {
         illegalPublicFiles.push(relative(root, path))
       }
     }

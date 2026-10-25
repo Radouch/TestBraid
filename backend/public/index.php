@@ -29,7 +29,6 @@ $app = AppFactory::create();
 // deployment lives at the domain root and must remain independent of rewrites.
 // Subdirectory deployments opt in using TESTBRAID_BASE_PATH (e.g. /testbraid).
 $basePath = InstallationConfig::basePath($root);
-InstallationConfig::assertPrivateBackend($root, $basePath);
 if ($basePath !== '') {
     $app->setBasePath($basePath);
 }

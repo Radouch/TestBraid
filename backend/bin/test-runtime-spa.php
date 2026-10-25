@@ -35,6 +35,7 @@ try {
         // __DIR__ of the actual PHP entry must match its public URL directory.
         $site = $setting === '/' ? $docRoot : $docRoot . $setting;
         copy(dirname(__DIR__, 2) . '/deploy/www/index.php', $site . '/index.php');
+        copy(dirname(__DIR__, 2) . '/deploy/www/backend-path.php', $site . '/backend-path.php');
         ob_start();
         require $site . '/index.php';
         $html = (string) ob_get_clean();
@@ -58,6 +59,9 @@ try {
     @rmdir($root . '/templates');
     @rmdir($root . '/public');
     @rmdir($root);
+    @unlink($docRoot . '/backend-path.php');
+    @unlink($docRoot . '/testbraid/backend-path.php');
+    @unlink($docRoot . '/courses/testbraid/backend-path.php');
     @unlink($docRoot . '/index.php');
     @unlink($docRoot . '/testbraid/index.php');
     @unlink($docRoot . '/courses/testbraid/index.php');

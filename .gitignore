@@ -29,3 +29,6 @@ Thumbs.db
 
 # Generated SFTP staging tree (never track deployment snapshots)
 deployment-package/
+
+# Operator-owned public bootstrap (never include in deployment packages)
+**/bootstrap.local.php

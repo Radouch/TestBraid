@@ -22,19 +22,9 @@ class JsonFileRepository
     public function __construct(private readonly string $root, ?string $publicRoot = null)
     {
         $this->ensureDirectory($this->root);
-        $resolved = realpath($this->root);
-
-        // On shared hosting, Apache DOCUMENT_ROOT may point to an ancestor of
-        // the actual served www/ directory. The public bootstrap provides the
-        // canonical served root; direct CLI use falls back to DOCUMENT_ROOT.
-        $publicRoot ??= defined('TESTBRAID_PUBLIC_ROOT')
-            ? (string) constant('TESTBRAID_PUBLIC_ROOT')
-            : (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
-        $public = $publicRoot === '' ? false : realpath($publicRoot);
-        if ($resolved === false || ($public !== false
-            && ($resolved === $public || str_starts_with($resolved, $public . DIRECTORY_SEPARATOR)))) {
-            throw new RuntimeException('Private storage cannot be located within the public document root.');
-        }
+        // Placement is an operator decision. The author-only installation
+        // diagnostic reports potentially exposed storage instead of blocking
+        // application requests based on unreliable CGI document roots.
     }
 
     public static function uuid(): string

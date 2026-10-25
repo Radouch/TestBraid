@@ -1,6 +1,8 @@
 # Relative per-directory rules also work when the app is installed at /a/b/.
 # The PHP HTML entry injects the configured base before loading static assets.
 RewriteEngine On
+# These are local PHP configuration files, not HTTP entry points.
+RewriteRule ^(backend-path|bootstrap\\.local(?:\\.example)?)\\.php$ - [F,END]
 
 RewriteRule ^api/index\.php$ - [END]
 RewriteRule ^api(/.*)?$ api/index.php [END]

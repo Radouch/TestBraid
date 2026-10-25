@@ -56,23 +56,7 @@ try {
     expectInvalid(fn() => InstallationConfig::basePath(dirname(__DIR__)), 'APP_BASE_PATH_MISMATCH');
     putenv('TESTBRAID_BASE_PATH');
 
-    // CGI may report a parent of the real web-served directory on shared hosts.
-    mkdir($tmp . '/public_html/tichotesty', 0700, true);
-    mkdir($tmp . '/public_html/tichotesty-backend', 0700, true);
-    mkdir($tmp . '/private-backend', 0700, true);
-    $_SERVER['DOCUMENT_ROOT'] = $tmp; // intentionally too broad
-    InstallationConfig::assertPrivateBackend(
-        $tmp . '/private-backend', '/tichotesty', $tmp . '/public_html/tichotesty');
-    expectInvalid(fn() => InstallationConfig::assertPrivateBackend(
-        $tmp . '/public_html/tichotesty-backend', '/tichotesty',
-        $tmp . '/public_html/tichotesty'), 'PRIVATE_ROOT_UNSAFE');
-    expectInvalid(fn() => InstallationConfig::assertPrivateBackend(
-        $tmp . '/private-backend', '/wrong', $tmp . '/public_html/tichotesty'),
-        'PRIVATE_ROOT_UNVERIFIED');
-    expectInvalid(fn() => InstallationConfig::assertPrivateBackend(
-        $tmp . '/private-backend', '/tichotesty'), 'PRIVATE_ROOT_UNVERIFIED');
-    InstallationConfig::assertPrivateBackend($tmp . '/private-backend', '');
-    echo "PASS: configurable runtime URL path, strict validation and private root checks\n";
+    echo "PASS: configurable runtime URL path, strict URL validation without hard blocking by filesystem layout\n";
 } finally {
     $originalConfig === false ? putenv('TESTBRAID_APP_CONFIG_FILE') : putenv('TESTBRAID_APP_CONFIG_FILE=' . $originalConfig);
     $originalBase === false ? putenv('TESTBRAID_BASE_PATH') : putenv('TESTBRAID_BASE_PATH=' . $originalBase);
