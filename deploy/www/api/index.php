@@ -20,17 +20,19 @@ if (!defined('TESTBRAID_PUBLIC_ROOT')) {
 
 $privateEntry = getenv('TESTBRAID_BACKEND_ENTRY');
 if (!is_string($privateEntry) || $privateEntry === '') {
-    $privateEntry = dirname(__DIR__, 2) . '/testbraid-backend/public/index.php';
+    // Temporary host-specific layout: <domain>/www/tichotesty/api/ and <domain>/tichotesty-backend/.
+    $privateEntry = dirname(__DIR__, 3) . '/tichotesty-backend/public/index.php';
 }
 
 $autoload = dirname($privateEntry, 2) . '/vendor/autoload.php';
 if (!is_file($privateEntry) || !is_readable($privateEntry) || !is_file($autoload)) {
-    // Do not disclose private filesystem paths to anonymous HTTP clients.
-    error_log('TestBraid backend entry point or Composer autoload file is missing.');
+    // Host-specific diagnostic: emit only an allowlisted code, never private paths.
+    $code = !is_file($privateEntry) ? 'BACKEND_ENTRY_MISSING'
+        : (!is_readable($privateEntry) ? 'BACKEND_ENTRY_UNREADABLE' : 'COMPOSER_AUTOLOAD_MISSING');
     http_response_code(503);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
-    echo '{"error":{"code":"BACKEND_UNAVAILABLE","message":"Service unavailable."}}';
+    echo json_encode(['error' => ['code' => $code, 'message' => 'Service unavailable.']], JSON_THROW_ON_ERROR);
     exit;
 }
 
