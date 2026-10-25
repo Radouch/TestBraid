@@ -63,6 +63,9 @@ jobs:
           test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
           test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
+          test -f deployment-package/www/index.php
+          test -f deployment-package/testbraid-backend/templates/index.html
+          test ! -f deployment-package/www/index.html
           test -f deployment-package/www/locales/en.json
           test -f deployment-package/www/locales/cs.json
           test -f deployment-package/testbraid-backend/.htaccess
@@ -103,6 +106,9 @@ jobs:
         run: composer run test:schemas
         working-directory: backend
       # Uses an isolated loopback PHP server and disposable credentials.
+      - name: Runtime base path validation and private-root regression
+        run: php bin/test-subdirectory-config.php
+        working-directory: backend
       - name: Installation UI language configuration validation
         run: composer run test:ui-languages
         working-directory: backend

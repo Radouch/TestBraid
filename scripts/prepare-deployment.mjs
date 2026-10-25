@@ -6,7 +6,7 @@
  * the same contracts. The deployed PHP backend needs a private copy under
  * testbraid-backend/schemas/ because its source checkout is not on the host.
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -46,6 +46,7 @@ try {
     'frontend/dist/index.html',
     'deploy/www/.htaccess',
     'deploy/www/api/index.php',
+    'deploy/www/index.php',
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
@@ -60,6 +61,11 @@ try {
   rmSync(output, { recursive: true, force: true })
 
   copyDirectory('frontend/dist', 'www')
+  // The static Vite entry is a private template rendered by PHP with the
+  // installation-specific base; all hashed assets stay in public www.
+  const templateDirectory = join(output, 'testbraid-backend/templates')
+  mkdirSync(templateDirectory, { recursive: true })
+  renameSync(join(output, 'www/index.html'), join(templateDirectory, 'index.html'))
   copyDirectory('deploy/www', 'www')
   copyDirectory('backend/public', 'testbraid-backend/public')
   copyDirectory('backend/src', 'testbraid-backend/src')

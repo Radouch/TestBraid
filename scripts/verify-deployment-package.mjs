@@ -46,7 +46,8 @@ try {
   walk(root)
 
   for (const required of [
-    'www/index.html',
+    'www/index.php',
+    'testbraid-backend/templates/index.html',
     'www/.htaccess',
     'www/api/index.php',
     'www/media/.htaccess',
@@ -66,6 +67,7 @@ try {
   for (const forbidden of [
     'testbraid-backend/storage',
     'testbraid-backend/vendor',
+    'www/index.html',
     'www/config',
     'www/storage',
     'www/testbraid-backend',
@@ -108,7 +110,7 @@ try {
     for (const item of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, item.name)
       if (item.isDirectory()) checkWeb(path)
-      else if (/\.php[0-9]?$/i.test(item.name) && path !== join(web, 'api/index.php')) {
+      else if (/\.php[0-9]?$/i.test(item.name) && path !== join(web, 'api/index.php') && path !== join(web, 'index.php')) {
         illegalPublicFiles.push(relative(root, path))
       }
     }
@@ -116,8 +118,15 @@ try {
   checkWeb(web)
   if (illegalPublicFiles.length) fail('unexpected public PHP files: ' + illegalPublicFiles.join(', '))
 
-  const index = readFileSync(join(web, 'index.html'), 'utf8').toLowerCase()
+  const index = readFileSync(join(root, 'testbraid-backend/templates/index.html'), 'utf8').toLowerCase()
   if (!index.includes('<html')) fail('frontend entry is not an HTML build')
+  if (index.includes('src="/assets/') || index.includes('href="/assets/')
+      || index.includes('href="/favicon.svg"')) {
+    fail('frontend still uses absolute root asset references')
+  }
+  if (!readFileSync(join(web, 'index.php'), 'utf8').includes('data-testbraid-base')) {
+    fail('public PHP index does not inject a runtime base element')
+  }
   console.log('PASS: deployment package contains code, schemas and deny policies without runtime secrets')
 } catch (error) {
   console.error(error.message)
