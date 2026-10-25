@@ -23,6 +23,9 @@ native video playback while retaining its position and the existing media nodes.
 The prompt has a neutral background and a visible heading. Answers form a
 separate section, with an explicit **Correct answer** radio/checkbox and a subtle
 success background for each marked answer. Video controls are outside those labels.
+The radio/checkbox itself is 24 px at the default root font size, with a
+contrasting 2 px outline and a visible keyboard-focus ring. Its full text label
+remains clickable and at least 44 px high.
 Single/multiple choice switching and scoring semantics are
 unchanged. Answer movement and deletion are available in the answer's action menu.
 Menus close after selection, outside click or Escape and support keyboard access.
@@ -32,8 +35,11 @@ button when the list is empty.
 ## Composing content
 
 The same application-owned editor composes question prompts, choice answers and
-both sides of matching pairs. Each block has a restrained frame, a visible
-Text/Image/Video label and one persistent local action disclosure. Text is edited
+both sides of matching pairs. Each block has a restrained frame and one
+persistent local action disclosure in a narrow column at its upper right,
+sharing the content row. Block types are available in insertion menus rather
+than repeated above every block. Text/media retain their accessible names, and
+the action column keeps native video controls clear. Text is edited
 directly in an automatically growing textarea. Every content list
 supports arbitrary repeated text/image/video blocks, including media-only content.
 

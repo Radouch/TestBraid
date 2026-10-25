@@ -151,7 +151,7 @@ async function remove(index: number): Promise<void> {
   const blocks = root.value?.querySelectorAll<HTMLElement>('.content-block')
   const nextBlock = blocks?.[Math.min(index, blocks.length - 1)]
   const target = nextBlock?.querySelector<HTMLElement>('textarea')
-    ?? nextBlock?.querySelector<HTMLElement>('.replace-media, .block-header summary')
+    ?? nextBlock?.querySelector<HTMLElement>('.replace-media, .block-actions summary')
   target?.focus()
   if (!nextBlock) root.value?.querySelector<HTMLElement>('.append-content summary')?.focus()
 }
@@ -165,21 +165,6 @@ onUnmounted(() => libraryRequest?.abort())
   <div ref="root" class="content-composer" role="group" :aria-label="label">
     <p :class="hideLabel ? 'visually-hidden' : 'fw-semibold mb-2'">{{ label }}</p>
     <div v-for="(block, index) in modelValue" :key="block.id" class="content-block border rounded p-2 p-sm-3" :data-block-id="block.id">
-      <div class="block-header d-flex align-items-center justify-content-between gap-2 mb-2">
-        <label v-if="block.type === 'text'" :for="'text-' + block.id" class="small text-secondary">{{ t('editorKind_text') }}</label>
-        <span v-else class="small text-secondary">{{ t('editorKind_' + block.type) }}</span>
-        <EditorMenu class="block-actions" :label="label + ' · ' + t('editorBlockActions', { index: index + 1 })">
-          <p class="small text-secondary px-2 pt-1 mb-1">{{ t('editorInsertContent', { index: index + 1 }) }}</p>
-          <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind" type="button" class="btn btn-sm insert-block"
-            :data-insert-kind="kind" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
-          <hr class="my-1" />
-          <button type="button" class="btn btn-sm move-block-up" :disabled="index === 0"
-            :aria-label="t('editorMoveBlockUp', { index: index + 1 })" @click="update(move(modelValue, index, -1))"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
-          <button type="button" class="btn btn-sm move-block-down" :disabled="index === modelValue.length - 1"
-            :aria-label="t('editorMoveBlockDown', { index: index + 1 })" @click="update(move(modelValue, index, 1))"><AppIcon name="arrow-down" />{{ t('editorMoveDown') }}</button>
-          <button type="button" class="btn btn-sm text-danger remove-block" @click="remove(index)"><AppIcon name="trash3" />{{ t('editorRemoveBlock') }}</button>
-        </EditorMenu>
-      </div>
       <div class="block-content">
         <template v-if="block.type === 'text'">
           <textarea :id="'text-' + block.id" v-grow class="form-control block-text" :value="block.text"
@@ -199,6 +184,17 @@ onUnmounted(() => libraryRequest?.abort())
           </button>
         </div>
       </div>
+      <EditorMenu class="block-actions" :label="label + ' · ' + t('editorBlockActions', { index: index + 1 })">
+        <p class="small text-secondary px-2 pt-1 mb-1">{{ t('editorInsertContent', { index: index + 1 }) }}</p>
+        <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind" type="button" class="btn btn-sm insert-block"
+          :data-insert-kind="kind" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
+        <hr class="my-1" />
+        <button type="button" class="btn btn-sm move-block-up" :disabled="index === 0"
+          :aria-label="t('editorMoveBlockUp', { index: index + 1 })" @click="update(move(modelValue, index, -1))"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
+        <button type="button" class="btn btn-sm move-block-down" :disabled="index === modelValue.length - 1"
+          :aria-label="t('editorMoveBlockDown', { index: index + 1 })" @click="update(move(modelValue, index, 1))"><AppIcon name="arrow-down" />{{ t('editorMoveDown') }}</button>
+        <button type="button" class="btn btn-sm text-danger remove-block" @click="remove(index)"><AppIcon name="trash3" />{{ t('editorRemoveBlock') }}</button>
+      </EditorMenu>
     </div>
     <EditorMenu class="append-content mt-1" :label="addLabel ?? t('editorAddContent')" align="start">
       <template #trigger><span class="text-primary"><AppIcon name="plus-lg" /> {{ addLabel ?? t('editorAddContent') }}</span></template>
@@ -244,8 +240,11 @@ onUnmounted(() => libraryRequest?.abort())
 <style scoped>
 .content-composer { min-width: 0; position: relative; }
 .content-composer:has(.editor-menu[open]) { z-index: 45; }
-.content-block { min-width: 0; background: var(--bs-body-bg); margin-bottom: .65rem; }
-.block-content { min-width: 0; }
+/* The menu shares the content row in a reserved column. It neither adds a
+   header row nor covers text, image details or native video controls. */
+.content-block { display: grid; grid-template-columns: minmax(0, 1fr) 2.75rem; align-items: start; gap: .5rem; min-width: 0; background: var(--bs-body-bg); margin-bottom: .65rem; }
+.block-content { min-width: 0; grid-column: 1; grid-row: 1; }
+.block-actions { grid-column: 2; grid-row: 1; }
 .block-text { min-height: 2.5rem; max-height: 24rem; overflow-y: auto; resize: vertical; }
 .block-media { display: grid; gap: .75rem; }
 .block-media-preview {

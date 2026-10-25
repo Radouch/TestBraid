@@ -159,7 +159,7 @@ try {
   actions = await menu('.block-actions', block(inserted.id))
   await click(find('.remove-block', actions))
   assert.equal(choice.prompt.some(item => item.id === inserted.id), false)
-  assert.equal(document.activeElement, find('summary', block('clip')))
+  assert.equal(document.activeElement, find('.replace-media', block('clip')))
   actions = await menu('.block-actions', block('clip'))
   await click(find('[data-insert-kind=text]', actions))
   const middle = choice.prompt[1]!

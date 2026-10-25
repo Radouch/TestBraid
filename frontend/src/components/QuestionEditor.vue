@@ -210,7 +210,8 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
 .answer-editor:has(.editor-menu[open]), .matching-pair:has(.editor-menu[open]) { position: relative; z-index: 45; }
 .answer-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .5rem .75rem; }
 .answer-correct-control { display: flex; align-items: center; justify-self: end; gap: .5rem; min-height: 2.75rem; color: var(--bs-secondary-color); }
-.answer-correct-control input { flex-shrink: 0; }
+.answer-correct-control input { flex-shrink: 0; width: 1.5rem; height: 1.5rem; border: 2px solid var(--bs-secondary-color); }
+.answer-correct-control input:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 3px; box-shadow: none; }
 .answer-correct { background: color-mix(in srgb, var(--bs-success-bg-subtle) 50%, var(--bs-body-bg)); }
 .answer-correct .answer-correct-control { color: var(--bs-success-text-emphasis); }
 .answer-correct .form-check-input:checked { background-color: var(--bs-success); border-color: var(--bs-success); }
