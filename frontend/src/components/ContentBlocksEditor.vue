@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { computed, nextTick, onUnmounted, ref, useId, type ObjectDirective } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader, { type UploadedMedia } from './MediaUploader.vue'
@@ -93,10 +94,10 @@ async function openPicker(kind: 'image' | 'video', target: NonNullable<typeof pi
   pickerDialog.value?.querySelector<HTMLButtonElement>('button')?.focus()
   try {
     const [response, groupsResponse] = await Promise.all([
-      fetch(import.meta.env.BASE_URL + 'api/admin/media', {
+      fetch(appBaseUrl() + 'api/admin/media', {
         credentials: 'same-origin', cache: 'no-store', signal: request.signal,
       }),
-      fetch(import.meta.env.BASE_URL + 'api/admin/groups', {
+      fetch(appBaseUrl() + 'api/admin/groups', {
         credentials: 'same-origin', cache: 'no-store', signal: request.signal,
       }),
     ])
@@ -156,7 +157,7 @@ async function remove(index: number): Promise<void> {
   if (!nextBlock) root.value?.querySelector<HTMLElement>('.append-content summary')?.focus()
 }
 function preview(mediaId: string): string {
-  return import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(mediaId) + '/preview'
+  return appBaseUrl() + 'api/admin/media/' + encodeURIComponent(mediaId) + '/preview'
 }
 onUnmounted(() => libraryRequest?.abort())
 </script>

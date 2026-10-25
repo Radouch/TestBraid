@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import AppIcon from './AppIcon.vue'
 import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -50,7 +51,7 @@ async function transition(action: 'publish' | 'unpublish'): Promise<void> {
   showLinkFallback.value = false
   try {
     const response = await fetch(
-      import.meta.env.BASE_URL + 'api/admin/tests/' + encodeURIComponent(props.test.id) + '/' + action,
+      appBaseUrl() + 'api/admin/tests/' + encodeURIComponent(props.test.id) + '/' + action,
       {
         method: 'POST',
         credentials: 'same-origin',
