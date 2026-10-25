@@ -78,23 +78,44 @@ final class InstallationConfig
         return self::effectiveBasePath($config->configuredBasePath);
     }
 
-    /** Avoid putting private data under the broader Apache document root on nested installs. */
-    public static function assertPrivateBackend(string $backendRoot, string $basePath): void
-    {
-        // Preserve existing root-install behavior: shared hosts can report an
-        // overbroad DOCUMENT_ROOT even for a separately configured vhost.
-        if ($basePath === '') return;
-
-        $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? null;
-        $served = is_string($documentRoot) && $documentRoot !== '' ? realpath($documentRoot) : false;
-        $private = realpath($backendRoot);
-        if ($served === false || $private === false) {
-            throw new ApiProblem(503, 'PRIVATE_ROOT_UNVERIFIED',
-                'Cannot verify the private backend against the hosting document root.');
+    /**
+     * The executing public bootstrap is the trusted physical location.
+     * CGI DOCUMENT_ROOT can over-report an ancestor on shared PHP-FPM.
+     * Derive the served site root by removing configured basePath segments.
+     * The private backend must lie outside that served site root.
+     */
+    public static function assertPrivateBackend(
+        string $backendRoot, string $basePath, ?string $publicAppRoot = null
+    ): void {
+        if ($basePath === '') {
+            // Preserve existing domain-root behavior.
+            return;
         }
-        if ($private === $served || str_starts_with($private, $served . DIRECTORY_SEPARATOR)) {
+        $publicAppRoot ??= defined('TESTBRAID_PUBLIC_ROOT')
+            ? (string) constant('TESTBRAID_PUBLIC_ROOT') : null;
+        $public = is_string($publicAppRoot) && $publicAppRoot !== ''
+            ? realpath($publicAppRoot) : false;
+        $private = realpath($backendRoot);
+        if ($public === false || $private === false || !is_dir($public) || !is_dir($private)) {
+            throw new ApiProblem(503, 'PRIVATE_ROOT_UNVERIFIED',
+                'Cannot verify the private backend and public installation directories.');
+        }
+        $servedRoot = $public;
+        foreach (array_reverse(explode('/', ltrim($basePath, '/'))) as $segment) {
+            if (basename($servedRoot) !== $segment) {
+                throw new ApiProblem(503, 'PRIVATE_ROOT_UNVERIFIED',
+                    'URL base path does not match the public installation directory.');
+            }
+            $parent = dirname($servedRoot);
+            if ($parent === $servedRoot) {
+                throw new ApiProblem(503, 'PRIVATE_ROOT_UNVERIFIED',
+                    'Cannot derive the served document root from the public installation.');
+            }
+            $servedRoot = $parent;
+        }
+        if ($private === $servedRoot || str_starts_with($private, $servedRoot . DIRECTORY_SEPARATOR)) {
             throw new ApiProblem(503, 'PRIVATE_ROOT_UNSAFE',
-                'Private backend must be outside the hosting document root.');
+                'Private backend must be outside the inferred served document root.');
         }
     }
 
