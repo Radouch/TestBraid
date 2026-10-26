@@ -148,36 +148,28 @@ async function checkProbe(): Promise<void> {
         </div>
         <dl class="mb-0">
           <div class="d-flex flex-wrap align-items-baseline gap-2 py-2 border-bottom">
-            <dt class="me-auto">{{ t('securityBackendPlacement') }}</dt>
-            <dd class="mb-0 d-flex align-items-baseline flex-wrap gap-2">
-              <span class="badge" :class="'text-bg-' + placementSeverity(inspection.backendPlacement)">
-                {{ statusLabel(placementSeverity(inspection.backendPlacement)) }}
-              </span>
-              <span>{{ t('securityPlacement_' + inspection.backendPlacement) }}</span>
-            </dd>
+            <span class="badge" :class="'text-bg-' + placementSeverity(inspection.backendPlacement)">
+              {{ statusLabel(placementSeverity(inspection.backendPlacement)) }}
+            </span>
+            <dt>{{ t('securityBackendPlacement') }}</dt>
+            <dd class="mb-0">{{ t('securityPlacement_' + inspection.backendPlacement) }}</dd>
           </div>
           <div class="d-flex flex-wrap align-items-baseline gap-2 py-2 border-bottom">
-            <dt class="me-auto">{{ t('securityStoragePlacement') }}</dt>
-            <dd class="mb-0 d-flex align-items-baseline flex-wrap gap-2">
-              <span class="badge" :class="'text-bg-' + placementSeverity(inspection.storagePlacement)">
-                {{ statusLabel(placementSeverity(inspection.storagePlacement)) }}
-              </span>
-              <span>{{ t('securityPlacement_' + inspection.storagePlacement) }}</span>
-            </dd>
+            <span class="badge" :class="'text-bg-' + placementSeverity(inspection.storagePlacement)">
+              {{ statusLabel(placementSeverity(inspection.storagePlacement)) }}
+            </span>
+            <dt>{{ t('securityStoragePlacement') }}</dt>
+            <dd class="mb-0">{{ t('securityPlacement_' + inspection.storagePlacement) }}</dd>
           </div>
           <div class="d-flex flex-wrap align-items-baseline gap-2 py-2 border-bottom">
-            <dt class="me-auto">{{ t('securityApacheRule') }}</dt>
-            <dd class="mb-0 d-flex align-items-baseline flex-wrap gap-2">
-              <span class="badge" :class="'text-bg-' + apacheSeverity">{{ statusLabel(apacheSeverity) }}</span>
-              <span>{{ t(hasDenyRule ? 'securityApacheRulePresent' : 'securityApacheRuleMissing') }}</span>
-            </dd>
+            <span class="badge" :class="'text-bg-' + apacheSeverity">{{ statusLabel(apacheSeverity) }}</span>
+            <dt>{{ t('securityApacheRule') }}</dt>
+            <dd class="mb-0">{{ t(hasDenyRule ? 'securityApacheRulePresent' : 'securityApacheRuleMissing') }}</dd>
           </div>
           <div class="d-flex flex-wrap align-items-baseline gap-2 py-2">
-            <dt class="me-auto">{{ t('securityProbeFile') }}</dt>
-            <dd class="mb-0 d-flex align-items-baseline flex-wrap gap-2">
-              <span class="badge" :class="'text-bg-' + probeFileSeverity">{{ statusLabel(probeFileSeverity) }}</span>
-              <span>{{ t(inspection.probeFilePresent ? 'securityProbeReady' : 'securityProbeMissing') }}</span>
-            </dd>
+            <span class="badge" :class="'text-bg-' + probeFileSeverity">{{ statusLabel(probeFileSeverity) }}</span>
+            <dt>{{ t('securityProbeFile') }}</dt>
+            <dd class="mb-0">{{ t(inspection.probeFilePresent ? 'securityProbeReady' : 'securityProbeMissing') }}</dd>
           </div>
         </dl>
         <p class="small text-body-secondary mt-2">{{ t('securityInconclusive') }}</p>
