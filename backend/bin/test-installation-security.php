@@ -21,8 +21,11 @@ try {
     $safe = InstallationSecurityDiagnostics::inspect($backend, $nested, '/tichotesty');
     checkSecurity($safe['backendPlacement'] === 'outside-inferred-site-root', 'Wrong safe placement');
     checkSecurity($safe['denyDirectivePresent'] && $safe['probeFilePresent'], 'Missing probe/deny');
+    checkSecurity($safe['probeUrlPath'] === null, 'Unknown Apache aliases must not be guessed');
     $risk = InstallationSecurityDiagnostics::inspect($unsafe, $nested, '/tichotesty');
     checkSecurity($risk['backendPlacement'] === 'within-inferred-site-root', 'Public backend missed');
+    checkSecurity($risk['probeUrlPath'] === '/exposed-backend/security-probe.txt',
+        'HTTP probe path should be suggested when the backend is within the web root');
     $mismatch = InstallationSecurityDiagnostics::inspect($backend, $nested, '/other-path');
     checkSecurity($mismatch['backendPlacement'] === 'unverified', 'Mismatched path must be unknown');
     echo "PASS: advisory diagnostics, safe response schema and overbroad CGI root\n";

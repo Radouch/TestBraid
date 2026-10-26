@@ -37,6 +37,9 @@ jobs:
       - name: Shared author editor and lesson dialogs regression
         run: npm run test:author
         working-directory: frontend
+      - name: Author security diagnostics UX and optional HTTP probe
+        run: npm run test:security
+        working-directory: frontend
       - name: Question composition and private media interaction regression
         run: npm run test:content
         working-directory: frontend

@@ -15,7 +15,7 @@ final class InstallationSecurityDiagnostics
         return $path === $root || str_starts_with($path, $root . DIRECTORY_SEPARATOR);
     }
 
-    /** @return array<string, bool|string> */
+    /** @return array<string, bool|string|null> */
     public static function inspect(string $backendRoot, ?string $publicAppRoot, string $basePath): array
     {
         $backend = realpath($backendRoot);
@@ -61,7 +61,21 @@ final class InstallationSecurityDiagnostics
                 ? 'within-inferred-site-root' : 'outside-inferred-site-root';
         }
 
+        // An HTTP probe URL can only be suggested when the backend is
+        // physically below the inferred web-served root. A backend outside
+        // that tree may still be exposed by an unknown Apache Alias, but
+        // guessing a URL would falsely imply that we know the mapping.
+        $probeUrlPath = null;
+        if ($backend !== false && $siteRoot !== false && self::inside($backend, $siteRoot)) {
+            $relative = ltrim(substr($backend, strlen($siteRoot)), DIRECTORY_SEPARATOR);
+            $parts = $relative === '' ? [] : explode(DIRECTORY_SEPARATOR, $relative);
+            $probeUrlPath = '/' . ($parts === [] ? ''
+                : implode('/', array_map('rawurlencode', $parts)) . '/')
+                . 'security-probe.txt';
+        }
+
         return [
+            'probeUrlPath' => $probeUrlPath,
             'backendPlacement' => $placement,
             'storagePlacement' => $storagePlacement,
             'denyFilePresent' => $denyFile,
