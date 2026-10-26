@@ -92,6 +92,8 @@ try {
 
   console.log('Deployment files staged at deployment-package/')
   console.log('Upload www/ to the public web root and testbraid-backend/ to the private backend.')
+  console.log('IMPORTANT: after EVERY frontend build, also upload testbraid-backend/templates/index.html.')
+  console.log('That private HTML template points to hashed JS/CSS assets. Uploading only www/ can leave the old frontend running.')
   console.log('Merge files only: do not delete existing server config/, storage/ or vendor/.')
   console.log(initialInstall
     ? 'Initial install package: includes private config/app.json. Use only on a NEW host.'

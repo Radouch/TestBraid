@@ -65,14 +65,27 @@ V `tichotesty-backend/config/app.json` nastav:
 
 Pro doménový kořen použij `"/"`; cesta nesmí obsahovat hostname. Zachovej ostatní položky `site`, `uploads` a `uiLanguages`. Případná explicitní proměnná `TESTBRAID_BASE_PATH` musí mít stejnou hodnotu jako nastavení.
 
-## 4. Apache a první instalace
+## 4. Důležité při každém frontend buildu
+
+**Frontend se aktualizuje dvěma oddělenými částmi.** Příkaz `node scripts/prepare-deployment.mjs` rozdělí sestavený Vite výstup mezi veřejné soubory a soukromou HTML šablonu:
+
+| Zdroj z deployment-package | Cíl při instalaci /tichotesty |
+| --- | --- |
+| `www/assets/`, `www/locales/` a ostatní obsah `www/` | `www/tichotesty/` |
+| **`testbraid-backend/templates/index.html`** | **`tichotesty-backend/templates/index.html`** |
+
+**Po každém novém buildu musíš aktualizovat i soukromý `templates/index.html`.** Obsahuje odkazy na soubory JavaScriptu a CSS s hashem v názvu. Pokud nahraješ jen nové `www/assets/` a `www/locales/`, stará šablona může stále odkazovat na starý JavaScript, zatímco překlady se načtou nové. Výsledkem je zdánlivě aktualizovaný web se starou funkcionalitou, případně chybějící JS/CSS.
+
+Není nutné po každém frontend buildu přepisovat backendový kód, pokud se nezměnil. Při nové verzi ale vždy aktualizuj **veřejné soubory i soukromou šablonu** a zachovej soubory provozní konfigurace a data. Po nasazení proveď tvrdé obnovení stránky (Ctrl+F5) a ověř, že se načetla nová verze komponent.
+
+## 5. Apache a první instalace
 
 - Ve veřejném adresáři musí být dodávaný `.htaccess`, `index.php`, `backend-path.php`, `api/index.php`, `assets/` a `locales/`. **Nekopíruj tam** statický `frontend/dist/index.html`: šablona patří soukromě do `templates/index.html`.
 - V backendu spusť `composer install --no-dev --optimize-autoloader`, pokud `vendor/` není součástí připraveného balíčku; ověř, že funguje `vendor/autoload.php`.
 - Je-li v kořeni domény **jiná Vue instalace** s pravidlem typu `RewriteRule ^ index.html [END]`, přidej k jejímu poslednímu SPA pravidlu výjimku pro `/tichotesty`, například `RewriteCond %{REQUEST_URI} !^/tichotesty(/|$)`. Nezastavuj zpracování pravidel v podadresáři pravidlem `[END]` v rodičovském `.htaccess`.
 - Pro novou instalaci obsahuje `--initial-install` soukromé `config/app.json`. Při aktualizacích používej balíček **bez** tohoto přepínače.
 
-## 5. Dobrovolná diagnostika zabezpečení
+## 6. Dobrovolná diagnostika zabezpečení
 
 Ve správě testů je sekce **Zabezpečení instalace**, kde se tlačítkem spustí kontrola. Kontroluje fyzické umístění backendu a úložiště vůči odhadovanému veřejnému kořeni, přítomnost `.htaccess` a známého zákazového pravidla, a přítomnost neškodného `security-probe.txt`.
 
@@ -84,7 +97,7 @@ Pokud server vrátí přesný obsah kontrolního souboru, backend je na této ad
 
 **Kontrola je dobrovolná, její výsledek neblokuje instalaci ani API.** Rozhodnutí a odpovědnost za provoz jsou na správci. Doporučená varianta je umístění backendu mimo celý veřejný webový kořen. Alternativně může být chráněn pravidlem `.htaccess`, jehož skutečnou účinnost je potřeba ověřit. Pravidla nikdy nesmí být považována za účinná pouze proto, že soubor existuje.
 
-## 6. Ověření po nasazení
+## 7. Ověření po nasazení
 
 1. `/tichotesty/api/health` vrátí `{"status":"ok","service":"testbraid-api"}`.
 2. Otevři `/tichotesty/`, `/tichotesty/admin` a obnov přímý odkaz klávesou F5.

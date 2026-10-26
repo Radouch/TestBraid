@@ -116,7 +116,7 @@ The staging command fails if the frontend build or essential schema fixtures are
 Use the **assembled deployment-package tree** as the upload source, not `frontend/dist/` directly: raw frontend output does not contain the runtime PHP HTML bootstrap, and `index.html` would serve the wrong URL base on deep links.
 
 - Copy the **contents** of `deployment-package/www/` to the public app directory, such as `public_html/testbraid/`.
-- Copy the **contents** of `deployment-package/testbraid-backend/` to a truly private backend directory outside the host's entire served document root. This is particularly important on nested installations.
+- Copy the **contents** of `deployment-package/testbraid-backend/` to a private backend directory. In particular, **always upload `testbraid-backend/templates/index.html` whenever the frontend is rebuilt**: it references hashed JavaScript/CSS asset filenames. Uploading only `www/assets/` or `www/locales/` may leave an old application shell pointing to old JS despite updated translations.
 - Preserve operator-owned `config/`, `storage/` and public uploaded `media/` during upgrades. **Do not mirror with deletion.**
 - If the backend is not the default sibling of the public app, copy `www/bootstrap.local.example.php` to **unversioned** `www/bootstrap.local.php` and set `backendPath` once. Both PHP entry points resolve it through `backend-path.php`; environment settings are optional.
 - Do not expose private backend source, `vendor/`, credentials, uploaded drafts or `config/app.json` over HTTP.
