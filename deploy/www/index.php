@@ -4,13 +4,28 @@ declare(strict_types=1);
 // Runtime HTML shell for the prebuilt Vue app. Deployment-specific backend
 // location is read from one shared, operator-owned bootstrap.local.php.
 try {
-    $backendRoot = require __DIR__ . '/backend-path.php';
+    $resolver = __DIR__ . '/backend-path.php';
+    if (!is_file($resolver) || !is_readable($resolver)) {
+        throw new RuntimeException('BACKEND_RESOLVER_MISSING');
+    }
+    $backendRoot = require $resolver;
+    if (!is_string($backendRoot) || $backendRoot === '') {
+        throw new RuntimeException('BACKEND_RESOLVER_INVALID');
+    }
 } catch (Throwable $error) {
+    // Hosting without PHP logs: tell an operator which bootstrap step failed,
+    // but never expose a filesystem path or arbitrary exception message.
+    $code = match ($error->getMessage()) {
+        'BACKEND_RESOLVER_MISSING' => 'BACKEND_RESOLVER_MISSING',
+        'BACKEND_RESOLVER_INVALID' => 'BACKEND_RESOLVER_INVALID',
+        'INVALID_BOOTSTRAP_CONFIG' => 'INVALID_BOOTSTRAP_CONFIG',
+        'BACKEND_UNAVAILABLE' => 'BACKEND_PATH_NOT_FOUND',
+        default => $error instanceof ParseError
+            ? 'BOOTSTRAP_PHP_INVALID' : 'BACKEND_RESOLVER_FAILED',
+    };
     http_response_code(503);
     header('Content-Type: text/plain; charset=utf-8');
     header('Cache-Control: no-store');
-    $code = in_array($error->getMessage(), ['INVALID_BOOTSTRAP_CONFIG', 'BACKEND_UNAVAILABLE'], true)
-        ? $error->getMessage() : 'BACKEND_UNAVAILABLE';
     echo 'TestBraid installation unavailable (' . $code . ').';
     exit;
 }
