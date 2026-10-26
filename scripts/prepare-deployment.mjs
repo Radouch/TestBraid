@@ -13,11 +13,13 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const output = join(root, 'deployment-package')
 const args = process.argv.slice(2)
-if (args.some(arg => arg !== '--initial-install') || args.length > 1) {
-  console.error('Usage: node scripts/prepare-deployment.mjs [--initial-install]')
+const allowedFlags = new Set(['--initial-install', '--include-vendor'])
+if (args.some(arg => !allowedFlags.has(arg)) || new Set(args).size !== args.length) {
+  console.error('Usage: node scripts/prepare-deployment.mjs [--initial-install] [--include-vendor]')
   process.exit(1)
 }
 const initialInstall = args.includes('--initial-install')
+const includeVendor = args.includes('--include-vendor')
 
 function requireFile(relativePath) {
   const absolute = join(root, relativePath)
@@ -61,6 +63,8 @@ try {
     requireFile(required)
   }
 
+  if (includeVendor) requireFile('backend/vendor/autoload.php')
+
   rmSync(output, { recursive: true, force: true })
 
   copyDirectory('frontend/dist', 'www')
@@ -81,6 +85,9 @@ try {
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   // Release installations must use the reviewed Composer dependency versions.
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
+  // Release archives include locked PHP dependencies. The default SFTP
+  // staging mode deliberately remains compatible with an existing vendor/.
+  if (includeVendor) copyDirectory('backend/vendor', 'testbraid-backend/vendor')
   // Only an explicitly requested FIRST installation stages an editable default.
   // Normal upgrades must never include config/, because blindly merging an
   // archive over a live host can overwrite operator-owned settings.
@@ -94,7 +101,10 @@ try {
   console.log('Upload www/ to the public web root and testbraid-backend/ to the private backend.')
   console.log('IMPORTANT: after EVERY frontend build, also upload testbraid-backend/templates/index.html.')
   console.log('That private HTML template points to hashed JS/CSS assets. Uploading only www/ can leave the old frontend running.')
-  console.log('Merge files only: do not delete existing server config/, storage/ or vendor/.')
+  console.log('Merge files only: never delete existing server config/, storage/ or public media/.')
+  console.log(includeVendor
+    ? 'Release package: replace the complete server vendor/ directory; do not merge stale dependencies.'
+    : 'SFTP staging: existing vendor/ is not included and must be preserved.')
   console.log(initialInstall
     ? 'Initial install package: includes private config/app.json. Use only on a NEW host.'
     : 'Upgrade-safe package: no config/ is included. For a NEW host, regenerate with --initial-install.')
