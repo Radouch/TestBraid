@@ -4,7 +4,7 @@
  * Never contacts the host or touches persistent author data.
  */
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -14,6 +14,7 @@ const paths = args.filter(arg => arg !== '--release')
 const root = resolve(paths[0] ?? join(project, 'deployment-package'))
 const web = join(root, 'www')
 const installationConfigDirectory = join(root, 'testbraid-backend/config')
+const vendorDirectory = join(root, 'testbraid-backend/vendor')
 
 function fail(reason) { throw new Error('Deployment package rejected: ' + reason) }
 function file(path) {
@@ -39,9 +40,10 @@ try {
       if (stat.isDirectory()) {
         // Only the initial-install package may have the single reviewed
         // default config/app.json, never author secrets or runtime settings.
+        const insideComposerPackage = path.startsWith(vendorDirectory + sep)
         if (['.git', 'node_modules', 'storage'].includes(entry)
-          || (entry === 'vendor' && (!releaseMode || path !== join(root, 'testbraid-backend/vendor')))
-          || (entry === 'config' && path !== installationConfigDirectory)) {
+          || (entry === 'vendor' && (!releaseMode || path !== vendorDirectory))
+          || (entry === 'config' && path !== installationConfigDirectory && !insideComposerPackage)) {
           fail('runtime or development directory: ' + relative(root, path))
         }
         walk(path)
