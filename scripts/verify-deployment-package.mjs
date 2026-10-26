@@ -4,13 +4,17 @@
  * Never contacts the host or touches persistent author data.
  */
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const root = resolve(process.argv[2] ?? join(project, 'deployment-package'))
+const args = process.argv.slice(2)
+const releaseMode = args.includes('--release')
+const paths = args.filter(arg => arg !== '--release')
+const root = resolve(paths[0] ?? join(project, 'deployment-package'))
 const web = join(root, 'www')
 const installationConfigDirectory = join(root, 'testbraid-backend/config')
+const vendorDirectory = join(root, 'testbraid-backend/vendor')
 
 function fail(reason) { throw new Error('Deployment package rejected: ' + reason) }
 function file(path) {
@@ -21,7 +25,10 @@ function absent(path) {
 }
 
 try {
-  if (process.argv.length > 3) fail('expected at most one package directory argument')
+  if (paths.length > 1 || args.filter(arg => arg === '--release').length > 1
+      || paths.some(arg => arg.startsWith('--'))) {
+    fail('usage: node scripts/verify-deployment-package.mjs [directory] [--release]')
+  }
   if (!existsSync(root) || !lstatSync(root).isDirectory()) fail('staging root does not exist')
 
   // Reject any symlink (including nested ones), even inside dist assets.
@@ -33,8 +40,10 @@ try {
       if (stat.isDirectory()) {
         // Only the initial-install package may have the single reviewed
         // default config/app.json, never author secrets or runtime settings.
-        if (['.git', 'node_modules', 'storage', 'vendor'].includes(entry)
-          || (entry === 'config' && path !== installationConfigDirectory)) {
+        const insideComposerPackage = path.startsWith(vendorDirectory + sep)
+        if (['.git', 'node_modules', 'storage'].includes(entry)
+          || (entry === 'vendor' && (!releaseMode || path !== vendorDirectory))
+          || (entry === 'config' && path !== installationConfigDirectory && !insideComposerPackage)) {
           fail('runtime or development directory: ' + relative(root, path))
         }
         walk(path)
@@ -67,9 +76,17 @@ try {
     'testbraid-backend/bin/reconcile-public-media.php',
   ]) file(join(root, required))
 
+  if (releaseMode) {
+    // Complete releases must carry Composer 2's production autoloader and
+    // package manifest so the hosting operator never needs to run Composer.
+    file(join(root, 'testbraid-backend/vendor/autoload.php'))
+    file(join(root, 'testbraid-backend/vendor/composer/installed.php'))
+  } else {
+    absent(join(root, 'testbraid-backend/vendor'))
+  }
+
   for (const forbidden of [
     'testbraid-backend/storage',
-    'testbraid-backend/vendor',
     'www/index.html',
     'www/bootstrap.local.php',
     'www/config',
@@ -133,7 +150,8 @@ try {
   if (!readFileSync(join(web, 'index.php'), 'utf8').includes('data-testbraid-base')) {
     fail('public PHP index does not inject a runtime base element')
   }
-  console.log('PASS: deployment package contains code, schemas and deny policies without runtime secrets')
+  console.log('PASS: ' + (releaseMode ? 'release' : 'SFTP')
+    + ' deployment package contains code, schemas and deny policies without runtime secrets')
 } catch (error) {
   console.error(error.message)
   process.exitCode = 1

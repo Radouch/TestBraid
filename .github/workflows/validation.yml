@@ -3,6 +3,7 @@ name: PoC-A schema and build checks
 on:
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   frontend:
