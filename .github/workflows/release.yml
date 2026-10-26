@@ -1,0 +1,130 @@
+name: Build distributable release archives
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/workflows/validation.yml'
+      - 'scripts/prepare-deployment.mjs'
+      - 'scripts/verify-deployment-package.mjs'
+      - 'backend/composer.json'
+      - 'backend/composer.lock'
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    # A tagged release must pass the same suite as a normal PR.
+    uses: ./.github/workflows/validation.yml
+
+  package:
+    name: Build and verify ZIP archives
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+      - name: Check version against release tag
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./frontend/package.json').version")"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected a MAJOR.MINOR.PATCH version, got $VERSION"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$VERSION" ]]; then
+            echo "::error::Git tag $GITHUB_REF_NAME does not match frontend version v$VERSION"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - name: Install locked production PHP dependencies
+        working-directory: backend
+        run: |
+          composer validate --no-check-publish
+          composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
+          composer check-platform-reqs --no-dev
+      - name: Stage both deployment flavors and create ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+
+          node scripts/prepare-deployment.mjs --initial-install --include-vendor
+          node scripts/verify-deployment-package.mjs deployment-package --release
+          (cd deployment-package && zip -q -r "../release-artifacts/testbraid-v${{ steps.version.outputs.version }}-install.zip" .)
+
+          node scripts/prepare-deployment.mjs --include-vendor
+          node scripts/verify-deployment-package.mjs deployment-package --release
+          (cd deployment-package && zip -q -r "../release-artifacts/testbraid-v${{ steps.version.outputs.version }}-upgrade.zip" .)
+
+          (cd release-artifacts && sha256sum *.zip > SHA256SUMS)
+      - name: Audit actual ZIP contents after extraction
+        shell: bash
+        run: |
+          set -euo pipefail
+          temp="$(mktemp -d)"
+          trap 'rm -rf "$temp"' EXIT
+          for flavor in install upgrade; do
+            mkdir -p "$temp/$flavor"
+            unzip -q "release-artifacts/testbraid-v${{ steps.version.outputs.version }}-$flavor.zip" -d "$temp/$flavor"
+            node scripts/verify-deployment-package.mjs "$temp/$flavor" --release
+          done
+          test -f "$temp/install/testbraid-backend/config/app.json"
+          cmp backend/config/app.json "$temp/install/testbraid-backend/config/app.json"
+          test ! -e "$temp/upgrade/testbraid-backend/config"
+          test ! -e "$temp/install/www/bootstrap.local.php"
+          test ! -e "$temp/upgrade/www/bootstrap.local.php"
+          (cd release-artifacts && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testbraid-distribution
+          path: release-artifacts/
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish GitHub Release for a version tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: testbraid-distribution
+          path: release-artifacts
+      - name: Publish built archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" release-artifacts/*.zip release-artifacts/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "TestBraid $GITHUB_REF_NAME" \
+            --generate-notes
