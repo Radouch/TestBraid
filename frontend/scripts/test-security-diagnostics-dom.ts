@@ -56,11 +56,12 @@ try {
   assert.equal(rows.length, 4)
   const labels = [cs.securityBackendPlacement, cs.securityStoragePlacement, cs.securityApacheRule, cs.securityProbeFile]
   for (const [index, row] of [...rows].entries()) {
-    assert.ok(row.firstElementChild?.classList.contains('badge'), 'Status badge must lead the row')
-    assert.equal(row.children[1]?.tagName, 'DT', 'Check name must follow the badge')
-    assert.equal(row.children[1]?.textContent?.trim(), labels[index])
-    assert.equal(row.children[2]?.tagName, 'DD', 'Explanation should follow the check name')
-    assert.ok(!row.children[1]?.classList.contains('me-auto'), 'Row must not push status to right edge')
+    assert.equal(row.firstElementChild?.tagName, 'DT', 'Status and name belong to the check term')
+    const term = row.firstElementChild!
+    assert.ok(term.firstElementChild?.classList.contains('badge'), 'Status badge must lead the term')
+    assert.equal(term.children[1]?.textContent?.trim(), labels[index], 'Check name must follow the badge')
+    assert.equal(row.children[1]?.tagName, 'DD', 'Explanation should follow the check name')
+    assert.ok(!term.classList.contains('me-auto'), 'Row must not push the description to right edge')
   }
   assert.equal(find<HTMLButtonElement>('details button').disabled, true,
     'Empty optional URL must not be actionable')
