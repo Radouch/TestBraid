@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -24,7 +25,7 @@ async function loadCatalog(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
-    const loaded = await fetchPublicCatalog(import.meta.env.BASE_URL, request.signal)
+    const loaded = await fetchPublicCatalog(appBaseUrl(), request.signal)
     if (!request.signal.aborted) groups.value = loaded
   } catch {
     if (request.signal.aborted) return

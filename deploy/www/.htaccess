@@ -1,17 +1,18 @@
-# Apache rewrite rules for the application's public document root.
-# [END] prevents additional per-directory rewrites after choosing a target.
-# Avoid Options directives: not all shared hosts permit overriding them.
+# Relative per-directory rules also work when the app is installed at /a/b/.
+# The PHP HTML entry injects the configured base before loading static assets.
 RewriteEngine On
+# These are local PHP configuration files, not HTTP entry points.
+RewriteRule ^(backend-path|bootstrap\.local(?:\.example)?)\.php$ - [F,END]
 
-# Pass API requests to Slim; preserve the original URI for route matching.
-# Skip the physical entry point to avoid rewriting it back into itself.
 RewriteRule ^api/index\.php$ - [END]
 RewriteRule ^api(/.*)?$ api/index.php [END]
+# Missing media and built static assets must stay real 404s, not SPA HTML.
+RewriteRule ^(media|assets|locales)(/|$) - [END]
 
-# Missing media must return an actual 404 rather than the SPA's HTML.
-RewriteRule ^media(/|$) - [END]
-
-# Serve existing static files normally and let Vue Router handle other URLs.
+# Old deployments may still have a static index.html; never serve it.
+RewriteRule ^index\.html$ index.php [END]
+RewriteRule ^index\.php$ - [END]
+RewriteRule ^$ index.php [END]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [END]
+RewriteRule ^ index.php [END]

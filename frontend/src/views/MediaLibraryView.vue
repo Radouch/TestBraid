@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader from '../components/MediaUploader.vue'
@@ -36,15 +37,15 @@ watch(lessonFilter, selected => {
   uploadLesson.value = selected === '__all__' ? '__unassigned__' : selected
 })
 function preview(id: string): string {
-  return import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(id) + '/preview'
+  return appBaseUrl() + 'api/admin/media/' + encodeURIComponent(id) + '/preview'
 }
 async function load(): Promise<void> {
   loading.value = true
   error.value = ''
   try {
     const [response, groupsResponse] = await Promise.all([
-      fetch(import.meta.env.BASE_URL + 'api/admin/media', { credentials: 'same-origin', cache: 'no-store' }),
-      fetch(import.meta.env.BASE_URL + 'api/admin/groups', { credentials: 'same-origin', cache: 'no-store' }),
+      fetch(appBaseUrl() + 'api/admin/media', { credentials: 'same-origin', cache: 'no-store' }),
+      fetch(appBaseUrl() + 'api/admin/groups', { credentials: 'same-origin', cache: 'no-store' }),
     ])
     if (!response.ok || !groupsResponse.ok) throw new Error(t('mediaLibraryUnavailable'))
     const data = await response.json() as { media: MediaItem[] }
@@ -65,7 +66,7 @@ async function setLesson(media: MediaItem, selected: string): Promise<void> {
   // Keep the select controlled while the request is pending, then roll back on failure.
   media.groupId = selected === '__unassigned__' ? null : selected
   try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(media.id), {
+    const response = await fetch(appBaseUrl() + 'api/admin/media/' + encodeURIComponent(media.id), {
       method: 'PATCH',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': authorSession.value.csrfToken },
@@ -87,7 +88,7 @@ async function deleteMedia(media: MediaItem): Promise<void> {
   deletingId.value = media.id
   deleteError.value = ''
   try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(media.id), {
+    const response = await fetch(appBaseUrl() + 'api/admin/media/' + encodeURIComponent(media.id), {
       method: 'DELETE',
       credentials: 'same-origin',
       headers: { 'X-CSRF-Token': authorSession.value.csrfToken },

@@ -31,7 +31,7 @@ This establishes working frontend/API routing on the selected host; the author-o
 ```text
 <domain-directory>/
 ├── www/                             # Public: served by Apache
-│   ├── index.html                   # From frontend/dist
+│   ├── index.php                    # Dynamic HTML shell; no static index.html
 │   ├── assets/                      # From frontend/dist
 │   ├── api/
 │   │   └── index.php               # From deploy/www/api/index.php
@@ -43,6 +43,7 @@ This establishes working frontend/API routing on the selected host; the author-o
     ├── composer.lock               # Reviewed lockfile committed with composer.json
     ├── bin/                        # Private PHP CLI checks
     ├── src/                        # Private PHP source
+    ├── templates/index.html        # Compiled HTML template, kept private
     ├── schemas/                    # COPY OF ROOT schemas/ FROM SOURCE REPO
     │   ├── test.schema.json
     │   ├── group.schema.json
@@ -59,30 +60,23 @@ This establishes working frontend/API routing on the selected host; the author-o
     └── vendor/                      # Installed by Composer on the host
 ```
 
-The `www/api/index.php` file is only a public bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. The bootstrap also identifies its actual served `www/` parent for the storage isolation guard, because `DOCUMENT_ROOT` supplied by Apache can be too broad on shared hosting. Author password hashes and the login throttling state must remain **private and writable by the PHP process as appropriate**.
+The `www/index.php` file renders the compiled HTML template with a validated runtime URL base. The `www/api/index.php` file is only a public API bootstrap. Its default path points to the **sibling** directory `testbraid-backend`; the actual PHP app loads its own `vendor/autoload.php` by a relative path. The bootstrap also identifies its actual served `www/` parent for the storage isolation guard, because `DOCUMENT_ROOT` supplied by Apache can be too broad on shared hosting. Author password hashes and the login throttling state must remain **private and writable by the PHP process as appropriate**.
 
-## 3. Prepare frontend locally
+**New in PR #74:** Arbitrary private backend paths are configured with a single public `bootstrap.local.php` (created from `bootstrap.local.example.php`). The backend's filesystem placement is **not a hard startup gate**; optional author-only diagnostics can report risks and test a harmless HTTP probe. See [runtime subdirectory installation](runtime-subdirectory-installation.md).\n\n## 3. Build once, deploy at any URL path
 
-Only Node.js/npm are needed on your computer. No local Composer installation is required.
+Release builds compile Vue only **once**, with Vite `base: './'`. There is no per-site Node.js build. Each request for the SPA page is answered by the lightweight public `index.php`, which loads the built `index.html` template from the **private** backend and injects a validated HTML `<base href=".../">` ahead of CSS/JS. Static chunks, images, localization JSON and published media still stream directly from Apache. This supports deep-link reloads.
 
-```sh
-git clone https://github.com/Radouch/TestBraid.git
-cd TestBraid/frontend
-npm ci
-npm run build
-```
+From a source checkout, developers can run `cd frontend && npm ci && npm run build` and `node scripts/prepare-deployment.mjs --initial-install`. The resulting **staged** `deployment-package/` tree (not raw `frontend/dist/`) is what should be uploaded. A future GitHub release will offer this already assembled, including the Composer vendor dependencies.
 
-The output is `frontend/dist/`. Build and test the default root installation first.
+Configure the **optional** private `testbraid-backend/config/app.json` `basePath`:
 
-For a **subdirectory** deployment, build with a matching Vite base path (including both slashes):
+- `"/"` (default; old configuration files without the field are still valid)
+- `"/testbraid"` for `https://example.com/testbraid/`
+- `"/courses/testbraid"` for `https://example.com/courses/testbraid/`
 
-```sh
-npm run build -- --base=/testbraid/
-```
+The existing server environment setting `TESTBRAID_BASE_PATH` continues to work for legacy installations without `basePath`. If both are explicit, their normalized values must match, or installation fails with a configuration error. Never use a full URL, query, fragment or `..` segment. **No rebuild is required** to change the path, but Apache rewrites, deployed folder and backend configuration must correspond.
 
-Vue Router and the health-check URL use Vite's `BASE_URL`. The default root build uses `/`. In the PHP backend, the default Slim base path is **empty** (domain-root URLs), deliberately independent of Apache's `SCRIPT_NAME` or internal rewrite target. For an actual subdirectory deployment, explicitly configure `TESTBRAID_BASE_PATH=/testbraid` for the PHP web process and deploy the matching Vite build. Also adjust the public bootstrap's relative private path to the actual layout and put the Apache rewrite file in the application directory. Do not set `TESTBRAID_BASE_PATH` for the current root-domain installation.
-
-Do not upload `frontend/node_modules/` or frontend source files to the public web root.
+See [runtime subdirectory installation](runtime-subdirectory-installation.md) for shared hosting layouts and Apache setup.
 
 ## 4. Upload files to the host
 
@@ -101,46 +95,31 @@ This creates an ignored, disposable `deployment-package/` directory with two top
 
 ```text
 deployment-package/
-├── www/                         # Upload contents to the public www/
+├── www/                         # Upload contents to the public app directory (name varies)
 └── testbraid-backend/           # Upload contents to the private backend/
     ├── composer.json
     ├── composer.lock
     ├── bin/
     ├── public/
     ├── src/
+    ├── templates/index.html
     └── schemas/
         └── fixtures/manifest.json
 ```
 
 Upload the **contents** of each directory to the corresponding server directory via SFTP, overwriting matching *code* files only. Ordinary upgrade packages exclude `config/`, `storage/`, and `vendor/`: **keep those existing server directories and their contents unchanged**. The explicitly selected `--initial-install` package includes only the ready-to-use private default `config/app.json` for first-time deployments. Do not use synchronization with `--delete` or wipe the remote backend. Run Composer on the server as described below. The committed `backend/composer.lock` is required and always included in the private deployment package.
 
-The staging command fails if the frontend build or essential schema fixtures are missing; CI verifies the staged paths too. No Composer or database is required on your computer.
+The staging command fails if the frontend build or essential schema fixtures are missing; CI verifies the staged paths too. Unlike earlier releases, the public folder has `index.php` instead of `index.html`: the compiled HTML is staged under private `templates/`. After upgrading, remove the **obsolete public** `index.html` file specifically; never delete private `config/`, `storage/` or uploaded media. No Composer or database is required on your computer.
 
 ### Manual SFTP/rsync alternative
 
-Use SFTP or `rsync`; substitute your real SSH account/paths. **Do not create or guess an absolute server path based on the hostname.**
+Use the **assembled deployment-package tree** as the upload source, not `frontend/dist/` directly: raw frontend output does not contain the runtime PHP HTML bootstrap, and `index.html` would serve the wrong URL base on deep links.
 
-- Copy **the contents** of `frontend/dist/` into `<domain-directory>/www/`.
-- Copy **the contents** of `deploy/www/` into the same `www/` directory, including hidden `.htaccess` files.
-- Copy `deploy/testbraid-backend/.htaccess` to the private `testbraid-backend/.htaccess` directory root. This explicitly denies HTTP access to the private backend even if a host exposes a broader document root by mistake. It does not affect PHP `require` / `include` across the filesystem.
-- Copy `backend/composer.json`, `backend/composer.lock`, `backend/public/`, `backend/src/`, `backend/bin/` and the **entire repository-root `schemas/` directory** to their corresponding private paths. In particular, `schemas/fixtures/manifest.json` must end up as `<domain-directory>/testbraid-backend/schemas/fixtures/manifest.json`, not as `<domain-directory>/schemas/fixtures/manifest.json` or under `www/`.
-- Do **not** copy `deploy/www/` itself as a nested `www/www` directory.
-- Do **not** expose `backend/`, `vendor/`, `storage/` or any password file inside `www/`.
-
-Example `rsync` structure (replace placeholders before running):
-
-```sh
-rsync -av frontend/dist/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
-rsync -av deploy/www/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/www/
-rsync -av deploy/testbraid-backend/.htaccess USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/.htaccess
-rsync -av backend/composer.json backend/composer.lock USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/
-rsync -av backend/public/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/public/
-rsync -av backend/src/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/src/
-rsync -av backend/bin/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/bin/
-rsync -av schemas/ USER@HOST:/ABSOLUTE/DOMAIN-DIR/testbraid-backend/schemas/
-```
-
-Create the destination `testbraid-backend/public/`, `testbraid-backend/src/` and `testbraid-backend/schemas/` directories with SSH/SFTP if absent. The optional `backend/bin/` test runner can also be copied for schema verification. The entire `schemas/` directory (including fixtures) should be deployed into the private backend.
+- Copy the **contents** of `deployment-package/www/` to the public app directory, such as `public_html/testbraid/`.
+- Copy the **contents** of `deployment-package/testbraid-backend/` to a private backend directory. In particular, **always upload `testbraid-backend/templates/index.html` whenever the frontend is rebuilt**: it references hashed JavaScript/CSS asset filenames. Uploading only `www/assets/` or `www/locales/` may leave an old application shell pointing to old JS despite updated translations.
+- Preserve operator-owned `config/`, `storage/` and public uploaded `media/` during upgrades. **Do not mirror with deletion.**
+- If the backend is not the default sibling of the public app, copy `www/bootstrap.local.example.php` to **unversioned** `www/bootstrap.local.php` and set `backendPath` once. Both PHP entry points resolve it through `backend-path.php`; environment settings are optional.
+- Do not expose private backend source, `vendor/`, credentials, uploaded drafts or `config/app.json` over HTTP.
 
 ## 5. Install PHP dependencies over SSH
 
@@ -414,11 +393,13 @@ The root Apache rewrite and media-directory `.htaccess` passed owner-hosted chec
 
 ## 9. Installation portability
 
-No hostname or absolute path is hardcoded in Vue or Slim. The PHP base path defaults to domain root and can be overridden explicitly by `TESTBRAID_BASE_PATH` for subdirectory deployments. For other domains, copy the same artifacts and point the domain document root to their deployed public directory.
+The same compiled frontend can be installed at the domain root or any nested directory. Site-specific URL base is controlled at runtime by private `config/app.json` `basePath`; Vue Router, API URLs, locale JSON files, favicon and published media URLs all use the resolved path. `www/index.php` emits HTML with `<base>` *before* browser scripts and styles load.
 
-By default `deploy/www/api/index.php` computes the sibling private backend location relative to itself. If a provider uses another layout, change the deployment template's default path **or** set `TESTBRAID_BACKEND_ENTRY` to the private `public/index.php` path. This customization is deployment configuration, not an application-code fork.
+The label `www/` **inside the deployment archive** does not constrain the host document-root folder's name: it may be `www`, `html`, `public_html` or an application subfolder. Deploy the contents at the actual application location.
 
-The SPA uses Vite's public base path and Vue Router uses the same base. This allows root and subdirectory deployment (with the appropriate build and rewrite configuration). For hosted public test links, production code must also derive the base URL rather than assume the example domain.
+For nested deployments, **never assume that placing `testbraid-backend/` beside the application directory makes it private.** E.g. `public_html/testbraid-backend/` is under the larger host document root even if it is not under `public_html/testbraid/`. The runtime rejects such layouts using the reported hosting `DOCUMENT_ROOT` (and fails closed if that root cannot be verified). Some hosts report an overbroad `DOCUMENT_ROOT`; resolve that deployment limitation with a trustworthy host setting, not by bypassing the safety check. `.htaccess` alone is not accepted as private isolation.
+
+Read [runtime subdirectory installation](runtime-subdirectory-installation.md) for exact placement, paths and smoke checks. Supporting storage entirely inside a publicly served document root is outside this change.
 
 ## 10. Hosting evidence — confirmed 2026-10-19 (Issues #2, #4, #6 and #8)
 

@@ -14,6 +14,7 @@ use TestBraid\Auth\SessionManager;
 use TestBraid\Http\JsonResponse;
 use TestBraid\Http\AdminDataRoutes;
 use TestBraid\Http\AdminMediaRoutes;
+use TestBraid\Http\InstallationSecurityDiagnostics;
 use TestBraid\Http\PublicTestRoutes;
 use TestBraid\Config\InstallationConfig;
 use TestBraid\Http\ApiProblem;
@@ -28,11 +29,7 @@ $app = AppFactory::create();
 // Never infer Slim's public route prefix from CGI metadata: the default
 // deployment lives at the domain root and must remain independent of rewrites.
 // Subdirectory deployments opt in using TESTBRAID_BASE_PATH (e.g. /testbraid).
-$configuredBase = getenv('TESTBRAID_BASE_PATH');
-$basePath = is_string($configuredBase) ? rtrim($configuredBase, '/') : '';
-if ($basePath !== '' && !preg_match('~^/(?:[A-Za-z0-9._-]+)(?:/[A-Za-z0-9._-]+)*$~D', $basePath)) {
-    throw new RuntimeException('Invalid TESTBRAID_BASE_PATH deployment setting.');
-}
+$basePath = InstallationConfig::basePath($root);
 if ($basePath !== '') {
     $app->setBasePath($basePath);
 }
@@ -188,9 +185,14 @@ $app->post('/api/auth/logout', static function (Request $request, Response $resp
 // Every future admin route must be registered in this protected route group.
 $adminData = new AdminDataRoutes($root);
 $adminMedia = new AdminMediaRoutes($root);
-$app->group('/api/admin', static function (RouteCollectorProxy $group) use ($adminData, $adminMedia): void {
+$app->group('/api/admin', static function (RouteCollectorProxy $group) use ($adminData, $adminMedia, $root, $basePath): void {
     $group->get('/ping', static function (Request $request, Response $response): Response {
         return JsonResponse::send($response, ['status' => 'ok', 'user' => $request->getAttribute('author')]);
+    });
+    $group->get('/installation/security', static function (Request $request, Response $response) use ($root, $basePath): Response {
+        $publicRoot = defined('TESTBRAID_PUBLIC_ROOT')
+            ? (string) constant('TESTBRAID_PUBLIC_ROOT') : null;
+        return JsonResponse::send($response, InstallationSecurityDiagnostics::inspect($root, $publicRoot, $basePath));
     });
     // All persistence routes inherit both guards from the enclosing group.
     $adminData->register($group);

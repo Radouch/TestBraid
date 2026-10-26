@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import ContentMedia from './ContentMedia.vue'
 import type { ContentBlock } from '../editor/model'
 import { uuidPattern } from '../editor/model'
@@ -7,7 +8,7 @@ defineProps<{ blocks: ContentBlock[]; mediaUrls?: Record<string, string>; privat
 function source(id: string, urls?: Record<string, string>, privatePreview = false): string {
   if (urls?.[id]) return urls[id]
   return privatePreview && uuidPattern.test(id)
-    ? import.meta.env.BASE_URL + 'api/admin/media/' + encodeURIComponent(id) + '/preview'
+    ? appBaseUrl() + 'api/admin/media/' + encodeURIComponent(id) + '/preview'
     : ''
 }
 </script>

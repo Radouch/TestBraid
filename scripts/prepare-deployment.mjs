@@ -6,7 +6,7 @@
  * the same contracts. The deployed PHP backend needs a private copy under
  * testbraid-backend/schemas/ because its source checkout is not on the host.
  */
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -46,6 +46,10 @@ try {
     'frontend/dist/index.html',
     'deploy/www/.htaccess',
     'deploy/www/api/index.php',
+    'deploy/www/index.php',
+    'deploy/www/backend-path.php',
+    'deploy/www/bootstrap.local.example.php',
+    'deploy/testbraid-backend/security-probe.txt',
     'deploy/testbraid-backend/.htaccess',
     'backend/composer.json',
     'backend/composer.lock',
@@ -60,6 +64,11 @@ try {
   rmSync(output, { recursive: true, force: true })
 
   copyDirectory('frontend/dist', 'www')
+  // The static Vite entry is a private template rendered by PHP with the
+  // installation-specific base; all hashed assets stay in public www.
+  const templateDirectory = join(output, 'testbraid-backend/templates')
+  mkdirSync(templateDirectory, { recursive: true })
+  renameSync(join(output, 'www/index.html'), join(templateDirectory, 'index.html'))
   copyDirectory('deploy/www', 'www')
   copyDirectory('backend/public', 'testbraid-backend/public')
   copyDirectory('backend/src', 'testbraid-backend/src')
@@ -68,6 +77,7 @@ try {
 
   const privateBackend = join(output, 'testbraid-backend')
   cpSync(join(root, 'deploy/testbraid-backend/.htaccess'), join(privateBackend, '.htaccess'))
+  cpSync(join(root, 'deploy/testbraid-backend/security-probe.txt'), join(privateBackend, 'security-probe.txt'))
   cpSync(join(root, 'backend/composer.json'), join(privateBackend, 'composer.json'))
   // Release installations must use the reviewed Composer dependency versions.
   cpSync(join(root, 'backend/composer.lock'), join(privateBackend, 'composer.lock'))
@@ -82,6 +92,8 @@ try {
 
   console.log('Deployment files staged at deployment-package/')
   console.log('Upload www/ to the public web root and testbraid-backend/ to the private backend.')
+  console.log('IMPORTANT: after EVERY frontend build, also upload testbraid-backend/templates/index.html.')
+  console.log('That private HTML template points to hashed JS/CSS assets. Uploading only www/ can leave the old frontend running.')
   console.log('Merge files only: do not delete existing server config/, storage/ or vendor/.')
   console.log(initialInstall
     ? 'Initial install package: includes private config/app.json. Use only on a NEW host.'

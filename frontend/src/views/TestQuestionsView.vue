@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
@@ -51,7 +52,7 @@ const previewLocation = computed(() => ({ name: 'test-preview', params: { id: te
   query: { ...languageQuery.value, editorTab: activeTab.value } }))
 const saveState = computed(() => t(publicationAction.value ? 'editorChangingPublication'
   : busy.value ? 'editorSaving' : dirty.value ? 'editorUnsaved' : 'editorAllSaved'))
-const api = (path: string) => import.meta.env.BASE_URL + 'api/' + path
+const api = (path: string) => appBaseUrl() + 'api/' + path
 let request: AbortController | undefined
 let observer: ResizeObserver | undefined
 let frame = 0

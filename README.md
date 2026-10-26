@@ -28,7 +28,7 @@ the ready-to-use file with `--initial-install`; normal upgrade packages
 **exclude all config/** to preserve local settings. Existing
 `config/uploads.json` installations remain compatible until their
 limits are migrated. A standard footer identifies **TestBraid** and shows its
-build version (currently `0.5.0`), alongside the author sign-in link.
+build version (currently `0.6.0`), alongside the author sign-in link.
 Release tags use `vMAJOR.MINOR.PATCH`; the footer links to the
 [GitHub source repository](https://github.com/Radouch/TestBraid), which currently remains
 private (anonymous visitors cannot access it). The public branding API is loaded before
@@ -46,7 +46,8 @@ See [deployment details](docs/deployment.md#6d-installation-branding-version-and
 - [Data model and API design](docs/data-model-and-api.md) — concrete proposal for JSON documents, validation, public/private media, endpoints and implementation sequence.
 - [PoC-A implementation plan](docs/poc-a-implementation-plan.md) — ordered GitHub issues, scaffold setup and the deployment acceptance gate.
 - [PoC-A acceptance evidence and runbook](docs/poc-a-acceptance.md) — tested CI/hosting behavior, repeatable deploy checks and confirmed PHP/cookie/quota configuration.
-- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting example with public `www/` and private backend, plus portable installation options.
+- [Apache/PHP deployment](docs/deployment.md) — PHP 8.5 hosting and public/private directories.
+- [Runtime subdirectory installation](docs/runtime-subdirectory-installation.md) — install the same prebuilt frontend under `/` or any nested URL without rebuilding.
 - [Shared JSON schemas](schemas/) — versioned contracts and common structural/publication validation fixtures.
 
 ## Status

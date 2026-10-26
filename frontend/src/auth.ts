@@ -1,3 +1,4 @@
+import { appBaseUrl } from './deployment-base'
 import { ref } from 'vue'
 
 export interface AuthorSession {
@@ -12,7 +13,7 @@ export const sessionChecked = ref(false)
 
 export async function refreshAuthorSession(): Promise<void> {
   try {
-    const response = await fetch(import.meta.env.BASE_URL + 'api/auth/session', {
+    const response = await fetch(appBaseUrl() + 'api/auth/session', {
       credentials: 'same-origin',
       cache: 'no-store',
     })

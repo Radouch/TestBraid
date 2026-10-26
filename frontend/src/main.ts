@@ -1,3 +1,4 @@
+import { appBaseUrl } from './deployment-base'
 import { createApp } from 'vue'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './style.css'
@@ -12,7 +13,7 @@ import { resolveUiLocale } from './ui-locale'
 // This prevents a transient default "TestBraid" header on customized hosts.
 void mountAfterConfiguration(async () => {
   await loadSiteIdentity()
-  await loadInterfaceTranslations(configuredUiLanguages.value, import.meta.env.BASE_URL)
+  await loadInterfaceTranslations(configuredUiLanguages.value, appBaseUrl())
 }, () => {
   const requestedLanguage = new URLSearchParams(window.location.search).get('lang')
   const language = resolveUiLocale(requestedLanguage)

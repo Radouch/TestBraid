@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -25,7 +26,7 @@ async function loadTest(id: string): Promise<void> {
   error.value = ''
   test.value = null
   try {
-    const sessionResponse = await fetch(import.meta.env.BASE_URL + 'api/auth/session', {
+    const sessionResponse = await fetch(appBaseUrl() + 'api/auth/session', {
       credentials: 'same-origin', cache: 'no-store',
     })
     if (!sessionResponse.ok) throw new Error(t('runnerPreviewSignIn'))
@@ -34,7 +35,7 @@ async function loadTest(id: string): Promise<void> {
 
     // The private draft JSON stays protected by the existing author middleware.
     // In particular, this route does not publish media or use the public API.
-    const response = await fetch(import.meta.env.BASE_URL + 'api/admin/tests/' + encodeURIComponent(id), {
+    const response = await fetch(appBaseUrl() + 'api/admin/tests/' + encodeURIComponent(id), {
       credentials: 'same-origin', cache: 'no-store',
     })
     if (response.status === 404) throw new Error(t('runnerNotFound'))

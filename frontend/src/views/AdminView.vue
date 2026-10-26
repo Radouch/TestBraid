@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { appBaseUrl } from '../deployment-base'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminCatalog from '../components/AdminCatalog.vue'
+import SecurityDiagnostics from '../components/SecurityDiagnostics.vue'
 import { authorSession } from '../auth'
 
 interface Author {
@@ -26,7 +28,7 @@ const setupKey = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
-const api = (route: string): string => `${import.meta.env.BASE_URL}api/${route}`
+const api = (route: string): string => `${appBaseUrl()}api/${route}`
 
 async function readSession(): Promise<void> {
   loading.value = true
@@ -127,6 +129,7 @@ onMounted(() => void readSession())
     <template v-if="!loading && session">
       <template v-if="session.authenticated && session.user">
         <AdminCatalog :csrf-token="session.csrfToken" />
+        <SecurityDiagnostics />
 </template>
       <form v-else-if="session.setupState === 'ready'" class="d-grid gap-3" @submit.prevent="createFirstAuthor">
         <p>{{ t('setupIntroduction') }}</p>

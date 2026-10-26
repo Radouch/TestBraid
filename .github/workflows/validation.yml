@@ -37,6 +37,9 @@ jobs:
       - name: Shared author editor and lesson dialogs regression
         run: npm run test:author
         working-directory: frontend
+      - name: Author security diagnostics UX and optional HTTP probe
+        run: npm run test:security
+        working-directory: frontend
       - name: Question composition and private media interaction regression
         run: npm run test:content
         working-directory: frontend
@@ -45,6 +48,9 @@ jobs:
         working-directory: frontend
       - name: Navigation and UI language URL regression
         run: npm run test:navigation
+        working-directory: frontend
+      - name: Runtime deployment URL base regression
+        run: npm run test:base
         working-directory: frontend
       - name: Multilingual installation branding regression
         run: npm run test:branding
@@ -63,6 +69,13 @@ jobs:
           test -f deployment-package/testbraid-backend/schemas/fixtures/manifest.json
           test -f deployment-package/testbraid-backend/composer.lock
           test -f deployment-package/www/api/index.php
+          test -f deployment-package/www/index.php
+          test -f deployment-package/www/backend-path.php
+          test -f deployment-package/www/bootstrap.local.example.php
+          test ! -e deployment-package/www/bootstrap.local.php
+          test -f deployment-package/testbraid-backend/security-probe.txt
+          test -f deployment-package/testbraid-backend/templates/index.html
+          test ! -f deployment-package/www/index.html
           test -f deployment-package/www/locales/en.json
           test -f deployment-package/www/locales/cs.json
           test -f deployment-package/testbraid-backend/.htaccess
@@ -97,12 +110,29 @@ jobs:
         run: composer install --no-interaction --no-progress --prefer-dist
         working-directory: backend
       - name: Lint PHP
-        run: composer run lint
+        run: |
+          composer run lint
+          php -l ../deploy/www/index.php
+          php -l ../deploy/www/backend-path.php
+          php -l ../deploy/www/bootstrap.local.example.php
+          php -l ../deploy/www/api/index.php
         working-directory: backend
       - name: Shared schema fixtures (Opis)
         run: composer run test:schemas
         working-directory: backend
       # Uses an isolated loopback PHP server and disposable credentials.
+      - name: One-file backend bootstrap path configuration
+        run: php bin/test-bootstrap-path.php
+        working-directory: backend
+      - name: Runtime base path validation and private-root regression
+        run: php bin/test-subdirectory-config.php
+        working-directory: backend
+      - name: Optional installation-security diagnostics
+        run: php bin/test-installation-security.php
+        working-directory: backend
+      - name: Dynamic SPA HTML base for root and nested installations
+        run: php bin/test-runtime-spa.php
+        working-directory: backend
       - name: Installation UI language configuration validation
         run: composer run test:ui-languages
         working-directory: backend

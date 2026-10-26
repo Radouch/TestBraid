@@ -6,6 +6,8 @@ import vue from '@vitejs/plugin-vue'
 const { version } = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')) as { version: string }
 
 export default defineConfig({
+  // One prebuilt asset set works at any runtime installation URL.
+  base: './',
   define: { __TESTBRAID_VERSION__: JSON.stringify(version) },
   plugins: [vue()],
   server: {

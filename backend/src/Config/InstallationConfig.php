@@ -32,7 +32,8 @@ final class InstallationConfig
     private function __construct(
         private readonly array $site,
         private readonly array $uploads,
-        private readonly array $uiLanguages
+        private readonly array $uiLanguages,
+        private readonly ?string $configuredBasePath
     ) {}
 
     /** @return array{name:string|array<string,string>,description:string|array<string,string>} */
@@ -64,17 +65,59 @@ final class InstallationConfig
         return self::publicConfiguration($backendRoot)['site'];
     }
 
-    /** @return array{site:array,uiLanguages:list<string>} */
+    /** Relative URL prefix; root is represented internally as an empty string. */
+    public static function basePath(string $backendRoot): string
+    {
+        $override = getenv('TESTBRAID_APP_CONFIG_FILE');
+        $explicit = is_string($override) && $override !== '';
+        $path = $explicit ? $override : $backendRoot . '/config/app.json';
+        if (!$explicit && !file_exists($path) && !is_link($path)) {
+            return self::effectiveBasePath(null);
+        }
+        $config = self::fromFile($path);
+        return self::effectiveBasePath($config->configuredBasePath);
+    }
+
+    private static function effectiveBasePath(?string $configured): string
+    {
+        $environment = getenv('TESTBRAID_BASE_PATH');
+        if (is_string($environment) && $environment !== '') {
+            $override = self::parseBasePath($environment, 'APP_BASE_PATH_INVALID');
+            if ($configured !== null && $configured !== $override) {
+                throw new ApiProblem(503, 'APP_BASE_PATH_MISMATCH',
+                    'Configured base path and hosting environment disagree.');
+            }
+            return $override;
+        }
+        return $configured ?? '';
+    }
+
+    private static function parseBasePath(mixed $value, string $errorCode): string
+    {
+        if ($value === '/') return '';
+        if (!is_string($value) || !preg_match('#^/[A-Za-z0-9._~-]+(?:/[A-Za-z0-9._~-]+)*/?$#D', $value)) {
+            throw new ApiProblem(503, $errorCode, 'Invalid installation base path.');
+        }
+        foreach (explode('/', trim($value, '/')) as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                throw new ApiProblem(503, $errorCode, 'Invalid installation base path segment.');
+            }
+        }
+        return rtrim($value, '/');
+    }
+
+    /** @return array{site:array,uiLanguages:list<string>,basePath:string} */
     public static function publicConfiguration(string $backendRoot): array
     {
         $override = getenv('TESTBRAID_APP_CONFIG_FILE');
         $explicit = is_string($override) && $override !== '';
         $path = $explicit ? $override : $backendRoot . '/config/app.json';
         if (!$explicit && !file_exists($path) && !is_link($path)) {
-            return ['site' => self::DEFAULT_SITE, 'uiLanguages' => self::DEFAULT_UI_LANGUAGES];
+            return ['site' => self::DEFAULT_SITE, 'uiLanguages' => self::DEFAULT_UI_LANGUAGES, 'basePath' => self::effectiveBasePath(null)];
         }
         $config = self::fromFile($path);
-        return ['site' => $config->site(), 'uiLanguages' => $config->uiLanguages()];
+        return ['site' => $config->site(), 'uiLanguages' => $config->uiLanguages(),
+            'basePath' => self::effectiveBasePath($config->configuredBasePath)];
     }
 
     /**
@@ -120,8 +163,8 @@ final class InstallationConfig
         }
 
         if (array_key_exists('site', $data) || array_key_exists('uploads', $data)) {
-            if ((count($data) !== 2 && count($data) !== 3)
-                || array_diff(array_keys($data), ['site', 'uploads', 'uiLanguages']) !== []
+            if ((count($data) < 2 || count($data) > 4)
+                || array_diff(array_keys($data), ['site', 'uploads', 'uiLanguages', 'basePath']) !== []
                 || !array_key_exists('site', $data)
                 || !array_key_exists('uploads', $data) || !is_array($data['site'])
                 || count($data['site']) !== 2
@@ -135,11 +178,14 @@ final class InstallationConfig
             ];
             $uploads = $data['uploads'];
             $uiLanguages = self::languageList($data['uiLanguages'] ?? self::DEFAULT_UI_LANGUAGES, $errorCode);
+            $basePath = array_key_exists('basePath', $data)
+                ? self::parseBasePath($data['basePath'], $errorCode) : null;
         } else {
             // Legacy config/uploads.json has a flat pair of size limits.
             $site = self::DEFAULT_SITE;
             $uploads = $data;
             $uiLanguages = self::DEFAULT_UI_LANGUAGES;
+            $basePath = null;
         }
 
         if (!is_array($uploads) || count($uploads) !== 2
@@ -152,7 +198,7 @@ final class InstallationConfig
                 throw new ApiProblem(503, $errorCode, 'Upload limits must be integers between 1 and 2048 MiB.');
             }
         }
-        return new self($site, $uploads, $uiLanguages);
+        return new self($site, $uploads, $uiLanguages, $basePath);
     }
 
     /** @return list<string> */
