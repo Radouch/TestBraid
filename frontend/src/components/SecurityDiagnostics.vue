@@ -198,7 +198,7 @@ async function checkProbe(): Promise<void> {
               {{ probing ? t('loading') : t('securityTestHttp') }}
             </button>
             <p v-if="probeResult" class="alert mt-3" role="status"
-              :class="probeResult === 'exposed' ? 'alert-danger' : 'alert-warning'">
+              :class="probeResult === 'exposed' ? 'alert-danger' : probeResult === 'blocked' ? 'alert-success' : 'alert-warning'">
               {{ t('securityProbe_' + probeResult) }}
             </p>
           </div>

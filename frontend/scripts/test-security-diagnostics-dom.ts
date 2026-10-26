@@ -15,6 +15,7 @@ let result: Record<string, unknown> = {
   probeUrlPath: null,
 }
 const requests: string[] = []
+let probeStatus = 200
 globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
   const url = String(input)
   requests.push(url)
@@ -24,7 +25,9 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   }
   assert.equal(init?.credentials, 'omit')
   if (url.endsWith('/security-probe.txt')) {
-    return new Response('TESTBRAID_PRIVATE_BACKEND_PROBE_V1\n', { status: 200 })
+    return probeStatus === 200
+      ? new Response('TESTBRAID_PRIVATE_BACKEND_PROBE_V1\n', { status: 200 })
+      : new Response(null, { status: probeStatus })
   }
   throw new Error('Unexpected HTTP probe URL: ' + url)
 }) as typeof fetch
@@ -85,6 +88,16 @@ try {
   assert.ok(host.textContent?.includes(cs.securityProbe_exposed))
   assert.equal(requests.at(-1), '/unsafe-backend/security-probe.txt')
   console.log('PASS SECURITY DOM: risky placement, inferred candidate and confirmed HTTP exposure')
+  for (const httpStatus of [403, 404]) {
+    probeStatus = httpStatus
+    await click(find('details button'))
+    const positive = find<HTMLElement>('details .alert-success')
+    assert.ok(positive.textContent?.includes(cs.securityProbe_blocked),
+      'HTTP ' + httpStatus + ' for one tested URL should show the green positive result')
+    assert.ok(find('.alert-danger').textContent?.includes(cs.securityOverviewDanger),
+      'A positive result for one URL must not hide the placement risk')
+  }
+  console.log('PASS SECURITY DOM: HTTP 403/404 show positive per-URL results without erasing broader risk')
 
   result = { ...result, backendPlacement: 'unverified', storagePlacement: 'unverified', probeUrlPath: null }
   await click(find('button'))
