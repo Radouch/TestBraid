@@ -16,7 +16,7 @@ export interface UploadBoundary {
   allowMultiple: boolean
   instantUpload: boolean
   queuedForTest: (files: FilePondFile[]) => void
-  processedBatches: string[][]
+  processedFiles: string[]
 }
 // Expose the real adapter's props to transport tests without emulating the
 // third-party widget. Mounted instances disappear when their picker closes.
@@ -37,28 +37,28 @@ export default function filePondDomBoundary() {
     },
     setup(props, { expose, emit }) {
       let files: FilePondFile[] = []
-      const processedBatches: string[][] = []
+      const processedFiles: string[] = []
       const boundary: UploadBoundary = {
         get name() { return props.name },
         get server() { return props.server },
         get allowMultiple() { return props.allowMultiple },
         get instantUpload() { return props.instantUpload },
-        processedBatches,
+        processedFiles,
         queuedForTest(items) {
           files = items
           emit('updatefiles', files)
         },
       }
       const getFiles = () => files
-      const processFiles = async (ids: string[] = files.map(file => file.id)) => {
-        processedBatches.push([...ids])
-        for (const file of files.filter(item => ids.includes(item.id))) {
-          file.status = FileStatus.PROCESSING_COMPLETE
-          emit('processfile', null, file)
-        }
-        return files
+      const processFile = async (id: string) => {
+        processedFiles.push(id)
+        const file = files.find(item => item.id === id)
+        if (!file) throw new Error('Missing test file')
+        file.status = FileStatus.PROCESSING_COMPLETE
+        emit('processfile', null, file)
+        return file
       }
-      expose({ getFiles, processFiles })
+      expose({ getFiles, processFile })
       onMounted(() => uploadBoundaries.add(boundary))
       onUnmounted(() => uploadBoundaries.delete(boundary))
       return () => h('input', { type: 'file', multiple: props.allowMultiple,
