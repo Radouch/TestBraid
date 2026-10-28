@@ -146,7 +146,8 @@ jq -e --arg group "$GROUP" --arg id "$T1" --arg draft "$INCOMPLETE_ID" \
     and .groups[0].tests[0].id == $id
     and .groups[0].tests[0].title == "Published example"
     and .groups[0].tests[0].language == "en"
-    and ((.groups[0].tests[0] | keys | sort) == ["id", "language", "title"])
+    and .groups[0].tests[0].questionCount == 1
+    and ((.groups[0].tests[0] | keys | sort) == ["id", "language", "questionCount", "title"])
     and (tostring | contains($draft) | not)
     and (tostring | contains($media) | not)
     and (tostring | contains("Unpublished lesson") | not)

@@ -4,6 +4,7 @@ import { NOT_FOUND_PATH, navigationSection, retainExplicitLanguage } from '../sr
 import { setAvailableUiLanguages } from '../src/ui-locale'
 import {
   fetchPublicCatalog, publicCatalogLocation, publicLessonAnchor, publicLessonForHash, publicLessonForTest, publicLessonHash,
+  publicLessonsForLanguage,
   type PublicLesson,
 } from '../src/public-catalog'
 
@@ -81,9 +82,15 @@ assert.equal(router.currentRoute.value.query.lang, undefined)
 setAvailableUiLanguages(['en', 'cs'])
 
 const lessons: PublicLesson[] = [
-  { id: 'lesson-a', name: 'Family', tests: [{ id: 'test-a', title: 'Signs', language: 'en' }] },
-  { id: 'lesson-b', name: 'Daily life', tests: [{ id: 'test-b', title: 'Pairs', language: 'cs' }] },
+  { id: 'lesson-a', name: 'Family', tests: [{ id: 'test-a', title: 'Signs', language: 'en', questionCount: 1 }] },
+  { id: 'lesson-b', name: 'Daily life', tests: [{ id: 'test-b', title: 'Pairs', language: 'cs', questionCount: 3 }] },
 ]
+// The public list filters test language and hides lessons with no tests in that language.
+assert.deepEqual(publicLessonsForLanguage(lessons, 'cs'), [lessons[1]])
+assert.deepEqual(publicLessonsForLanguage(lessons, 'en'), [lessons[0]])
+assert.deepEqual(publicLessonsForLanguage(lessons, 'de'), [])
+assert.deepEqual(lessons[0]?.tests.map(test => test.language), ['en'], 'Language filtering must not mutate the fetched catalog.')
+
 // Directly shared test URLs can resolve their lesson without browser history.
 assert.equal(publicLessonForTest(lessons, { id: 'test-b', groupId: 'lesson-b' }), lessons[1])
 assert.equal(publicLessonForTest(lessons, { id: 'test-b', groupId: 'lesson-a' }), undefined)
@@ -118,7 +125,11 @@ try {
   payload = { groups: [] }
   assert.deepEqual(await fetchPublicCatalog('/training/', controller.signal), [])
   for (const malformed of [null, {}, { groups: null }, { groups: [null] },
-    { groups: [{ id: 'lesson', name: 'Lesson', tests: [{}] }] }]) {
+    { groups: [{ id: 'lesson', name: 'Lesson', tests: [{}] }] },
+    { groups: [{ id: 'lesson', name: 'Lesson', tests: [{ id: 't', title: 'T', language: 'cs' }] }] },
+    ...[-1, 1.5, '2'].map(questionCount => ({
+      groups: [{ id: 'lesson', name: 'Lesson', tests: [{ id: 't', title: 'T', language: 'cs', questionCount }] }],
+    }))]) {
     payload = malformed
     await assert.rejects(fetchPublicCatalog('/training/', controller.signal), /Invalid public catalog/)
   }

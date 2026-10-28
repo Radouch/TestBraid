@@ -2,6 +2,7 @@ export interface PublicTestSummary {
   id: string
   title: string
   language: string
+  questionCount: number
 }
 
 export const PUBLIC_CATALOG_ANCHOR = 'public-catalog-heading'
@@ -18,7 +19,8 @@ function isPublicLesson(value: unknown): value is PublicLesson {
   return typeof lesson.id === 'string' && typeof lesson.name === 'string'
     && Array.isArray(lesson.tests) && lesson.tests.every(test => test !== null
       && typeof test === 'object' && typeof test.id === 'string'
-      && typeof test.title === 'string' && typeof test.language === 'string')
+      && typeof test.title === 'string' && typeof test.language === 'string'
+      && Number.isInteger(test.questionCount) && test.questionCount >= 0)
 }
 
 /** Use only the anonymous, allowlisted catalog for public lesson names. */
@@ -34,6 +36,14 @@ export async function fetchPublicCatalog(basePath: string, signal?: AbortSignal)
     throw new Error('Invalid public catalog')
   }
   return groups
+}
+
+/** Only show lessons containing published tests for the selected interface language. */
+export function publicLessonsForLanguage(groups: PublicLesson[], language: string): PublicLesson[] {
+  return groups.map(group => ({
+    ...group,
+    tests: group.tests.filter(test => test.language === language),
+  })).filter(group => group.tests.length > 0)
 }
 
 /** A lesson name is valid only when the published catalog also lists this test. */
