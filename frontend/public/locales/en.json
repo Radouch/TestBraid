@@ -415,5 +415,12 @@
   "securityAdvancedHttpTitle": "Advanced: test a specific HTTP URL (optional)",
   "securityAdvancedHttpIntro": "If you know a URL that might expose the backend, you can test whether the server serves its harmless probe file. This is optional and cannot prove that all paths are protected.",
   "securityNoSuggestedUrl": "The backend is outside the inferred web root, so the application cannot infer any public URL for it. Leave this empty if you do not know one.",
-  "securitySuggestedUrl": "The application derived this possible URL from the backend location. You can keep or change it:"
+  "securitySuggestedUrl": "The application derived this possible URL from the backend location. You can keep or change it:",
+  "mediaDropMultiple": "Drop files here or <span class=\"filepond--label-action\">browse files</span>",
+  "mediaUploadSelected": "Upload selected files ({count})",
+  "mediaUploadResult": "Uploaded {uploaded} of {total} files. Failed files can be retried.",
+  "mediaUploading": "Uploading",
+  "mediaUploadComplete": "Upload complete",
+  "mediaUploadFile": "Upload file",
+  "mediaUploadRetry": "Retry"
 }
