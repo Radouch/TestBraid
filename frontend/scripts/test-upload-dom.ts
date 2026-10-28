@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { createApp, h, nextTick, reactive, type App } from 'vue'
 import { createI18n } from 'vue-i18n'
 import { createFileProcessorFunction } from 'filepond-transport-test'
+import { FileStatus, type FilePondFile } from 'filepond'
 import MediaUploader from '../src/components/MediaUploader.vue'
 import QuestionEditor from '../src/components/QuestionEditor.vue'
 import { uploadBoundaries, type UploadBoundary } from './filepond-dom-boundary'
@@ -108,10 +109,34 @@ async function transport(adapter: UploadBoundary, file: File, groupId: string | 
 try {
   for (const [groupId, kind] of [[undefined, 'image'], [null, 'image'], [lessonId, 'image'], [lessonId, 'video']] as const) {
     await mount(MediaUploader, { csrfToken: 'session-csrf', groupId, kind })
+    assert.equal(boundary().allowMultiple, false, 'Editor attachments must stay single-file')
+    assert.equal(boundary().instantUpload, true, 'Editor attachments must still upload immediately')
     const file = new File([kind === 'image' ? jpeg : video], kind === 'image' ? 'Pozdrav.JPG' : 'Pozdrav.mp4', { type: kind === 'image' ? 'image/jpeg' : 'video/mp4' })
     await transport(boundary(), file, groupId, { caption: 'Not application metadata' })
   }
   console.log('PASS UPLOAD DOM: real FilePond multipart serialization, binary-only file parts, filenames/bytes/MIME, lesson assignment, base path and CSRF')
+
+  await mount(MediaUploader, { csrfToken: 'session-csrf', groupId: lessonId })
+  const library = boundary()
+  assert.equal(library.allowMultiple, true, 'Library must allow selecting several files')
+  assert.equal(library.instantUpload, false, 'Library uploads should await a button click')
+  assert.equal(find<HTMLInputElement>('[data-upload-boundary]').multiple, true)
+  const uploadAll = find<HTMLButtonElement>('[data-upload-selected]')
+  assert.equal(uploadAll.disabled, true, 'No files selected yet')
+  const queued = [
+    { id: 'photo-1', status: FileStatus.IDLE },
+    { id: 'movie-2', status: FileStatus.IDLE },
+  ] as FilePondFile[]
+  library.queuedForTest(queued)
+  await settle()
+  assert.equal(uploadAll.disabled, false)
+  uploadAll.click()
+  await settle()
+  assert.deepEqual(library.processedBatches, [['photo-1', 'movie-2']], 'One click processes both files')
+  assert.equal(uploadAll.disabled, true, 'Completed media must not be reuploaded')
+  assert.ok(host!.textContent?.includes('Nahráno 2 z 2'), 'Show batch upload result')
+  assert.deepEqual(errors, [])
+  console.log('PASS UPLOAD DOM: one-click batch media uploads; editor upload stays single-file')
 
   const question = reactive<ChoiceQuestion>({ id: 'choice', type: 'choice', mode: 'single', prompt: [{ id: 'prompt', type: 'text', text: 'Choose the correct picture' }],
     options: [{ id: 'first', content: [{ id: 'answer-text', type: 'text', text: 'Answer with a picture' }] },
