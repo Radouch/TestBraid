@@ -415,5 +415,12 @@
   "securityAdvancedHttpTitle": "Pokročilé: kontrola konkrétní HTTP adresy (volitelné)",
   "securityAdvancedHttpIntro": "Pokud znáte URL, pod kterou by mohl být backend dostupný, můžete ověřit, zda server skutečně vydává jeho neškodný testovací soubor. Tento krok není povinný a není důkazem úplného zabezpečení.",
   "securityNoSuggestedUrl": "Backend leží mimo odvozený veřejný adresář. Aplikace proto nezná žádnou jeho veřejnou URL a nemůže ji automaticky otestovat. Pokud ji neznáte, toto pole nevyplňujte.",
-  "securitySuggestedUrl": "Aplikace odvodila následující možnou URL z umístění backendu. Můžete ji ponechat, nebo změnit:"
+  "securitySuggestedUrl": "Aplikace odvodila následující možnou URL z umístění backendu. Můžete ji ponechat, nebo změnit:",
+  "mediaDropMultiple": "Přetáhněte sem soubory nebo <span class=\"filepond--label-action\">vyberte soubory</span>",
+  "mediaUploadSelected": "Nahrát vybrané soubory ({count})",
+  "mediaUploadResult": "Nahráno {uploaded} z {total} souborů. Neúspěšné soubory lze nahrát znovu.",
+  "mediaUploading": "Nahrávání",
+  "mediaUploadComplete": "Nahrávání dokončeno",
+  "mediaUploadFile": "Nahrát soubor",
+  "mediaUploadRetry": "Zkusit znovu"
 }
