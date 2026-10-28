@@ -4,7 +4,7 @@
   "notFoundTitle": "Page not found",
   "notFoundDescription": "The requested page does not exist. Check the address or return to the test list.",
   "notFoundHome": "Back to tests",
-  "publicCatalogHeading": "Available tests",
+  "publicCatalogHeading": "Lessons and tests",
   "publicCatalogIntroduction": "Choose a lesson and a published test to practice. No account is required and results are not stored.",
   "publicCatalogLoading": "Loading available lessons and tests…",
   "publicCatalogUnavailable": "The public test list could not be loaded.",
