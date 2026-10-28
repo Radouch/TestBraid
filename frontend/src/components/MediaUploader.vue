@@ -22,7 +22,7 @@ const { t } = useI18n()
 const uploadError = ref('')
 // Bulk selection is for the library only. An editor block still accepts one
 // file and uploads it immediately to its chosen location.
-const pond = ref<{ processFiles: (ids?: string[]) => Promise<unknown>; getFiles: () => FilePondFile[] } | null>(null)
+const pond = ref<{ processFile: (id: string) => Promise<unknown>; getFiles: () => FilePondFile[] } | null>(null)
 const pendingFileIds = ref<string[]>([])
 const batchUploading = ref(false)
 const batchResult = ref<{ uploaded: number; total: number } | null>(null)
@@ -39,19 +39,17 @@ async function uploadSelected(): Promise<void> {
   batchUploading.value = true
   batchResult.value = null
   uploadError.value = ''
-  try {
-    // Each file uses its own POST, preserving server-side per-file limits.
-    await pond.value.processFiles(selectedIds)
-  } catch {
-    // FilePond retains failed files so they can be retried.
-    if (!uploadError.value) uploadError.value = t('mediaUploadFailed')
-  } finally {
-    const uploaded = pond.value?.getFiles().filter(file =>
-      selectedIds.includes(file.id) && file.status === FileStatus.PROCESSING_COMPLETE).length ?? 0
-    batchResult.value = { uploaded, total: selectedIds.length }
-    batchUploading.value = false
-    syncFileList()
+  // Wait for every upload, even if an earlier one fails. A single file's
+  // failure must not prevent the other selected files from finishing.
+  const results = await Promise.allSettled(selectedIds.map(id => pond.value!.processFile(id)))
+  if (results.some(result => result.status === 'rejected') && !uploadError.value) {
+    uploadError.value = t('mediaUploadFailed')
   }
+  const uploaded = pond.value?.getFiles().filter(file =>
+    selectedIds.includes(file.id) && file.status === FileStatus.PROCESSING_COMPLETE).length ?? 0
+  batchResult.value = { uploaded, total: selectedIds.length }
+  batchUploading.value = false
+  syncFileList()
 }
 
 const FilePond = vueFilePond(FilePondPluginFileValidateType, FilePondPluginFileValidateSize)
