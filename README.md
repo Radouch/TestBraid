@@ -27,6 +27,6 @@ The full project introduction and Czech documentation will be added separately.
 
 ## License
 
-TestBraid application code is licensed under the [GNU Affero General Public License, version 3 or (at your option) any later version](LICENSE) (\`AGPL-3.0-or-later\`).
+TestBraid application code is licensed under the [GNU Affero General Public License, version 3 or (at your option) any later version](LICENSE) (`AGPL-3.0-or-later`).
 
 This license applies to the TestBraid application, **not to tests, lessons or media created or uploaded by its users**. Third-party libraries retain their respective licenses.

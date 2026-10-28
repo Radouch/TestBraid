@@ -1,75 +1,36 @@
 # Media library
 
-TestBraid stores uploaded images/videos independently of the tests using them. An author can select the same file in many questions, including questions in different lessons.
+The media library stores images and videos for reuse in any test. Sign in and open **Media library** (`/admin/media`).
 
-## 1. Open the library
+## Upload files
 
-Sign in and choose **Media library** in the application navigation (`/admin/media` under your installation's base URL). The library shows persistent uploaded files, not just uploads from the current editing session.
+The library accepts **JPEG, PNG and WebP images** and **MP4 and WebM videos**. File-size limits are configured by the site operator and may also be restricted by the hosting provider.
 
-Use the available controls to:
-- Filter by **home lesson**, by **unassigned** media or by **all lessons**.
-- Filter by **images**, **videos** or all kinds.
-- Search by the original filename.
-- Preview files and inspect which tests reference them.
-- Change a media item's home lesson or delete an unused item.
+To upload several files:
 
-Media access and management require an author account.
+1. Choose a **home lesson** if you want the files organized under a particular lesson.
+2. Select or drop **multiple images and videos**.
+3. Click **Upload selected files** once to start the batch.
+4. Review the result. Successfully uploaded files stay available even if others fail; retry failed files as needed.
 
-## 2. Supported files
+Each file is uploaded and checked **separately**. Selecting several files does not combine them into one large server request. Limits apply per file.
 
-| Type | Accepted extensions | Default limit |
-| --- | --- | --- |
-| Images | `.jpg`/`.jpeg`, `.png`, `.webp` | 10 MiB |
-| Videos | `.mp4`, `.webm` | 64 MiB |
+The uploader inside a **test question** works differently: it attaches and uploads **one file at a time**. For bulk preparation, upload files into the library first and then select them when editing questions.
 
-Limits are configured in the private `app.json` and further constrained by PHP/web-server settings. The application checks the contents (MIME/signatures), not just the filename; images require recognizable dimensions and are limited to **24 megapixels**. File upload does **not** include antivirus scanning, video transcoding or complete video-codec validation.
+## Organize and find media
 
-For broad browser compatibility, use MP4 with H.264 video/AAC audio or commonly supported WebM codecs. Test actual playback and seeking on target devices. Large uploads may be limited by PHP request size, timeout or temporary disk space, even when `app.json` allows them.
+Media can be assigned to one **home lesson**, or left unassigned. This acts like a virtual folder: changing the lesson does **not** move the file or restrict where it can be used. A test may use media assigned to another lesson.
 
-See [Configuration](configuration.md) for custom upload limits.
+Filter by lesson and file type, or search for part of the original filename. The library also shows which tests use each item.
 
-## 3. Upload new media
+## Reuse and deletion
 
-Open the library, optionally choose a **home lesson**, and upload a file with the provided uploader. You can select **several images and videos at once**, either in the file chooser or by dropping multiple files onto the uploader. The library queues them rather than uploading immediately. Press **Upload selected files (N)** once to start processing all selected files. Each file is sent as an **individual authenticated upload**, with up to two uploads in progress at once; no combined multi-file API request is needed.
+The same media item can appear in several questions and tests without uploading the original again.
 
-After all selected files have finished, the library reports a summary such as **Uploaded 4 of 5 files**. Successfully uploaded files remain available even if another file fails. Failed files can be retried, without repeating the successful uploads. Format and size limits apply to **each file**.
+You may delete a media item only when **no draft or published test references it**. Removing a media block from a question does not automatically delete the file. If the item is still in use, replace or remove its references in the relevant tests first.
 
-After a successful upload, its entry appears in the persistent library.
+## Private and published media
 
-In the question editor, choosing **Image** or **Video** opens a media-selection dialog. Unlike the standalone media library, this editor attachment control accepts **one file at a time and uploads it immediately**; multi-file selection is specific to the media library. You can select an existing compatible item or upload a new one there. The chooser initially emphasizes the current lesson but allows selection from another lesson or from unassigned media.
+Uploaded originals are stored in the **private backend**. Authors can preview them while signed in. When a test is published, copies of its referenced media become available to its learners. Public copies no longer used by any published test can be cleaned up, while private originals remain.
 
-A new media block is attached only when a compatible item is selected or an upload succeeds. Canceling selection does not insert a new media block.
-
-## 4. Home lessons are virtual folders
-
-Every media item has **one optional home lesson** (`groupId` in metadata), but the file is stored in a common private media store. These assignments are **virtual**:
-
-- Moving an item to another home lesson changes metadata, not its physical storage location.
-- The same image/video may be referenced by any test regardless of home lesson.
-- Selecting a lesson in the library filters the view; it does not grant or deny permission to reuse files.
-- A media item may be unassigned.
-- Deleting an empty lesson does not delete its media; its home-lesson association is removed.
-
-For an installation with many lessons, assign media to the lesson where they are primarily created or maintained. This is only an organizational convention.
-
-## 5. Find usages and safely delete items
-
-The library indicates **which tests use** each item. Deletion is offered only for media that is **not referenced by any draft or published test**. A confirmation is required, and the server checks all test references again; concurrent changes can cause a deletion to be rejected.
-
-If an item is in use, remove or replace **all** references from the relevant test questions, save the drafts, and return to the library. Unpublishing alone does not necessarily make a media item unused: unpublished drafts can still refer to it.
-
-Removing a media block from a question does not delete the original file. Deleting an entire test likewise does not silently delete its media. These rules protect shared files from accidental loss.
-
-## 6. Privacy and publication
-
-Uploaded originals and metadata live in private backend storage. A signed-in author can preview them through authenticated API routes. TestBraid does not expose private uploaded originals simply because they exist in the library.
-
-When a test is published, TestBraid prepares public static copies of its referenced media under `www/media/`. Anonymous users access the published copies through the test. Unpublishing cleans up copies no longer needed by any **other published** test, while the original private upload remains.
-
-Do not put confidential media in tests intended for public publication. Content and answer keys in public tests are accessible to visitors; TestBraid is intended for self-assessment.
-
-## 7. Troubleshooting media
-
-If an upload fails, check format, dimensions, configured and effective limits, web PHP settings, available space and write permissions. If a preview works for the author but not for learners, check whether the test is published and whether the public `media/` directory retains the supplied Apache rules.
-
-See [Troubleshooting](troubleshooting.md) and [Security and backups](security-and-backups.md).
+For upload limits, see [Configuration](configuration.md). For hosting issues, see [Troubleshooting](troubleshooting.md).

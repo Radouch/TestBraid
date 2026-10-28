@@ -6,25 +6,25 @@ Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBr
 
 Before upgrading, make a consistent backup of:
 
-- Private \`config/\` (settings and author accounts).
-- Private \`storage/\` (lessons, tests, media metadata and original uploads).
-- Public \`media/\` (published media and its \`.htaccess\`).
-- Public \`bootstrap.local.php\`, if you configured a custom backend path.
+- Private `config/` (settings and author accounts).
+- Private `storage/` (lessons, tests, media metadata and original uploads).
+- Public `media/` (published media and its `.htaccess`).
+- Public `bootstrap.local.php`, if you configured a custom backend path.
 
 Avoid editing tests during the backup and upgrade. See [Security and backups](security-and-backups.md).
 
 ## 2. Replace application files
 
-Extract the upgrade archive. Upload its \`www/\` contents to your actual public application directory and its \`testbraid-backend/\` contents to the private backend.
+Extract the upgrade archive. Upload its `www/` contents to your actual public application directory and its `testbraid-backend/` contents to the private backend.
 
 **Important:**
 
-- **Preserve** the existing private \`config/\` and \`storage/\`, uploaded public \`media/\`, and any local \`bootstrap.local.php\`. The upgrade archive deliberately omits these installation-specific files.
-- **Replace the private \`vendor/\` directory completely**, rather than merging new dependency files with old ones.
-- Update both public \`assets/\` and private \`templates/index.html\`. They belong to the same frontend build.
-- Keep the distributed \`.htaccess\` rules. Do **not** run a synchronization tool with a global “delete missing files” option.
+- **Preserve** the existing private `config/` and `storage/`, uploaded public `media/`, and any local `bootstrap.local.php`. The upgrade archive deliberately omits these installation-specific files.
+- **Replace the private `vendor/` directory completely**, rather than merging new dependency files with old ones.
+- Update both public `assets/` and private `templates/index.html`. They belong to the same frontend build.
+- Keep the distributed `.htaccess` rules. Do **not** run a synchronization tool with a global “delete missing files” option.
 
-If an older installation still has a public \`index.html\`, remove that **obsolete application file** after the new \`index.php\` is in place.
+If an older installation still has a public `index.html`, remove that **obsolete application file** after the new `index.php` is in place.
 
 The release ZIP already contains PHP dependencies. No Composer or frontend build is necessary on the host.
 
