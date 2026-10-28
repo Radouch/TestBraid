@@ -28,7 +28,7 @@ the ready-to-use file with `--initial-install`; normal upgrade packages
 **exclude all config/** to preserve local settings. Existing
 `config/uploads.json` installations remain compatible until their
 limits are migrated. A standard footer identifies **TestBraid** and shows its
-build version (currently `0.7.0`), alongside the author sign-in link.
+build version, alongside the author sign-in link.
 Release tags use `vMAJOR.MINOR.PATCH`; the footer links to the
 [GitHub source repository](https://github.com/Radouch/TestBraid), which currently remains
 private (anonymous visitors cannot access it). The public branding API is loaded before
