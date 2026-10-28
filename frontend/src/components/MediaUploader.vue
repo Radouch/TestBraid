@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { appBaseUrl } from '../deployment-base'
 import { computed, onMounted, ref } from 'vue'
+import { FileStatus, type FilePondFile } from 'filepond'
 import { useI18n } from 'vue-i18n'
 import vueFilePond from 'vue-filepond'
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
@@ -19,6 +20,38 @@ const props = defineProps<{ csrfToken: string; kind?: 'image' | 'video'; groupId
 const emit = defineEmits<{ uploaded: [media: UploadedMedia] }>()
 const { t } = useI18n()
 const uploadError = ref('')
+// Bulk selection is for the library only. An editor block still accepts one
+// file and uploads it immediately to its chosen location.
+const pond = ref<{ processFile: (id: string) => Promise<unknown>; getFiles: () => FilePondFile[] } | null>(null)
+const pendingFileIds = ref<string[]>([])
+const batchUploading = ref(false)
+const batchResult = ref<{ uploaded: number; total: number } | null>(null)
+
+function syncFileList(files?: FilePondFile[]): void {
+  pendingFileIds.value = (files ?? pond.value?.getFiles() ?? [])
+    .filter(file => ![FileStatus.PROCESSING_COMPLETE, FileStatus.PROCESSING, FileStatus.PROCESSING_QUEUED].includes(file.status))
+    .map(file => file.id)
+}
+
+async function uploadSelected(): Promise<void> {
+  if (props.kind || batchUploading.value || !pond.value || pendingFileIds.value.length === 0) return
+  const selectedIds = [...pendingFileIds.value]
+  batchUploading.value = true
+  batchResult.value = null
+  uploadError.value = ''
+  // Wait for every upload, even if an earlier one fails. A single file's
+  // failure must not prevent the other selected files from finishing.
+  const results = await Promise.allSettled(selectedIds.map(id => pond.value!.processFile(id)))
+  if (results.some(result => result.status === 'rejected') && !uploadError.value) {
+    uploadError.value = t('mediaUploadFailed')
+  }
+  const uploaded = pond.value?.getFiles().filter(file =>
+    selectedIds.includes(file.id) && file.status === FileStatus.PROCESSING_COMPLETE).length ?? 0
+  batchResult.value = { uploaded, total: selectedIds.length }
+  batchUploading.value = false
+  syncFileList()
+}
+
 const FilePond = vueFilePond(FilePondPluginFileValidateType, FilePondPluginFileValidateSize)
 interface UploadWarning { kind: 'image' | 'video'; configuredMaxBytes: number; effectiveMaxBytes: number }
 interface UploadLimits {
@@ -91,7 +124,7 @@ function uploaded(response: string): string {
     throw new Error(uploadError.value)
   }
 
-  uploadError.value = ''
+  if (props.kind) uploadError.value = ''
   const media = parsed as UploadedMedia
   emit('uploaded', media)
   return media.mediaId
@@ -152,15 +185,34 @@ const server = computed(() => ({
     </div>
     <p v-if="uploadError" class="alert alert-danger" role="alert">{{ uploadError }}</p>
     <FilePond v-if="limits && fileMaximum > 0"
+      ref="pond"
       name="file"
       :server="server"
-      :allow-multiple="false"
+      :allow-multiple="!props.kind"
+      :instant-upload="!!props.kind"
+      :max-parallel-uploads="2"
       :allow-revert="false"
       :accepted-file-types="acceptedTypes"
       :max-file-size="fileMaximum"
       :before-add-file="beforeAddFile"
-      :label-idle="t('mediaDrop')"
+      :label-idle="t(props.kind ? 'mediaDrop' : 'mediaDropMultiple')"
+      :label-file-processing="t('mediaUploading')"
+      :label-file-processing-complete="t('mediaUploadComplete')"
+      :label-file-processing-error="t('mediaUploadFailed')"
+      :label-button-process-item="t('mediaUploadFile')"
+      :label-button-retry-item-processing="t('mediaUploadRetry')"
+      @updatefiles="syncFileList"
+      @processfile="syncFileList()"
     />
+    <div v-if="!props.kind && limits && fileMaximum > 0" class="mt-2">
+      <button type="button" class="btn btn-primary" data-upload-selected
+        :disabled="batchUploading || pendingFileIds.length === 0" @click="uploadSelected">
+        {{ t('mediaUploadSelected', { count: pendingFileIds.length }) }}
+      </button>
+      <p v-if="batchResult" class="mt-2 mb-0" role="status">
+        {{ t('mediaUploadResult', { uploaded: batchResult.uploaded, total: batchResult.total }) }}
+      </p>
+    </div>
     <p v-if="limits" class="form-text">{{ t('mediaFormats', {
       image: asMiB(limits.imageMaxBytes), video: asMiB(limits.videoMaxBytes),
     }) }}</p>
