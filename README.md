@@ -26,3 +26,7 @@ The current English documentation is organized by task. A full project overview 
 - [Development and contributions](docs/en/development.md) — setup, local development, tests, CI and release packages.
 
 English is the primary source language. A corresponding Czech documentation set will follow in `docs/cs/`. Until that translation is ready, the links above intentionally point only to complete English files.
+
+## License
+
+TestBraid application code is licensed under the [GNU Affero General Public License, version 3](LICENSE) (SPDX: `AGPL-3.0-only`). The license covers the application code, **not** lessons, tests, images or videos created or uploaded by its users. Third-party dependencies retain their own licenses.

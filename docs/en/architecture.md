@@ -1,6 +1,6 @@
 # Architecture and data model
 
-This document describes the **implemented** TestBraid architecture (v0.6.0), rather than earlier proof-of-concept proposals. It is intended for developers and operators inspecting the source.
+This document describes the **implemented** TestBraid architecture (v0.7.0), rather than earlier proof-of-concept proposals. It is intended for developers and operators inspecting the source.
 
 ## 1. Components and deployment boundary
 
@@ -97,7 +97,7 @@ The author-only installation diagnostic inspects placement and Apache protection
 
 The publication service validates the saved test and required media, prepares static Apache-served copies for its media references, and records the published status. Public listing and test routes only return published records. Unpublishing removes public test availability and reconciles copies not needed by other published tests; private originals are retained. A repair script `bin/reconcile-public-media.php` is provided for operational maintenance.
 
-A media item may have one home lesson for organization yet be referenced across many lessons/tests. Deletion requires **no references in either draft or published tests**. Empty lessons can be removed without deleting media.
+A media item may have one home lesson for organization yet be referenced across many lessons/tests. Deletion requires **no references in either draft or published tests**. Empty lessons can be removed without deleting media. The standalone library supports multi-file selection and one-click batch processing in FilePond, but sends a separate authenticated upload request for each file (up to two in parallel); editor attachments remain single-file.
 
 This file-backed design makes installation simple, but operators must take consistent backups of multiple related files. There is no integrated database transaction spanning all records and no automatic global migration or backup service.
 

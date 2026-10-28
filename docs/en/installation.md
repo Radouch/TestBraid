@@ -2,7 +2,7 @@
 
 TestBraid is a self-hosted application for multimedia self-assessment tests. This guide is for people deploying a **prebuilt release ZIP** to Apache/PHP hosting; it does not require Node.js, npm, Composer, a database, or SSH on the hosting account.
 
-> **Release availability:** The repository contains an automated release-building workflow, but as of the documentation review on 26 October 2026 no GitHub Release had been published. Follow the steps below once the first versioned release is available. Developers can prepare an equivalent package from source; see [Development](development.md).
+> **Release archives:** Versioned install and upgrade ZIPs are available from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). The archives include the built frontend and PHP production dependencies. Developers can also prepare packages from source; see [Development](development.md).
 
 ## 1. Hosting requirements
 

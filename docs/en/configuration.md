@@ -59,7 +59,7 @@ The `uploads` object configures `maxImageSizeMiB` and `maxVideoSizeMiB` as posit
 
 PHP and the web server can impose stricter limits (`upload_max_filesize`, `post_max_size`, request size and timeouts). TestBraid uses the effective lower limit and can warn a signed-in author when the server is more restrictive than `app.json`. Multipart uploads need space beyond the nominal media bytes.
 
-Supported media are JPEG, PNG, WebP, MP4 and WebM; they are validated server-side. A valid container is not a guarantee that every browser supports its codec. See [Media library](media-library.md).
+Supported media are JPEG, PNG, WebP, MP4 and WebM; they are validated server-side. In the library, selecting several files does not combine them into one request: limits apply independently to each file. A valid container is not a guarantee that every browser supports its codec. See [Media library](media-library.md).
 
 For upgrades from older installations, legacy `config/uploads.json` is read when a unified `app.json` has not been created. Migrate custom limits to `app.json` rather than maintaining two files indefinitely.
 

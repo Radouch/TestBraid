@@ -67,7 +67,7 @@ From `frontend/`:
 | `npm run test:editor` | Question model, answer keys and editing invariants |
 | `npm run test:content` | Content blocks and media selection |
 | `npm run test:author` | Author workspace and catalog |
-| `npm run test:upload` | FilePond upload wiring |
+| `npm run test:upload` | FilePond upload transport, multi-file library batches and single-file editor attachments |
 | `npm run test:learner` | Pure grading logic |
 | `npm run test:runner` | Mounted learner/preview interactions |
 | `npm run test:published` | Published read-only rendering |

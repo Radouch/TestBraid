@@ -78,7 +78,7 @@ Every question prompt, choice answer and matching item is a sequence of **conten
 - **Image:** a media reference selected from the library or uploaded while editing.
 - **Video:** a media reference with playback controls.
 
-Use **Add content** or the block's local action menu to insert a block at the required position, move it or remove it. Adding an image/video opens a chooser of compatible existing media and an upload option. You may select an item whose home lesson differs from the test's lesson.
+Use **Add content** or the block's local action menu to insert a block at the required position, move it or remove it. Adding an image/video opens a chooser of compatible existing media and an upload option. You may select an item whose home lesson differs from the test's lesson. To upload **several images and videos with one action**, use the standalone **Media library** first; the in-editor media chooser still uploads one attachment at a time.
 
 Removing a block **does not delete the underlying media file**. The same media may be used by other questions and tests. The library manages media references and deletion separately.
 

@@ -30,9 +30,13 @@ See [Configuration](configuration.md) for custom upload limits.
 
 ## 3. Upload new media
 
-Open the library, optionally choose a **home lesson**, and upload a file with the provided uploader. After a successful upload, its entry appears in the persistent library.
+Open the library, optionally choose a **home lesson**, and upload a file with the provided uploader. You can select **several images and videos at once**, either in the file chooser or by dropping multiple files onto the uploader. The library queues them rather than uploading immediately. Press **Upload selected files (N)** once to start processing all selected files. Each file is sent as an **individual authenticated upload**, with up to two uploads in progress at once; no combined multi-file API request is needed.
 
-In the question editor, choosing **Image** or **Video** opens a media-selection dialog. You can select an existing compatible item or upload a new one there. The chooser initially emphasizes the current lesson but allows selection from another lesson or from unassigned media.
+After all selected files have finished, the library reports a summary such as **Uploaded 4 of 5 files**. Successfully uploaded files remain available even if another file fails. Failed files can be retried, without repeating the successful uploads. Format and size limits apply to **each file**.
+
+After a successful upload, its entry appears in the persistent library.
+
+In the question editor, choosing **Image** or **Video** opens a media-selection dialog. Unlike the standalone media library, this editor attachment control accepts **one file at a time and uploads it immediately**; multi-file selection is specific to the media library. You can select an existing compatible item or upload a new one there. The chooser initially emphasizes the current lesson but allows selection from another lesson or from unassigned media.
 
 A new media block is attached only when a compatible item is selected or an upload succeeds. Canceling selection does not insert a new media block.
 
