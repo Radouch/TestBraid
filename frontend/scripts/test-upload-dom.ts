@@ -132,7 +132,7 @@ try {
   assert.equal(uploadAll.disabled, false)
   uploadAll.click()
   await settle()
-  assert.deepEqual(library.processedBatches, [['photo-1', 'movie-2']], 'One click processes both files')
+  assert.deepEqual(library.processedFiles, ['photo-1', 'movie-2'], 'One click processes both files')
   assert.equal(uploadAll.disabled, true, 'Completed media must not be reuploaded')
   assert.ok(host!.textContent?.includes('Nahráno 2 z 2'), 'Show batch upload result')
   assert.deepEqual(errors, [])
