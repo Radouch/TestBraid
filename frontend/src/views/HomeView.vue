@@ -44,7 +44,7 @@ async function loadCatalog(): Promise<void> {
   }
 }
 
-watch([loading, () => route.hash], async ([pending]) => {
+watch([loading, () => route.hash, visibleGroups], async ([pending]) => {
   const hash = route.hash
   if (pending || !hash) return
   const lesson = publicLessonForHash(visibleGroups.value, hash)

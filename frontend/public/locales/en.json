@@ -9,7 +9,7 @@
   "publicCatalogLoading": "Loading available lessons and tests…",
   "publicCatalogUnavailable": "The public test list could not be loaded.",
   "publicCatalogRetry": "Try again",
-  "publicCatalogEmpty": "No tests have been published yet.",
+  "publicCatalogEmpty": "No tests are published in this language yet.",
   "publicCatalogStart": "Start test",
   "publicCatalogQuestionCount_one": "{count} question",
   "publicCatalogQuestionCount_few": "{count} questions",

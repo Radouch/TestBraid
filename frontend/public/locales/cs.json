@@ -9,7 +9,7 @@
   "publicCatalogLoading": "Načítání lekcí a testů…",
   "publicCatalogUnavailable": "Nepodařilo se načíst seznam veřejných testů.",
   "publicCatalogRetry": "Zkusit znovu",
-  "publicCatalogEmpty": "Zatím nejsou publikované žádné testy.",
+  "publicCatalogEmpty": "V tomto jazyce zatím nejsou publikované žádné testy.",
   "publicCatalogStart": "Spustit test",
   "publicCatalogQuestionCount_one": "{count} otázka",
   "publicCatalogQuestionCount_few": "{count} otázky",

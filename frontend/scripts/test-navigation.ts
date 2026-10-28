@@ -89,6 +89,9 @@ const lessons: PublicLesson[] = [
 assert.deepEqual(publicLessonsForLanguage(lessons, 'cs'), [lessons[1]])
 assert.deepEqual(publicLessonsForLanguage(lessons, 'en'), [lessons[0]])
 assert.deepEqual(publicLessonsForLanguage(lessons, 'de'), [])
+const mixed = [{ ...lessons[0]!, tests: [...lessons[0]!.tests, ...lessons[1]!.tests] }]
+assert.deepEqual(publicLessonsForLanguage(mixed, 'cs')[0]?.tests, lessons[1]?.tests)
+assert.deepEqual(publicLessonsForLanguage(mixed, 'en')[0]?.tests, lessons[0]?.tests)
 assert.deepEqual(lessons[0]?.tests.map(test => test.language), ['en'], 'Language filtering must not mutate the fetched catalog.')
 
 // Directly shared test URLs can resolve their lesson without browser history.
