@@ -1,99 +1,53 @@
-# Configuring an installation
+# Configuration
 
-The main installation configuration is the private `testbraid-backend/config/app.json`. The application reads its settings at runtime; changing the site name, visible languages, upload limits or base URL does **not** require rebuilding Vue.
+Each installation has its own private \`testbraid-backend/config/app.json\`. Changes to site identity, supported UI languages, upload limits and application URL are read at runtime: **no frontend rebuild is needed**.
 
-## 1. Main configuration file
+## Main settings
 
-The versioned defaults are in `backend/config/app.json` in the source repository. On a new installation, the `install` release archive places that file in the private backend:
-
-~~~json
-{
-  "site": {
-    "name": { "cs": "TestBraid", "en": "TestBraid" },
-    "description": {
-      "cs": "Aplikace pro tvorbu a vyplňování multimediálních testů se samostatným vyhodnocením odpovědí.",
-      "en": "An application for creating and taking multimedia self-assessment tests with immediate feedback."
-    }
-  },
-  "uploads": {
-    "maxImageSizeMiB": 10,
-    "maxVideoSizeMiB": 64
-  },
-  "uiLanguages": ["en", "cs"],
-  "basePath": "/"
-}
-~~~
-
-Keep this file **outside the public web root**. Invalid configuration can make the application return HTTP 503 rather than silently ignoring the error. The upgrade ZIP intentionally does not contain `config/`, so your local settings are retained.
-
-## 2. Site title and description
-
-`site.name` supplies the application header and browser-tab title. `site.description` appears as the introduction **only on the public home page**, not as a repeating header in author screens.
-
-Each accepts either a single string or a map from locale codes to translated strings. For example:
-
-~~~json
-"name": { "en": "Training Tests", "cs": "Výukové testy" }
-~~~
-
-Use a single string for a language-independent title. Missing site-text translations fall back to another available configured translation. The site title is distinct from the fixed TestBraid product identification and build version in the footer.
-
-## 3. Interface languages and translations
-
-`uiLanguages` is a nonempty list of locale codes offered by this installation, such as `["cs"]` for a Czech-only website. These are **interface** languages, not a filter on the language of lesson/test content.
-
-The browser loads translation dictionaries from the public application directory `locales/<code>.json`. Built-in files are `locales/en.json` and `locales/cs.json`. To add a language:
-
-1. Copy the structure of `en.json` into a new UTF-8 JSON file, for example `locales/de.json`.
-2. Translate every key and set the dictionary's `languageName`.
-3. Upload the new file to the installed public `locales/` directory.
-4. Add `"de"` to `uiLanguages` in the private `app.json` and reload the site.
-
-No frontend build is necessary. English is used as a fallback dictionary when available; it need not be an offered language. Unsupported or missing translation files are not shown as selectable languages. Language selection can be carried by an explicit `?lang=cs`/`?lang=en` URL parameter when those locales are enabled; the application also uses saved or browser language preferences.
-
-For precise validation constraints, consult `backend/src/Config/InstallationConfig.php` and the locale loader. A language code accepted as a test's **content language** does not imply its UI dictionary exists.
-
-## 4. File-upload size limits
-
-The `uploads` object configures `maxImageSizeMiB` and `maxVideoSizeMiB` as positive integer sizes in MiB (1–2048). The defaults are **10 MiB per image** and **64 MiB per video**.
-
-PHP and the web server can impose stricter limits (`upload_max_filesize`, `post_max_size`, request size and timeouts). TestBraid uses the effective lower limit and can warn a signed-in author when the server is more restrictive than `app.json`. Multipart uploads need space beyond the nominal media bytes.
-
-Supported media are JPEG, PNG, WebP, MP4 and WebM; they are validated server-side. In the library, selecting several files does not combine them into one request: limits apply independently to each file. A valid container is not a guarantee that every browser supports its codec. See [Media library](media-library.md).
-
-For upgrades from older installations, legacy `config/uploads.json` is read when a unified `app.json` has not been created. Migrate custom limits to `app.json` rather than maintaining two files indefinitely.
-
-## 5. Application URL base
-
-`basePath` specifies the **URL path**, not the backend filesystem path:
-
-| Public URL | `basePath` |
+| Setting | Purpose |
 | --- | --- |
-| `https://example.org/` | `"/"` |
-| `https://example.org/testbraid/` | `"/testbraid"` |
-| `https://example.org/courses/tests/` | `"/courses/tests"` |
+| \`site.name\` | Website title and browser-tab title |
+| \`site.description\` | Introductory text on the public home page |
+| \`uiLanguages\` | Interface languages offered to visitors |
+| \`uploads.maxImageSizeMiB\` | Maximum image file size |
+| \`uploads.maxVideoSizeMiB\` | Maximum video file size |
+| \`basePath\` | URL path where the application is installed |
 
-The old `TESTBRAID_BASE_PATH` environment override remains supported. If both that environment variable and `app.json` define an explicit base, they must agree. Mismatches produce an application configuration error. The PHP public `index.php` inserts the correct HTML `<base>` into a private built template, so there is **one build** for root and nested URLs.
+Use the supplied \`app.json\` as a starting point; it contains working defaults. Do not put this private file in the public directory. Upgrades preserve it.
 
-## 6. Filesystem path to the backend
+## Site name and description
 
-The two public entry points, `index.php` and `api/index.php`, both use the supplied `backend-path.php` resolver. Normally the private backend is a sibling directory named `testbraid-backend`.
+Both \`site.name\` and \`site.description\` accept a single string or language-specific values:
 
-For another private path, copy `www/bootstrap.local.example.php` to `www/bootstrap.local.php` and edit the relative `backendPath`:
+\`\`\`json
+{
+  "en": "Training tests",
+  "cs": "Výukové testy"
+}
+\`\`\`
 
-~~~php
-<?php
-return [
-    'backendPath' => '../../my-private-testbraid',
-];
-~~~
+The description is shown on the home page, not in every screen. Changing the UI language changes the displayed site text when a translation is available.
 
-The relative path is evaluated from the actual **public application folder**. The local file is not included in either release ZIP; keep it through upgrades. Do not edit `backend-path.php` or both entry points separately.
+## Interface languages
 
-Advanced environment settings (such as `TESTBRAID_BACKEND_ENTRY`, `TESTBRAID_APP_CONFIG_FILE` and `TESTBRAID_STORAGE_DIR`) are available in the PHP code for specialized hosting and testing. Avoid using them unless necessary; never move private storage into a publicly served directory.
+The interface reads JSON translation files from the public \`locales/\` directory. English and Czech are supplied. To add another language:
 
-## 7. Applying and checking changes
+1. Translate a copy of \`locales/en.json\`, keeping the same message keys.
+2. Upload it as \`locales/<language-code>.json\`.
+3. Add that code to \`uiLanguages\` in \`app.json\` and reload.
 
-Update `app.json` on the host and reload the application. Check the title, introductory text and language selector. When changing the URL base or backend location, also ensure Apache routing, the actual directory and the host configuration agree; test `/api/health`, author login and a deep link.
+No build is needed. You can also offer only one language. **The interface language does not translate test content**; a test has its own content-language setting.
 
-For diagnostics see [Troubleshooting](troubleshooting.md). For protecting settings and credentials see [Security and backups](security-and-backups.md).
+## Upload limits
+
+Configure the per-file image and video limits in \`app.json\`. The hosting provider's PHP limits (\`upload_max_filesize\` and \`post_max_size\`) can reduce the effective maximum.
+
+The library supports selecting multiple files, but uploads and limits still apply **per file**. See [Media library](media-library.md).
+
+## Installation path
+
+Set \`basePath\` to \`"/"\` at the domain root or to a path such as \`"/courses/tests"\` for \`https://example.org/courses/tests/\`. It is a **URL path**, not a filesystem path. Match it to the actual Apache directory and rewrite rules.
+
+By default the public application looks for a sibling private directory named \`testbraid-backend\`. If your host requires a different location, copy \`www/bootstrap.local.example.php\` to \`www/bootstrap.local.php\` and set its \`backendPath\` to the **private filesystem path relative to the public application directory**. Keep this local file during upgrades.
+
+For problems with URL routing or private paths, see [Troubleshooting](troubleshooting.md).

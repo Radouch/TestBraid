@@ -1,101 +1,65 @@
-# Installing TestBraid
+# Installation
 
-TestBraid is a self-hosted application for multimedia self-assessment tests. This guide is for people deploying a **prebuilt release ZIP** to Apache/PHP hosting; it does not require Node.js, npm, Composer, a database, or SSH on the hosting account.
+This guide is for installing TestBraid on ordinary Apache/PHP web hosting. Use a **prebuilt release package**: you do not need Node.js, Composer or a database on the server.
 
-> **Release archives:** Versioned install and upgrade ZIPs are available from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). The archives include the built frontend and PHP production dependencies. Developers can also prepare packages from source; see [Development](development.md).
+## Requirements
 
-## 1. Hosting requirements
+- Apache hosting with working \`.htaccess\` rules and URL rewriting.
+- PHP compatible with the release's dependencies, with file uploads, sessions and \`fileinfo\` enabled. Check the [current backend requirements](../../backend/composer.json) and release notes for compatibility details.
+- HTTPS, SFTP (or a hosting file manager), and permission to create private writable directories.
+- Space for original uploads and public copies of published media.
 
-- Apache with `.htaccess` overrides and rewrite support (`mod_rewrite`). TestBraid relies on the supplied rules for API requests, deep links, and protected media.
-- PHP compatible with the application's locked dependencies, with `fileinfo`, sessions, JSON support and file uploads enabled. `backend/composer.json` declares PHP `^8.1`; the project's current CI and known live-host verification use **PHP 8.5**. Other PHP versions covered by the declaration have **not** all been independently tested.
-- HTTPS for a real installation: production login cookies are marked `Secure`.
-- SFTP or an equivalent hosting file manager. You must be able to place a **private backend outside the web-served directory**, or set up and verify effective access restrictions for it.
-- Writable private storage and configuration directories for the PHP process; writable public `media/` for published media; adequate storage and PHP upload allowances.
-- No SQL database, Node.js server, background worker or PHP Composer command is needed to run the prepared release.
+The supplied hosting rules are for **Apache**. Other web servers need equivalent configuration.
 
-If your host uses Nginx or does not permit the supplied Apache rules, this guide is insufficient: equivalent routing and access-control configuration must be designed and verified separately.
+## Download and upload
 
-## 2. Download the right archive
+Download the **install ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). The archive contains a ready-built frontend and PHP dependencies, split into two folders:
 
-From the [GitHub Releases page](https://github.com/Radouch/TestBraid/releases), obtain `testbraid-vX.Y.Z-install.zip` for a **new** installation, together with `SHA256SUMS`. Replace `X.Y.Z` with the version you are downloading. Check the archive against the checksum using a SHA-256 utility if one is available. Do **not** use the `upgrade` archive for an initial installation.
+\`\`\`text
+www/                 Public files (the actual folder name depends on your host)
+testbraid-backend/   Private application, settings, tests and original media
+\`\`\`
 
-Extract the ZIP locally. It contains two top-level directories:
+Upload the contents of \`www/\` into the directory served by your domain, and \`testbraid-backend/\` **outside that public directory**. Keep hidden \`.htaccess\` files. Do not make private configuration, author accounts or \`storage/\` accessible from the web.
 
-~~~text
-www/                       -> files served by Apache
-testbraid-backend/         -> private PHP application and dependencies
-~~~
+A typical layout is:
 
-The `install` archive includes `testbraid-backend/config/app.json` with editable defaults and `testbraid-backend/vendor/` with locked PHP production dependencies. It contains **no** author accounts, uploaded media or persistent test data.
-
-## 3. Place the files on the host
-
-A typical domain-root layout is:
-
-~~~text
-account-or-domain-directory/
-├── www/                              # Apache document root
-│   ├── .htaccess
-│   ├── index.php
-│   ├── backend-path.php
-│   ├── api/index.php
-│   ├── assets/
-│   ├── locales/
-│   └── media/.htaccess
-└── testbraid-backend/                # not served by Apache
-    ├── .htaccess
+\`\`\`text
+hosting-account/
+├── www/                        # Apache document root
+└── testbraid-backend/          # Private; outside the document root
     ├── config/app.json
-    ├── public/index.php
-    ├── src/
-    ├── schemas/
-    ├── templates/index.html
     ├── vendor/
-    └── storage/                      # created as needed
-~~~
+    ├── templates/index.html
+    └── storage/                 # Created as needed
+\`\`\`
 
-Upload the **contents** of the ZIP's `www/` to the chosen publicly served application directory, and the **contents** of `testbraid-backend/` to a private directory. Your host might call its public directory `public_html`, `htdocs` or something else: `www` is a name inside the archive, not a mandatory server directory name.
+PHP needs write access to the private \`config/\` and \`storage/\` directories and to the public \`media/\` directory. Use appropriate ownership/permissions, **not** blanket permissions such as \`777\`.
 
-Do not upload the whole extracted ZIP into the web root. Do not expose `testbraid-backend/`, `vendor/`, `config/`, private `storage/` or the original private media to unauthenticated HTTP requests. Preserve hidden `.htaccess` files during extraction and upload.
+## Configure the application address
 
-The PHP process must be able to create private files in `testbraid-backend/config/` and `testbraid-backend/storage/`, and write public copies to `www/media/`. Prefer correct user/group ownership or access-control lists; **do not set everything to mode 777**.
+The private \`testbraid-backend/config/app.json\` contains \`basePath\`:
 
-## 4. Configure the application URL and backend location
+- \`"/"\` for \`https://example.org/\`.
+- \`"/courses"\` for \`https://example.org/courses/\`.
 
-For a domain-root installation such as `https://example.org/`, keep `"basePath": "/"` in the private `config/app.json`. For `https://example.org/courses/` use `"basePath": "/courses"`. For a deeper directory, use e.g. `"/learning/tests"`. Do not include the domain, a trailing slash (except `"/"`), a query string or `..`.
+The same prebuilt frontend works at either address. For a backend not located in the default sibling directory, copy \`www/bootstrap.local.example.php\` to \`www/bootstrap.local.php\` and configure its \`backendPath\` to point to the actual **private filesystem directory**. See [Configuration](configuration.md).
 
-If the backend is a sibling of the application directory named `testbraid-backend`, the public PHP resolver finds it automatically. Otherwise copy the supplied `www/bootstrap.local.example.php` to `www/bootstrap.local.php` **in the installed public application directory** and set its single `backendPath` value relative to that directory:
+## Create the first author
 
-~~~php
-<?php
-return [
-    'backendPath' => '../../my-private-testbraid',
-];
-~~~
+TestBraid does not allow public registration.
 
-For example, if the served application lives in `account/www/courses/` and the private backend is `account/my-private-testbraid/`, the relative path above points to it. The path is a filesystem path, **not a URL**. Leave the distributed `backend-path.php` unchanged. The local `bootstrap.local.php` is not provided by release packages and must be retained during upgrades.
+1. Generate a random secret of at least **32 characters** and upload it as \`testbraid-backend/config/setup.key\` (a plain-text file in the **private** backend).
+2. Open your installation's \`/admin\` page.
+3. Create an author using a username, a password of at least **12 characters**, and the same setup key.
+4. Sign out and back in. The key should be deleted automatically; remove it via SFTP if it remains.
 
-A single prebuilt frontend works in the domain root or a URL subdirectory; no recompilation is needed. If another application in a parent directory has an aggressive catch-all Apache rewrite, its rules may need an exception so requests can reach TestBraid's own `.htaccess`. See [Configuration](configuration.md) and [Troubleshooting](troubleshooting.md).
+The author account is stored privately, with a password hash. Do not delete the account file to reset access.
 
-## 5. Create the first author
+## Verify the installation
 
-TestBraid has **no public sign-up**. The first author is initialized with a one-time secret placed privately on the server.
+Open the home page and the \`/api/health\` endpoint under the installed URL. Sign in, create a lesson and test, and try a preview. Publish a complete test and verify its public link and media playback.
 
-1. Generate a cryptographically random secret of **32–256 characters**. Save it as a plain-text file `testbraid-backend/config/setup.key`, containing only the secret (an optional ending newline is accepted). Never place it under `www/`.
-2. Check that PHP can read `setup.key` and create `config/authors.json`; its private login-attempt storage must also be writable.
-3. Open `https://example.org/admin` (or `https://example.org/courses/admin` for a subdirectory install).
-4. Enter the username, a password of **at least 12 characters**, and the same setup secret.
-5. Once the first author is created, sign out and sign in again. The application attempts to delete `setup.key` automatically. Remove it yourself through SFTP if it remains.
+Finally, confirm that private backend files **cannot** be fetched over HTTP. The author area's installation security check can help, but a successful check of one address is not proof that every possible address is protected.
 
-Creating an author writes a **password hash** to private `config/authors.json` and permanently disables browser first-author registration. Do not delete `authors.json` as a way of resetting access. Optional SSH provisioning for additional authors is discussed in [Security and backups](security-and-backups.md).
-
-## 6. Check the installation
-
-- Open the home page; you should see the public catalog (empty if no tests are published).
-- Open `/api/health` relative to the application URL; it should return JSON containing `"status":"ok"` and `"service":"testbraid-api"`.
-- Open `/admin`, sign in, and create a lesson and a draft test.
-- Open an author preview, then publish a complete test and follow its public link. Confirm that the page still works after a direct reload.
-- Upload a small permitted image and video; verify playback, including seeking in a published MP4 where supported.
-- In the author area run the **Installation security** check. Follow its guidance, but remember that an HTTP 403/404 at one tested URL does not establish that every URL is protected.
-- Confirm the private backend is not web-accessible. The supplied `security-probe.txt` is a harmless test marker; **never probe real credential or storage files**.
-
-After installation, see [Configuration](configuration.md), [Author guide](author-guide.md) and [Security and backups](security-and-backups.md). For later versions, use **[Upgrading](upgrading.md)**, not this initial-install procedure.
+Next: [Configuration](configuration.md) · [Author guide](author-guide.md) · [Security and backups](security-and-backups.md).
