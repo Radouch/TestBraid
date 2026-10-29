@@ -4,6 +4,8 @@
 
 Install TestBraid on ordinary web hosting in about ten minutes. You only upload files and create one small text file. You do not need a database, Node.js or a command line.
 
+Want to see it first? **[Try the demo](https://radouch.github.io/TestBraid/)** in your browser, with nothing to install.
+
 **You need:** web hosting with Apache and PHP, HTTPS, and a way to upload files to it (SFTP or your hosting's file manager).
 
 ## Words used in this guide

@@ -4,6 +4,8 @@
 
 TestBraid nainstalujete na běžný webhosting asi za deset minut. Stačí nahrát soubory a vytvořit jeden malý textový soubor. Nepotřebujete databázi, Node.js ani příkazový řádek.
 
+Chcete si ho nejdřív prohlédnout? **[Vyzkoušejte ukázku](https://radouch.github.io/TestBraid/?lang=cs)** přímo v prohlížeči, bez jakékoli instalace.
+
 **Potřebujete:** webhosting s Apache a PHP, HTTPS a možnost nahrávat na něj soubory (přes SFTP nebo správce souborů vašeho hostingu).
 
 ## Pojmy používané v tomto návodu
