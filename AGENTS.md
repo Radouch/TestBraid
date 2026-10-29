@@ -19,7 +19,7 @@ These instructions apply to source code, tests, documentation, issues and PRs.
 - FilePond must be hidden behind a local `MediaUploader` abstraction.
 - Use an application-owned, typed text/image/video block editor.
 - Keep private backend code, credentials, JSON and original media outside the public document root.
-- Do not hardcode the example hostname `testbraid.mariebila.cz` or host-specific absolute paths into application code.
+- Do not hardcode any installation's hostname or host-specific absolute paths into application code.
 - All privileged operations must be authenticated and CSRF-protected server-side before they are exposed.
 - Provision the first author using the private, SFTP-uploaded `setup.key` and the one-time `/admin` setup form, or through the SSH-only CLI provisioner. After the first author exists, browser setup must remain disabled. Never commit keys, password hashes, passwords or login-throttling state; do not disable secure cookies in production.
 
