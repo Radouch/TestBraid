@@ -15,6 +15,10 @@ There is one lesson per language because the home page lists only tests whose co
 
 `scripts/prepare-deployment.mjs --initial-install` copies `storage/` into the private backend and the media files into the public `www/media/`, as publication would have done. Upgrade packages never include any of it.
 
+## GitHub Pages demo
+
+The same lessons also run as a read-only demo on GitHub Pages. `pages/app.json` holds that site's name and introduction, in the same format as an installation's `config/app.json`. See [Development](../docs/en/development.md#github-pages-demo) for how it is built.
+
 ## Changing the demo
 
 - Edit the test or lesson JSON directly. IDs of lessons, tests and media must be UUIDv4 values. Question, answer and block IDs only need to be unique where the schemas require.

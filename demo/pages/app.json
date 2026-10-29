@@ -1,0 +1,20 @@
+{
+  "site": {
+    "name": {
+      "cs": "Ukázka TestBraidu",
+      "en": "TestBraid demo"
+    },
+    "description": {
+      "cs": "Vyzkoušejte si, jak TestBraid funguje: vyplňte ukázkové testy níže. Odpovědi se vyhodnotí přímo ve vašem prohlížeči a nikam se neukládají.",
+      "en": "See how TestBraid works: take the demo tests below. Your answers are checked right in your browser and are not stored anywhere."
+    }
+  },
+  "uploads": {
+    "maxImageSizeMiB": 10,
+    "maxVideoSizeMiB": 64
+  },
+  "uiLanguages": [
+    "en",
+    "cs"
+  ]
+}

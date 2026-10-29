@@ -1,0 +1,68 @@
+name: GitHub Pages demo
+
+# A read-only learner demo of the demo lessons (demo/storage), published at
+# https://<owner>.github.io/<repository>/. Pull requests only build it, so a
+# change that breaks the demo fails before it reaches main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  # Superseded pull request builds stop early; a running deployment always finishes.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build demo site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+      - name: Install production PHP dependencies
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist
+        working-directory: backend
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: frontend
+      # The Pages address is /<repository>/, so the base path follows the repository name.
+      - name: Build the static demo
+        run: node scripts/build-pages-demo.mjs "/${{ github.event.repository.name }}"
+      - name: Check the built site
+        run: |
+          test -f pages-site/api/public/config
+          test -f pages-site/api/public/catalog
+          test "$(ls pages-site/api/public/tests | wc -l)" -ge 4
+          grep -q 'data-testbraid-base href="/${{ github.event.repository.name }}/"' pages-site/404.html
+          cmp pages-site/index.html pages-site/404.html
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          path: pages-site
+
+  deploy:
+    name: Publish to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

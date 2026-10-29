@@ -427,5 +427,7 @@
   "mediaUploading": "Uploading",
   "mediaUploadComplete": "Upload complete",
   "mediaUploadFile": "Upload file",
-  "mediaUploadRetry": "Retry"
+  "mediaUploadRetry": "Retry",
+  "demoBanner": "This is a read-only demo of TestBraid. To create your own tests, install TestBraid on your own web hosting.",
+  "demoBannerLink": "How to install"
 }

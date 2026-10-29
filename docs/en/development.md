@@ -79,6 +79,22 @@ Use the **assembled deployment directory**, not raw `frontend/dist/`, for hostin
 
 The release workflow builds validated archives when an appropriately versioned tag is pushed. For current tag/version rules and artifact naming, consult `.github/workflows/release.yml`.
 
+## GitHub Pages demo
+
+`.github/workflows/pages.yml` publishes a read-only learner demo of the lessons in `demo/storage` to GitHub Pages on every push to `main`. Pull requests only build it. To build and inspect it locally (with frontend dependencies and `backend/vendor/` installed):
+
+```sh
+node scripts/build-pages-demo.mjs /TestBraid
+```
+
+The result is in `pages-site/`, ready to be served under `/TestBraid/`. The demo needs no server code:
+
+- **Frontend:** built with `TESTBRAID_STATIC_DEMO=1` (see `frontend/src/static-demo.ts`). That build has no author area, never asks for a sign-in session, and shows a banner linking to the installation guide. It goes into its own directory, so `frontend/dist` is never affected.
+- **Data:** `backend/bin/export-static-demo.php` writes `api/public/config`, `api/public/catalog` and `api/public/tests/<id>` as static files, using the same services as a real installation, and copies the media into `media/`. The site name and introduction come from `demo/pages/app.json`.
+- **Addresses:** `index.html` gets the same `<base data-testbraid-base>` element that the PHP entry point adds. A copy named `404.html` makes GitHub Pages hand unknown paths, such as a reloaded `/tests/<id>`, to the app's router.
+
+Publishing requires GitHub Pages to be enabled once in the repository settings: Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+
 ## Translating and contributing
 
 Interface messages are JSON files under `frontend/public/locales/` and can be added to deployed installations without recompiling. Enabling a new interface language is controlled by private `app.json`; the content language of a test is separate.
