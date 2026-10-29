@@ -59,7 +59,7 @@ An **author account** is the account you sign in with to create and edit tests. 
 
 1. Open `https://example.org/admin` (your site address followed by `/admin`).
 2. Fill in the form:
-   - **Username:** any name you choose. Use letters, digits, dots, dashes or underscores, without spaces.
+   - **Username:** any name you choose. Use letters without accents, digits, dots, dashes or underscores, and no spaces.
    - **Password:** any password you choose, at least 12 characters long.
    - **One-time setup key:** paste the setup key from step 3.
 3. Select **Create first author**. You are now signed in. Next time, sign in at the same address with the username and password you chose.

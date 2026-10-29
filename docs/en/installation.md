@@ -70,7 +70,7 @@ TestBraid has no public registration. The first author account is created with a
 
 1. Create a text file `testbraid-backend/config/setup.key` containing the setup key: one line of **32–256 random characters**.
 2. Open `/admin` on your site.
-3. Choose any username (letters, digits, `.`, `_` or `-`, no spaces) and any password of at least **12 characters**, and enter the setup key.
+3. Choose any username (letters without accents, digits, `.`, `_` or `-`; no spaces) and any password of at least **12 characters**, and enter the setup key.
 4. Select **Create first author**. You are signed in, and `setup.key` is deleted automatically. Delete it yourself if it is still there.
 
 After the first author exists, this browser setup is disabled. The account is stored in the private `config/authors.json` with a hashed password. Do not delete that file to "reset" access. Further accounts can be created by an operator with SSH access, see [Security and backups](security-and-backups.md#protect-author-accounts).
