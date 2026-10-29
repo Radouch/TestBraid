@@ -1,0 +1,178 @@
+{
+    "schemaVersion": 1,
+    "id": "d3aac3f6-9369-4b6f-a42e-cf4d7fde75a2",
+    "groupId": "9cf63193-d688-4d1e-ae5c-96caeab20a18",
+    "language": "cs",
+    "title": "Tvary a barvy",
+    "description": "Ukázkový test s otázkami s výběrem odpovědí. Otázky mohou obsahovat text, obrázky a videa, odpovědi mohou být text nebo obrázky.",
+    "showOverallScore": true,
+    "status": "published",
+    "createdAt": "2026-10-29T12:00:00Z",
+    "updatedAt": "2026-10-29T12:00:00Z",
+    "publishedAt": "2026-10-29T12:00:00Z",
+    "position": 0,
+    "questions": [
+        {
+            "id": "question-1",
+            "type": "choice",
+            "mode": "single",
+            "prompt": [
+                {
+                    "id": "block-1",
+                    "type": "text",
+                    "text": "Jaký je to tvar?"
+                },
+                {
+                    "id": "block-2",
+                    "type": "image",
+                    "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37"
+                }
+            ],
+            "options": [
+                {
+                    "id": "option-1",
+                    "content": [
+                        {
+                            "id": "block-3",
+                            "type": "text",
+                            "text": "Kruh"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-2",
+                    "content": [
+                        {
+                            "id": "block-4",
+                            "type": "text",
+                            "text": "Čtverec"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-3",
+                    "content": [
+                        {
+                            "id": "block-5",
+                            "type": "text",
+                            "text": "Trojúhelník"
+                        }
+                    ]
+                }
+            ],
+            "correctOptionIds": [
+                "option-1"
+            ]
+        },
+        {
+            "id": "question-2",
+            "type": "choice",
+            "mode": "multiple",
+            "prompt": [
+                {
+                    "id": "block-6",
+                    "type": "text",
+                    "text": "Vyberte všechny modré tvary. Správných odpovědí může být víc."
+                }
+            ],
+            "options": [
+                {
+                    "id": "option-1",
+                    "content": [
+                        {
+                            "id": "block-7",
+                            "type": "image",
+                            "mediaId": "f8dae869-472e-4880-bc0d-dd088106fc24"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-2",
+                    "content": [
+                        {
+                            "id": "block-8",
+                            "type": "image",
+                            "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-3",
+                    "content": [
+                        {
+                            "id": "block-9",
+                            "type": "image",
+                            "mediaId": "7775be41-c799-473b-a4ae-f38fdb7120e1"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-4",
+                    "content": [
+                        {
+                            "id": "block-10",
+                            "type": "image",
+                            "mediaId": "07a23619-a0d3-4d4d-964e-0d571b79f577"
+                        }
+                    ]
+                }
+            ],
+            "correctOptionIds": [
+                "option-1",
+                "option-3"
+            ]
+        },
+        {
+            "id": "question-3",
+            "type": "choice",
+            "mode": "single",
+            "prompt": [
+                {
+                    "id": "block-11",
+                    "type": "text",
+                    "text": "Přehrajte video. Kterým směrem se míček pohybuje?"
+                },
+                {
+                    "id": "block-12",
+                    "type": "video",
+                    "mediaId": "89dc324e-2d9d-4627-8807-2d72d4682c0c"
+                }
+            ],
+            "options": [
+                {
+                    "id": "option-1",
+                    "content": [
+                        {
+                            "id": "block-13",
+                            "type": "text",
+                            "text": "Zleva doprava"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-2",
+                    "content": [
+                        {
+                            "id": "block-14",
+                            "type": "text",
+                            "text": "Zprava doleva"
+                        }
+                    ]
+                },
+                {
+                    "id": "option-3",
+                    "content": [
+                        {
+                            "id": "block-15",
+                            "type": "text",
+                            "text": "Nahoru a dolů"
+                        }
+                    ]
+                }
+            ],
+            "correctOptionIds": [
+                "option-1"
+            ]
+        }
+    ]
+}

@@ -22,13 +22,13 @@ Download `testbraid-vX.Y.Z-install.zip` from [GitHub Releases](https://github.co
 www/                       Website files; their contents go into your public folder
 testbraid-backend/         The private folder, never opened by browsers
 ├── config/app.json        Settings you may edit
-├── storage/               Lessons, tests and uploaded originals (starts with the demo lesson)
+├── storage/               Lessons, tests and uploaded originals (starts with the demo lessons)
 ├── vendor/                PHP libraries
 ├── templates/index.html   Page template that belongs to the files in assets/
 └── …                      Application code
 ```
 
-The install package also contains a published demo lesson. Its files are in `testbraid-backend/storage/` and in the `media` folder of the public folder. See [Author guide](author-guide.md#remove-the-demo-content) for how to remove it.
+The install package also contains two published demo lessons, one in English and one in Czech. Their files are in `testbraid-backend/storage/` and in the `media` folder of the public folder. See [Author guide](author-guide.md#remove-the-demo-content) for how to remove them.
 
 ## Where to put the files
 
@@ -79,7 +79,7 @@ After the first author exists, this browser setup is disabled. The account is st
 
 ## Check the installation
 
-1. Open the home page. The demo lesson should be listed.
+1. Open the home page. The demo lesson in the selected interface language should be listed.
 2. Open `/api/health` on your site. It should return a short JSON message, not a web page.
 3. Sign in at `/admin`, open a demo test and try **Preview**.
 4. Take a demo test from the public home page and check that images and videos play.

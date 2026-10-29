@@ -1,0 +1,170 @@
+{
+    "schemaVersion": 1,
+    "id": "e861afe2-97b3-40ab-9eea-a27ff60834da",
+    "groupId": "9cf63193-d688-4d1e-ae5c-96caeab20a18",
+    "language": "cs",
+    "title": "Spoj dvojice",
+    "description": "Ukázkový test s otázkami s přiřazováním. Ke každé položce vlevo přiřaďte její protějšek vpravo.",
+    "showOverallScore": true,
+    "status": "published",
+    "createdAt": "2026-10-29T12:00:00Z",
+    "updatedAt": "2026-10-29T12:00:00Z",
+    "publishedAt": "2026-10-29T12:00:00Z",
+    "position": 1,
+    "questions": [
+        {
+            "id": "question-1",
+            "type": "matching",
+            "prompt": [
+                {
+                    "id": "block-16",
+                    "type": "text",
+                    "text": "Přiřaďte ke každému obrázku jeho název."
+                }
+            ],
+            "leftItems": [
+                {
+                    "id": "left-1",
+                    "content": [
+                        {
+                            "id": "block-17",
+                            "type": "image",
+                            "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37"
+                        }
+                    ]
+                },
+                {
+                    "id": "left-2",
+                    "content": [
+                        {
+                            "id": "block-18",
+                            "type": "image",
+                            "mediaId": "f8dae869-472e-4880-bc0d-dd088106fc24"
+                        }
+                    ]
+                },
+                {
+                    "id": "left-3",
+                    "content": [
+                        {
+                            "id": "block-19",
+                            "type": "image",
+                            "mediaId": "07a23619-a0d3-4d4d-964e-0d571b79f577"
+                        }
+                    ]
+                }
+            ],
+            "rightItems": [
+                {
+                    "id": "right-1",
+                    "content": [
+                        {
+                            "id": "block-20",
+                            "type": "text",
+                            "text": "Červený kruh"
+                        }
+                    ]
+                },
+                {
+                    "id": "right-2",
+                    "content": [
+                        {
+                            "id": "block-21",
+                            "type": "text",
+                            "text": "Modrý čtverec"
+                        }
+                    ]
+                },
+                {
+                    "id": "right-3",
+                    "content": [
+                        {
+                            "id": "block-22",
+                            "type": "text",
+                            "text": "Zelený trojúhelník"
+                        }
+                    ]
+                }
+            ],
+            "matches": [
+                {
+                    "leftId": "left-1",
+                    "rightId": "right-1"
+                },
+                {
+                    "leftId": "left-2",
+                    "rightId": "right-2"
+                },
+                {
+                    "leftId": "left-3",
+                    "rightId": "right-3"
+                }
+            ]
+        },
+        {
+            "id": "question-2",
+            "type": "matching",
+            "prompt": [
+                {
+                    "id": "block-23",
+                    "type": "text",
+                    "text": "Přiřaďte ke každému videu, co se v něm děje."
+                }
+            ],
+            "leftItems": [
+                {
+                    "id": "left-1",
+                    "content": [
+                        {
+                            "id": "block-24",
+                            "type": "video",
+                            "mediaId": "89dc324e-2d9d-4627-8807-2d72d4682c0c"
+                        }
+                    ]
+                },
+                {
+                    "id": "left-2",
+                    "content": [
+                        {
+                            "id": "block-25",
+                            "type": "video",
+                            "mediaId": "0c0b43d6-8550-4e43-8b67-39f62060b93a"
+                        }
+                    ]
+                }
+            ],
+            "rightItems": [
+                {
+                    "id": "right-1",
+                    "content": [
+                        {
+                            "id": "block-26",
+                            "type": "text",
+                            "text": "Míček se kutálí zleva doprava"
+                        }
+                    ]
+                },
+                {
+                    "id": "right-2",
+                    "content": [
+                        {
+                            "id": "block-27",
+                            "type": "text",
+                            "text": "Míček skáče nahoru a dolů"
+                        }
+                    ]
+                }
+            ],
+            "matches": [
+                {
+                    "leftId": "left-1",
+                    "rightId": "right-1"
+                },
+                {
+                    "leftId": "left-2",
+                    "rightId": "right-2"
+                }
+            ]
+        }
+    ]
+}

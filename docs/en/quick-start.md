@@ -70,7 +70,7 @@ The setup key works only once. After your account is created, TestBraid deletes 
 
 ## 5. Look around
 
-A new installation contains a **demo lesson** with two short tests, including pictures and videos. They are already published, so everyone can see them:
+A new installation contains two **demo lessons**, one in English and one in Czech, each with the same two short tests including pictures and videos. Your site shows the lesson in the language chosen in the menu at the top of the page. The tests are already published, so everyone can see them:
 
 - Open your site address to take the demo tests as a visitor would.
 - Sign in at `https://example.org/admin` and open the demo tests to see how the questions are built.
