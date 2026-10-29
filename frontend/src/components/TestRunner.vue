@@ -365,20 +365,21 @@ onBeforeUnmount(() => {
 .question-body { padding: 1.25rem; }
 .question-prompt { padding-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color); }
 .question-prompt :deep(> :last-child) { margin-bottom: 0 !important; }
-.choice-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: .75rem; }
+/* 18rem keeps two options side by side next to the overview within the 60rem reading column. */
+.choice-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: .75rem; }
 .choice-option { min-width: 0; padding: 1rem; border: 2px solid var(--bs-border-color); background: var(--bs-body-bg); }
 .choice-option:not(:has(input:disabled)) { cursor: pointer; }
 .choice-option:focus-within { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
 .choice-option .form-check-input { flex-shrink: 0; }
 .choice-option label { min-height: 1.5rem; cursor: pointer; }
-.option-selected { border-color: var(--bs-primary); background: rgb(var(--bs-primary-rgb) / .06); }
+.option-selected { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .06); }
 .option-selected .option-feedback { color: var(--bs-primary-text-emphasis); }
 .result-correct { border-color: var(--bs-success-border-subtle); }
 .result-correct .question-toggle { background: var(--bs-success-bg-subtle); border-color: var(--bs-success-border-subtle); }
 .result-incorrect { border-color: var(--bs-danger-border-subtle); }
 .result-incorrect .question-toggle { background: var(--bs-danger-bg-subtle); border-color: var(--bs-danger-border-subtle); }
-.option-chosen-correct, .option-correct-unselected { border-color: var(--bs-success); background: rgb(var(--bs-success-rgb) / .06); }
-.option-chosen-incorrect { border-color: var(--bs-danger); background: rgb(var(--bs-danger-rgb) / .06); }
+.option-chosen-correct, .option-correct-unselected { border-color: var(--bs-success); background: rgba(var(--bs-success-rgb), .06); }
+.option-chosen-incorrect { border-color: var(--bs-danger); background: rgba(var(--bs-danger-rgb), .06); }
 .option-chosen-correct .option-feedback, .option-correct-unselected .option-feedback { color: var(--bs-success-text-emphasis); }
 .option-chosen-incorrect .option-feedback { color: var(--bs-danger-text-emphasis); }
 .runner-summary { background: var(--bs-tertiary-bg); }

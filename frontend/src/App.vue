@@ -18,6 +18,10 @@ const signingOut = ref(false)
 const authError = ref('')
 // No navigation item should appear active on an unknown route.
 const activeSection = computed(() => route.name === 'not-found' ? null : navigationSection(route.path))
+// Public pages (catalog, tests, not found) use a narrower reading column, and
+// so does the author preview, which must show the test as learners see it.
+// Other author pages keep the full container for their side-by-side panels.
+const readingWidth = computed(() => navigationSection(route.path) === 'home' || route.name === 'test-preview')
 const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
 const appVersion = APP_VERSION
 const brandMarkUrl = `${appBaseUrl()}testbraid-mark.svg`
@@ -75,15 +79,20 @@ watch(() => route.path, () => void refreshAuthorSession())
   <div class="app-shell">
     <header class="app-header">
       <div class="container app-header-inner">
-        <RouterLink to="/" class="app-brand text-decoration-none text-body fw-semibold">{{ siteName }}</RouterLink>
-        <nav class="app-nav" aria-label="Main navigation">
+        <RouterLink to="/" class="app-brand text-decoration-none text-body fw-semibold">
+          <img :src="brandMarkUrl" alt="" aria-hidden="true" width="28" height="28" class="app-brand-mark" />
+          <span>{{ siteName }}</span>
+        </RouterLink>
+        <!-- Anonymous visitors would get a single "Tests" item, which only repeats
+             the site name link, so the navigation is shown to authors only. -->
+        <nav v-if="authorSession?.authenticated" class="app-nav" aria-label="Main navigation">
           <RouterLink to="/" class="app-nav-link"
             :class="{ 'app-nav-link-active': activeSection === 'home' }"
             :aria-current="activeSection === 'home' ? 'location' : undefined">{{ t('home') }}</RouterLink>
-          <RouterLink v-if="authorSession?.authenticated" to="/admin" class="app-nav-link"
+          <RouterLink to="/admin" class="app-nav-link"
             :class="{ 'app-nav-link-active': activeSection === 'admin' }"
             :aria-current="activeSection === 'admin' ? 'location' : undefined">{{ t('author') }}</RouterLink>
-          <RouterLink v-if="authorSession?.authenticated" to="/admin/media" class="app-nav-link"
+          <RouterLink to="/admin/media" class="app-nav-link"
             :class="{ 'app-nav-link-active': activeSection === 'media' }"
             :aria-current="activeSection === 'media' ? 'location' : undefined">{{ t('mediaLibraryTitle') }}</RouterLink>
         </nav>
@@ -103,8 +112,8 @@ watch(() => route.path, () => void refreshAuthorSession())
         </div>
       </div>
     </header>
-    <main class="container app-main">
-      <p v-if="STATIC_DEMO" class="alert alert-info demo-banner">
+    <main class="container app-main" :class="{ 'app-main-reading': readingWidth }">
+      <p v-if="STATIC_DEMO" class="demo-banner">
         {{ t('demoBanner') }}
         <a :href="installGuideUrl" target="_blank" rel="noopener noreferrer">{{ t('demoBannerLink') }}</a>
       </p>

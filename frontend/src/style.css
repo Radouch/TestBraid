@@ -1,8 +1,4 @@
-:root {
-  --app-page-bg: #f1f3f5;
-  --app-footer-bg: var(--bs-secondary-bg);
-}
-
+/* Colours and their tokens live in theme.css; this file holds layout. */
 body { background-color: var(--app-page-bg); }
 
 /* Full-width chrome shares Bootstrap's content alignment on every route. */
@@ -24,12 +20,17 @@ body { background-color: var(--app-page-bg); }
   padding-block: 1rem;
 }
 .app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
   min-width: 0;
   max-width: 100%;
   margin-inline-end: auto;
   overflow-wrap: anywhere;
   font-size: 1.5rem;
 }
+.app-brand > span { min-width: 0; }
+.app-brand-mark { flex-shrink: 0; width: 1.75rem; height: 1.75rem; }
 .app-nav {
   display: flex;
   flex-wrap: wrap;
@@ -78,6 +79,21 @@ body { background-color: var(--app-page-bg); }
   /* Long imported text and URLs must not widen the page on small screens. */
   overflow-wrap: anywhere;
 }
+/* Learner pages read better in a narrower column. Below 1200px Bootstrap's
+   container is already this width or narrower, so only wider screens change. */
+@media (min-width: 1200px) {
+  .app-main-reading { max-width: 60rem; }
+}
+/* A slim notice that stays out of the way of the demo content. */
+.demo-banner {
+  margin-bottom: 1.5rem;
+  padding: .5rem .875rem;
+  border-radius: var(--bs-border-radius);
+  background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary-text-emphasis);
+  font-size: .875rem;
+}
+.demo-banner a { color: inherit; font-weight: 600; }
 .app-main .card {
   --bs-card-border-color: var(--bs-border-color);
   --bs-card-cap-bg: var(--bs-tertiary-bg);

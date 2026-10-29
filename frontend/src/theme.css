@@ -1,0 +1,110 @@
+/*
+ * TestBraid colour theme, loaded after the compiled Bootstrap CSS.
+ *
+ * One accent colour replaces Bootstrap's blue, and controls and secondary
+ * text meet WCAG 2.1 AA contrast (3:1 for control borders, 4.5:1 for text).
+ * Ratios in the comments are against white unless stated otherwise.
+ *
+ * Bootstrap's compiled CSS does not derive everything from --bs-primary: the
+ * button variants, focus rings and checked inputs hardcode its blue. Those
+ * rules are restated below with the accent; keep them in sync when adding
+ * Bootstrap components that use the primary colour.
+ *
+ * Layout and spacing stay in style.css; colours belong here.
+ */
+:root,
+[data-bs-theme=light] {
+  /* Indigo accent, 6.29:1; white text on hover and active steps is 7.9:1 or more. */
+  --app-accent: #4f46e5;
+  --app-accent-rgb: 79, 70, 229;
+  --app-accent-hover: #4338ca;
+  --app-accent-active: #3730a3;
+
+  /* Radio buttons and checkboxes 4.83:1; text fields and selects 3.32:1. */
+  --app-control-border: #6b7280;
+  --app-field-border: #868e96;
+
+  /* The light frame approved in #63: grey canvas, white header, neutral footer. */
+  --app-page-bg: #f1f3f5;
+  --app-footer-bg: var(--bs-secondary-bg);
+
+  --bs-primary: var(--app-accent);
+  --bs-primary-rgb: var(--app-accent-rgb);
+  /* Emphasis text on the subtle background: 8.88:1. */
+  --bs-primary-text-emphasis: #3730a3;
+  --bs-primary-bg-subtle: #eef2ff;
+  --bs-primary-border-subtle: #c7d2fe;
+  --bs-link-color: var(--app-accent);
+  --bs-link-color-rgb: var(--app-accent-rgb);
+  --bs-link-hover-color: var(--app-accent-active);
+  --bs-link-hover-color-rgb: 55, 48, 163;
+  --bs-focus-ring-color: rgba(var(--app-accent-rgb), .25);
+
+  /* .text-secondary: Bootstrap's #6c757d is 4.22:1 on the page canvas; this is 5.48:1. */
+  --bs-secondary-rgb: 92, 99, 106;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--app-accent);
+  --bs-btn-border-color: var(--app-accent);
+  --bs-btn-hover-bg: var(--app-accent-hover);
+  --bs-btn-hover-border-color: var(--app-accent-hover);
+  --bs-btn-focus-shadow-rgb: var(--app-accent-rgb);
+  --bs-btn-active-bg: var(--app-accent-active);
+  --bs-btn-active-border-color: var(--app-accent-active);
+  --bs-btn-disabled-bg: var(--app-accent);
+  --bs-btn-disabled-border-color: var(--app-accent);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--app-accent);
+  --bs-btn-border-color: var(--app-accent);
+  --bs-btn-hover-bg: var(--app-accent);
+  --bs-btn-hover-border-color: var(--app-accent);
+  --bs-btn-focus-shadow-rgb: var(--app-accent-rgb);
+  --bs-btn-active-bg: var(--app-accent-hover);
+  --bs-btn-active-border-color: var(--app-accent-hover);
+  --bs-btn-disabled-color: var(--app-accent);
+  --bs-btn-disabled-border-color: var(--app-accent);
+}
+/* Bootstrap's yellow outline (#ffc107) is 1.63:1; dark amber text and border are 5.02:1. */
+.btn-outline-warning {
+  --bs-btn-color: #b45309;
+  --bs-btn-border-color: #b45309;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #b45309;
+  --bs-btn-hover-border-color: #b45309;
+  --bs-btn-focus-shadow-rgb: 180, 83, 9;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #92400e;
+  --bs-btn-active-border-color: #92400e;
+  --bs-btn-disabled-color: #b45309;
+  --bs-btn-disabled-border-color: #b45309;
+}
+
+.dropdown-menu { --bs-dropdown-link-active-bg: var(--app-accent); }
+.list-group {
+  --bs-list-group-active-bg: var(--app-accent);
+  --bs-list-group-active-border-color: var(--app-accent);
+}
+.nav-link:focus-visible { box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color); }
+
+.form-control,
+.form-select { border-color: var(--app-field-border); }
+.form-check-input {
+  border-width: 2px;
+  border-color: var(--app-control-border);
+}
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+}
+.form-check-input:checked,
+.form-check-input[type=checkbox]:indeterminate {
+  background-color: var(--app-accent);
+  border-color: var(--app-accent);
+}
+/* A learner reviewing results must see what they chose: Bootstrap fades
+   disabled inputs to 50% (about 2:1); 75% keeps a checked accent at about 3.8:1. */
+.form-check-input:checked:disabled { opacity: .75; }

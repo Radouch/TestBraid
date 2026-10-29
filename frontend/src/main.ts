@@ -1,6 +1,8 @@
 import { appBaseUrl } from './deployment-base'
 import { createApp } from 'vue'
 import 'bootstrap/dist/css/bootstrap.min.css'
+// The theme overrides Bootstrap's colours, so it must load after Bootstrap.
+import './theme.css'
 import './style.css'
 import App from './App.vue'
 import { router } from './router'
