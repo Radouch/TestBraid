@@ -1,5 +1,7 @@
 # Příručka studenta
 
+[English](../en/learner-guide.md) · **Čeština**
+
 V TestBraidu můžete vyplňovat publikované multimediální testy **bez registrace a bez přihlášení**.
 
 ## Otevření testu

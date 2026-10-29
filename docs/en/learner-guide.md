@@ -1,5 +1,7 @@
 # Learner guide
 
+**English** · [Čeština](../cs/learner-guide.md)
+
 TestBraid lets you complete published multimedia tests **without registering or signing in**.
 
 ## Open a test

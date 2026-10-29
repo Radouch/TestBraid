@@ -1,5 +1,7 @@
 # Quick start
 
+**English** · [Čeština](../cs/quick-start.md)
+
 Install TestBraid on ordinary web hosting in about ten minutes. You only upload files and create one small text file. You do not need a database, Node.js or a command line.
 
 **You need:** web hosting with Apache and PHP, HTTPS, and a way to upload files to it (SFTP or your hosting's file manager).

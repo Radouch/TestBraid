@@ -1,5 +1,7 @@
 # Instalace
 
+[English](../en/installation.md) · **Čeština**
+
 Toto je úplný popis instalace. Pro běžný případ stačí kratší [Rychlý start](quick-start.md).
 
 ## Požadavky

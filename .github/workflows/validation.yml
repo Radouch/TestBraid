@@ -14,6 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # Plain Node, no dependencies: English/Czech page pairs, language
+      # switches and every relative link in the documentation.
+      - name: Documentation links and language versions
+        run: node scripts/check-docs.mjs
       - name: Install frontend dependencies
         run: npm ci --no-audit --no-fund
         working-directory: frontend

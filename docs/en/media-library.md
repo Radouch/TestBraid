@@ -1,5 +1,7 @@
 # Media library
 
+**English** · [Čeština](../cs/media-library.md)
+
 The media library stores images and videos for reuse in any test. Sign in and open **Media library** (`/admin/media`).
 
 ## Upload files

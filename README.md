@@ -1,5 +1,7 @@
 # TestBraid
 
+**English** · [Čeština](README.cs.md)
+
 TestBraid is a self-hosted application for creating and completing multimedia self-assessment tests.
 
 ## Documentation
@@ -19,13 +21,6 @@ TestBraid is a self-hosted application for creating and completing multimedia se
 - [Upgrading](docs/en/upgrading.md) — installing a new version.
 - [Troubleshooting](docs/en/troubleshooting.md) — common problems.
 - [Installation](docs/en/installation.md) — full installation reference, including subfolders and custom layouts.
-
-### Dokumentace v češtině
-
-**Nový uživatel? Začněte [Rychlým startem](docs/cs/quick-start.md).** Provede vás instalací TestBraidu pouhým nahráním souborů, bez příkazové řádky a bez databáze.
-
-- [Příručka autora](docs/cs/author-guide.md) · [Knihovna médií](docs/cs/media-library.md) · [Příručka studenta](docs/cs/learner-guide.md)
-- [Konfigurace](docs/cs/configuration.md) · [Zabezpečení a zálohy](docs/cs/security-and-backups.md) · [Aktualizace](docs/cs/upgrading.md) · [Řešení problémů](docs/cs/troubleshooting.md) · [Instalace](docs/cs/installation.md)
 
 ### For developers
 

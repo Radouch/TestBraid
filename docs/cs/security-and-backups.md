@@ -1,5 +1,7 @@
 # Zabezpečení a zálohy
 
+[English](../en/security-and-backups.md) · **Čeština**
+
 TestBraid má veřejné testy pro studenty a chráněnou pracovní plochu pro autory. Testy a nahrané originály ukládá jako soukromé soubory, proto záleží na tom, jak jsou na hostingu rozmístěné složky.
 
 ## Soukromé soubory musí zůstat soukromé

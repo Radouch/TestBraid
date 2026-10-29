@@ -1,5 +1,7 @@
 # Příručka autora
 
+[English](../en/author-guide.md) · **Čeština**
+
 Autoři vytvářejí lekce, sestavují testy s textem, obrázky a videi, prohlížejí si je v náhledu a publikují je pro studenty. Přihlaste se na `/admin`; založení prvního účtu popisuje [Rychlý start](quick-start.md).
 
 ## Začněte ukázkovými testy

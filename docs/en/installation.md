@@ -1,5 +1,7 @@
 # Installation
 
+**English** · [Čeština](../cs/installation.md)
+
 This is the full installation reference. For the usual case, follow the shorter [Quick start](quick-start.md).
 
 ## Requirements

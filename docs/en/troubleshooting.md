@@ -1,5 +1,7 @@
 # Troubleshooting
 
+**English** · [Čeština](../cs/troubleshooting.md)
+
 Most problems come from a file that was not uploaded, a hidden `.htaccess` file that is missing, or PHP not being allowed to write to a folder. Your hosting's PHP error log usually names the cause.
 
 ## Common problems

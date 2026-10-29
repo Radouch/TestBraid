@@ -1,5 +1,7 @@
 # Author guide
 
+**English** · [Čeština](../cs/author-guide.md)
+
 Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in the [Quick start](quick-start.md).
 
 ## Start from the demo tests

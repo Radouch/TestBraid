@@ -1,5 +1,7 @@
 # Configuration
 
+**English** · [Čeština](../cs/configuration.md)
+
 All settings are in one private file: `testbraid-backend/config/app.json`. Edit it in a text editor, upload it back and reload the page. Nothing needs to be rebuilt. Upgrades never overwrite this file.
 
 The supplied file looks like this:

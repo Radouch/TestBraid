@@ -1,5 +1,7 @@
 # Konfigurace
 
+[English](../en/configuration.md) · **Čeština**
+
 Všechna nastavení jsou v jediném soukromém souboru: `testbraid-backend/config/app.json`. Upravte ho v textovém editoru, nahrajte zpět a stránku znovu načtěte. Nic není potřeba znovu sestavovat. Aktualizace tento soubor nikdy nepřepíší.
 
 Dodaný soubor vypadá takto:

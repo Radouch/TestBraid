@@ -1,5 +1,7 @@
 # Security and backups
 
+**English** · [Čeština](../cs/security-and-backups.md)
+
 TestBraid has public tests for learners and a protected workspace for authors. It stores tests and uploaded originals as private files, so the hosting directory layout matters.
 
 ## Keep private files private

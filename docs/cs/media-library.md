@@ -1,5 +1,7 @@
 # Knihovna médií
 
+[English](../en/media-library.md) · **Čeština**
+
 Knihovna médií uchovává obrázky a videa, která můžete použít v libovolném testu. Přihlaste se a otevřete **Knihovna médií** (`/admin/media`).
 
 ## Nahrávání souborů

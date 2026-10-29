@@ -1,5 +1,7 @@
 # Řešení problémů
 
+[English](../en/troubleshooting.md) · **Čeština**
+
 Většina problémů vzniká tím, že se nenahrál některý soubor, chybí skrytý soubor `.htaccess`, nebo PHP nemá právo zapisovat do některé složky. Příčinu obvykle prozradí chybový log PHP na vašem hostingu.
 
 ## Časté problémy
