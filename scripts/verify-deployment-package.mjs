@@ -57,8 +57,7 @@ try {
   for (const required of [
     'www/index.php',
     'www/backend-path.php',
-    'www/bootstrap.local.example.php',
-    'testbraid-backend/security-probe.txt',
+     'testbraid-backend/security-probe.txt',
     'testbraid-backend/templates/index.html',
     'www/.htaccess',
     'www/api/index.php',
@@ -97,9 +96,15 @@ try {
     'www/phpinfo.php',
   ]) absent(join(root, forbidden))
 
-  // A normal upgrade stages no config. An explicit initial install stages
-  // exactly the versioned, non-secret default; reject anything else.
+  // The bootstrap template accompanies only an initial installation.
+  // An upgrade must not copy the example or overwrite the operator's local settings.
+  const bootstrapExample = join(web, 'bootstrap.local.example.php')
   if (existsSync(installationConfigDirectory)) {
+    file(bootstrapExample)
+    if (readFileSync(bootstrapExample, 'utf8')
+        !== readFileSync(join(project, 'deploy/www/bootstrap.local.example.php'), 'utf8')) {
+      fail('staged bootstrap example differs from the versioned template')
+    }
     const entries = readdirSync(installationConfigDirectory)
     if (entries.length !== 1 || entries[0] !== 'app.json') {
       fail('initial configuration must contain only app.json')
@@ -111,6 +116,8 @@ try {
     }
     const settings = JSON.parse(readFileSync(staged, 'utf8'))
     if (!settings.site || !settings.uploads) fail('initial configuration is missing required sections')
+  } else {
+    absent(bootstrapExample)
   }
 
   // The media directory in the release must not contain uploaded files.
