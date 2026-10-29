@@ -1,17 +1,10 @@
 # Upgrading
 
-Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases), not the first-install package. Read the release notes first in case the new version requires special steps.
+Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). Never upload the install ZIP over a running site: it would replace your `config/app.json` and bring the demo lesson back. Read the release notes first in case the new version requires special steps.
 
 ## 1. Back up your installation
 
-Before upgrading, make a consistent backup of:
-
-- Private `config/` (settings and author accounts).
-- Private `storage/` (lessons, tests, media metadata and original uploads).
-- Public `media/` (published media and its `.htaccess`).
-- Public `bootstrap.local.php`, if you configured a custom backend path.
-
-Avoid editing tests during the backup and upgrade. See [Security and backups](security-and-backups.md).
+Download a copy of the folders listed in [Security and backups](security-and-backups.md#back-up-and-restore), mainly the private `config/` and `storage/` and the public `media/`. Don't edit tests while you back up and upgrade.
 
 ## 2. Replace application files
 

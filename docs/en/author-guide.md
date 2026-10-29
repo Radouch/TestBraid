@@ -1,6 +1,10 @@
 # Author guide
 
-Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in [Installation](installation.md).
+Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in the [Quick start](quick-start.md).
+
+## Start from the demo tests
+
+A new installation has a published **demo lesson** with two short tests, including images and videos: one with choice questions and one with matching questions. Open them in the author area to see how questions are put together. Published tests are read-only, so use **Duplicate** to get a draft copy you can change freely.
 
 ## Organize lessons and tests
 
@@ -47,6 +51,15 @@ The **editor attaches one file at a time**. To select and upload several files t
 A published test is read-only in the author editor. **Unpublish it before editing**, then save and publish again. To delete a published test, unpublish it first.
 
 Media used by other published tests remains available when a test is withdrawn. Original uploads remain in the private library.
+
+## Remove the demo content
+
+Remove the demo lesson before you share your site:
+
+1. Open each demo test and select **Unpublish**.
+2. Delete both demo tests in the author catalog.
+3. Delete the now empty demo lesson.
+4. In the [Media library](media-library.md), delete the demo images and videos. A file can be deleted only after no test uses it, including any copies you made with **Duplicate**.
 
 ## Scoring
 

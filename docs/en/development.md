@@ -1,6 +1,6 @@
 # Development
 
-This guide is for contributors working on TestBraid's **source code**. Users installing the application should start with [Installation](installation.md) and the prebuilt release ZIP.
+This guide is for contributors working on TestBraid's **source code**. Users installing the application should start with the [Quick start](quick-start.md) and the prebuilt release ZIP.
 
 ## Prerequisites and project layout
 
