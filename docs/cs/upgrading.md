@@ -2,7 +2,7 @@
 
 [English](../en/upgrading.md) · **Čeština**
 
-Použijte **aktualizační ZIP** (`upgrade`) z [GitHub Releases](https://github.com/Radouch/TestBraid/releases). Instalační ZIP nikdy nenahrávejte přes běžící web: přepsal by váš `config/app.json` a vrátil by ukázkovou lekci. Nejdřív si přečtěte poznámky k vydání, zda nová verze nevyžaduje zvláštní kroky.
+Použijte **aktualizační ZIP** (`upgrade`) z [GitHub Releases](https://github.com/Radouch/TestBraid/releases). Instalační ZIP nikdy nenahrávejte přes běžící web: přepsal by váš `config/app.json` a vrátil by ukázkové lekce. Nejdřív si přečtěte poznámky k vydání, zda nová verze nevyžaduje zvláštní kroky.
 
 ## 1. Zálohujte instalaci
 

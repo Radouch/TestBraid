@@ -6,7 +6,7 @@ Autoři vytvářejí lekce, sestavují testy s textem, obrázky a videi, prohlí
 
 ## Začněte ukázkovými testy
 
-Nová instalace obsahuje publikovanou **ukázkovou lekci** se dvěma krátkými testy s obrázky a videi: jeden s otázkami s výběrem odpovědí a jeden s přiřazováním. Otevřete je v autorské části a podívejte se, jak jsou otázky sestavené. Publikované testy jsou jen pro čtení, proto si přes **Duplikovat** vytvořte rozpracovanou kopii, kterou můžete volně měnit.
+Nová instalace obsahuje dvě publikované **ukázkové lekce**, českou a anglickou. Každá má stejné dva krátké testy s obrázky a videi: jeden s otázkami s výběrem odpovědí a jeden s přiřazováním. Otevřete je v autorské části a podívejte se, jak jsou otázky sestavené. Publikované testy jsou jen pro čtení, proto si přes **Duplikovat** vytvořte rozpracovanou kopii, kterou můžete volně měnit.
 
 ## Uspořádání lekcí a testů
 
@@ -56,11 +56,11 @@ Média, která používají jiné publikované testy, zůstanou po stažení tes
 
 ## Odstranění ukázkového obsahu
 
-Ukázkovou lekci odstraňte dřív, než web začnete používat:
+Ukázkové lekce odstraňte dřív, než web začnete používat:
 
-1. Otevřete každý ukázkový test a klikněte na **Odpublikovat**.
-2. V přehledu **Editace testů** smažte oba ukázkové testy.
-3. Smažte prázdnou ukázkovou lekci.
+1. Otevřete každý ze čtyř ukázkových testů a klikněte na **Odpublikovat**.
+2. V přehledu **Editace testů** smažte všechny čtyři ukázkové testy.
+3. Smažte obě ukázkové lekce, které jsou teď prázdné.
 4. V [Knihovně médií](media-library.md) smažte ukázkové obrázky a videa. Soubor lze smazat, až když ho nepoužívá žádný test, včetně kopií vytvořených přes **Duplikovat**.
 
 ## Hodnocení

@@ -22,13 +22,13 @@ Stáhněte `testbraid-vX.Y.Z-install.zip` z [GitHub Releases](https://github.com
 www/                       Soubory webu; jejich obsah patří do veřejné složky
 testbraid-backend/         Soukromá složka, prohlížeče ji nikdy neotevírají
 ├── config/app.json        Nastavení, která můžete upravit
-├── storage/               Lekce, testy a nahrané originály (na začátku ukázková lekce)
+├── storage/               Lekce, testy a nahrané originály (na začátku ukázkové lekce)
 ├── vendor/                Knihovny PHP
 ├── templates/index.html   Šablona stránky, která patří k souborům v assets/
 └── …                      Kód aplikace
 ```
 
-Instalační balíček obsahuje také publikovanou ukázkovou lekci. Její soubory jsou v `testbraid-backend/storage/` a ve složce `media` ve veřejné složce. Jak ji odstranit, popisuje [Příručka autora](author-guide.md#odstranění-ukázkového-obsahu).
+Instalační balíček obsahuje také dvě publikované ukázkové lekce, českou a anglickou. Jejich soubory jsou v `testbraid-backend/storage/` a ve složce `media` ve veřejné složce. Jak je odstranit, popisuje [Příručka autora](author-guide.md#odstranění-ukázkového-obsahu).
 
 ## Kam soubory umístit
 
@@ -79,7 +79,7 @@ Jakmile první autor existuje, zakládání účtu v prohlížeči je vypnuté. 
 
 ## Kontrola instalace
 
-1. Otevřete úvodní stránku. Měla by na ní být ukázková lekce.
+1. Otevřete úvodní stránku. Měla by na ní být ukázková lekce ve zvoleném jazyce rozhraní.
 2. Otevřete na svém webu `/api/health`. Měla by se vrátit krátká zpráva ve formátu JSON, ne webová stránka.
 3. Přihlaste se na `/admin`, otevřete ukázkový test a vyzkoušejte **Náhled**.
 4. Vyplňte ukázkový test z veřejné úvodní stránky a ověřte, že se zobrazují obrázky a přehrávají videa.

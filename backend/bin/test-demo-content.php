@@ -71,7 +71,14 @@ foreach ($kinds as $directory => $schema) {
         check($schemas->validate($schema, $record)['valid'], "$directory/$id matches the $schema schema");
     }
 }
-check(count($data['groups']) === 1 && count($data['tests']) === 2, 'demo has one lesson and two tests');
+// The home page lists only tests whose content language matches the
+// interface language, so each supplied interface language needs its own lesson.
+check(count($data['groups']) === 2 && count($data['tests']) === 4, 'demo has two lessons and four tests');
+foreach (['en', 'cs'] as $language) {
+    $tests = array_filter($data['tests'], static fn (stdClass $test): bool => $test->language === $language);
+    $lessons = array_unique(array_map(static fn (stdClass $test): string => $test->groupId, $tests));
+    check(count($tests) === 2 && count($lessons) === 1, "demo has one $language lesson with two $language tests");
+}
 
 $finfo = new finfo(FILEINFO_MIME_TYPE);
 foreach ($data['media'] as $id => $media) {
@@ -96,7 +103,10 @@ try {
     $service = new PublicationService($backend, $web);
 
     $catalog = $service->publicCatalog()['groups'];
-    check(count($catalog) === 1 && count($catalog[0]['tests']) === 2, 'public catalog lists the demo lesson with both tests');
+    $languages = array_map(static fn (array $group): array => array_unique(array_column($group['tests'], 'language')), $catalog);
+    check(count($catalog) === 2 && array_sum(array_map(static fn (array $group): int => count($group['tests']), $catalog)) === 4,
+        'public catalog lists both demo lessons with all four tests');
+    check(array_map('array_values', $languages) === [['en'], ['cs']], 'each listed demo lesson is in one language: English first, then Czech');
     foreach (array_keys($data['tests']) as $id) {
         $public = $service->publicTest((string) $id);
         foreach ((array) $public['mediaUrls'] as $url) {
@@ -122,7 +132,9 @@ try {
         $service->deleteUnusedMedia((string) $id);
     }
     check(records($storage . '/media') === [], 'all demo media can be deleted once unused');
-    check($repository->delete('groups', (string) array_key_first($data['groups'])), 'the empty demo lesson can be deleted');
+    foreach (array_keys($data['groups']) as $id) {
+        check($repository->delete('groups', (string) $id), "the empty demo lesson $id can be deleted");
+    }
 } catch (Throwable $error) {
     check(false, 'publication round trip: ' . $error->getMessage());
 } finally {

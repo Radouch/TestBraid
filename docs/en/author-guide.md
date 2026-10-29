@@ -6,7 +6,7 @@ Authors can create lessons, build tests with text, images and video, preview the
 
 ## Start from the demo tests
 
-A new installation has a published **demo lesson** with two short tests, including images and videos: one with choice questions and one with matching questions. Open them in the author area to see how questions are put together. Published tests are read-only, so use **Duplicate** to get a draft copy you can change freely.
+A new installation has two published **demo lessons**, one in English and one in Czech. Each has the same two short tests with images and videos: one with choice questions and one with matching questions. Open them in the author area to see how questions are put together. Published tests are read-only, so use **Duplicate** to get a draft copy you can change freely.
 
 ## Organize lessons and tests
 
@@ -56,11 +56,11 @@ Media used by other published tests remains available when a test is withdrawn. 
 
 ## Remove the demo content
 
-Remove the demo lesson before you share your site:
+Remove the demo lessons before you share your site:
 
-1. Open each demo test and select **Unpublish**.
-2. Delete both demo tests on the **Edit tests** page.
-3. Delete the now empty demo lesson.
+1. Open each of the four demo tests and select **Unpublish**.
+2. Delete all four demo tests on the **Edit tests** page.
+3. Delete both demo lessons, which are now empty.
 4. In the [Media library](media-library.md), delete the demo images and videos. A file can be deleted only after no test uses it, including any copies you made with **Duplicate**.
 
 ## Scoring

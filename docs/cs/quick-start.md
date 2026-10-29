@@ -70,7 +70,7 @@ Instalační klíč funguje jen jednou. Po založení účtu TestBraid soubor `s
 
 ## 5. Prohlídka
 
-Nová instalace obsahuje **ukázkovou lekci** se dvěma krátkými testy s obrázky a videi. Ukázkový obsah je v angličtině. Testy jsou už publikované, takže je vidí každý:
+Nová instalace obsahuje dvě **ukázkové lekce**, jednu českou a jednu anglickou, obě se stejnými dvěma krátkými testy s obrázky a videi. Web zobrazí lekci v jazyce zvoleném v nabídce nahoře na stránce. Testy jsou už publikované, takže je vidí každý:
 
 - Otevřete adresu svého webu a vyplňte ukázkové testy tak, jak by to udělal návštěvník.
 - Přihlaste se na `https://example.org/admin` a otevřete ukázkové testy, abyste viděli, jak jsou otázky sestavené.

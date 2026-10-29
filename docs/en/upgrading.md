@@ -2,7 +2,7 @@
 
 **English** · [Čeština](../cs/upgrading.md)
 
-Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). Never upload the install ZIP over a running site: it would replace your `config/app.json` and bring the demo lesson back. Read the release notes first in case the new version requires special steps.
+Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). Never upload the install ZIP over a running site: it would replace your `config/app.json` and bring the demo lessons back. Read the release notes first in case the new version requires special steps.
 
 ## 1. Back up your installation
 
