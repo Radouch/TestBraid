@@ -72,7 +72,7 @@ jobs:
           test -f deployment-package/www/api/index.php
           test -f deployment-package/www/index.php
           test -f deployment-package/www/backend-path.php
-          test -f deployment-package/www/bootstrap.local.example.php
+          test ! -e deployment-package/www/bootstrap.local.example.php
           test ! -e deployment-package/www/bootstrap.local.php
           test -f deployment-package/testbraid-backend/security-probe.txt
           test -f deployment-package/testbraid-backend/templates/index.html
@@ -89,6 +89,7 @@ jobs:
         run: |
           node scripts/prepare-deployment.mjs --initial-install
           test -f deployment-package/testbraid-backend/config/app.json
+          test -f deployment-package/www/bootstrap.local.example.php
           test ! -e deployment-package/testbraid-backend/config/authors.json
           cmp backend/config/app.json deployment-package/testbraid-backend/config/app.json
           node scripts/verify-deployment-package.mjs

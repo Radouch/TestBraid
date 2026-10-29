@@ -95,6 +95,8 @@ jobs:
           test -f "$temp/install/testbraid-backend/config/app.json"
           cmp backend/config/app.json "$temp/install/testbraid-backend/config/app.json"
           test ! -e "$temp/upgrade/testbraid-backend/config"
+          test -f "$temp/install/www/bootstrap.local.example.php"
+          test ! -e "$temp/upgrade/www/bootstrap.local.example.php"
           test ! -e "$temp/install/www/bootstrap.local.php"
           test ! -e "$temp/upgrade/www/bootstrap.local.php"
           (cd release-artifacts && sha256sum -c SHA256SUMS)

@@ -74,6 +74,9 @@ try {
   mkdirSync(templateDirectory, { recursive: true })
   renameSync(join(output, 'www/index.html'), join(templateDirectory, 'index.html'))
   copyDirectory('deploy/www', 'www')
+  // The optional bootstrap template is for first installations only.
+  // Existing installations keep their own bootstrap.local.php during upgrades.
+  if (!initialInstall) rmSync(join(output, 'www/bootstrap.local.example.php'))
   copyDirectory('backend/public', 'testbraid-backend/public')
   copyDirectory('backend/src', 'testbraid-backend/src')
   copyDirectory('backend/bin', 'testbraid-backend/bin')
