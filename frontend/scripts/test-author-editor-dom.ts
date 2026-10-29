@@ -157,12 +157,14 @@ async function submit(form: HTMLFormElement): Promise<void> {
 const save = () => submit(find<HTMLFormElement>('#test-editor-form'))
 const puts = () => calls.filter(call => call.method === 'PUT' && call.path === 'admin/tests/draft')
 const back = () => find<HTMLAnchorElement>('.editor-back')
-const publicationButton = () => find<HTMLButtonElement>('#editor-publication-action')
+const publicationButton = () => find<HTMLButtonElement>('.editor-primary-actions #editor-publication-action')
 const publicationCalls = () => calls.filter(call => call.method === 'POST' && /\/(publish|unpublish)$/.test(call.path))
 
 try {
   await settle()
   assert.equal(find('#editor-tab-settings').getAttribute('aria-selected'), 'true')
+  assert.equal(publicationButton().textContent?.trim(), cs.publicationPublish)
+  assert.equal(find('.editor-publication').querySelector('#editor-publication-action'), null, 'The publication action is not duplicated in settings')
   assert.equal(find<HTMLInputElement>('#test-settings-title').value, 'Original title')
   assert.equal(find<HTMLInputElement>('#test-settings-score').checked, true, 'Legacy tests keep visible scoring')
   assert.ok(find<HTMLSelectElement>('#test-settings-lesson').disabled)
@@ -171,6 +173,7 @@ try {
   find('#editor-tab-settings').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }))
   await settle()
   assert.equal(document.activeElement, find('#editor-tab-questions'))
+  assert.equal(publicationButton().textContent?.trim(), cs.publicationPublish, 'Publication is also available on the questions tab')
   assert.equal(router.currentRoute.value.query.tab, undefined)
   assert.equal(confirmations, 0, 'Switching tabs must not ask to discard edits')
   const video = find('video')
@@ -366,7 +369,7 @@ try {
   failPublication = 'MEDIA_MISSING'
   await click(publicationButton())
   assert.equal(stored.draft!.status, 'draft')
-  assert.ok(find('[role=alert]', find('.editor-publication')).textContent?.includes(cs.publicationNotReady!))
+  assert.ok(find('.test-editor > [role=alert]').textContent?.includes(cs.publicationNotReady!))
   assert.equal(find<HTMLInputElement>('#test-settings-title').value, 'Ready after saving')
   assert.equal(publicationButton().disabled, false, 'Rejected publication can be retried without losing the draft')
   failPublication = ''
@@ -374,7 +377,7 @@ try {
   const beforeStalePublication = publicationCalls().length
   await click(publicationButton())
   assert.equal(publicationCalls().length, beforeStalePublication, 'An intervening server edit prevents publication')
-  assert.ok(find('[role=alert]', find('.editor-publication')).textContent?.includes(cs.editorStaleTest!))
+  assert.ok(find('.test-editor > [role=alert]').textContent?.includes(cs.editorStaleTest!))
   await router.push('/elsewhere')
   await router.push('/admin/tests/draft/questions?tab=settings&lang=cs')
   await settle()
@@ -401,6 +404,7 @@ try {
   assert.equal(publicationButton().textContent?.trim(), cs.publicationUnpublish)
   assert.equal(publicationButton().disabled, false, 'Read-only settings must not disable the unpublish action')
   assert.equal(publicationButton().closest('fieldset'), null)
+  assert.equal(find('.alert-warning').querySelector('button'), null, 'The published-test warning has no duplicate unpublish button')
   assert.ok(find('.editor-publication').textContent?.includes(cs.catalogPublished!))
   const publicLink = find<HTMLAnchorElement>('.editor-publication a')
   assert.equal(publicLink.getAttribute('href'), '/training/tests/draft?lang=cs')
@@ -426,7 +430,7 @@ try {
   await click(publicationButton())
   assert.equal(stored.draft!.status, 'published')
   assert.ok(find<HTMLFieldSetElement>('.editor-fields').disabled)
-  assert.ok(find('[role=alert]', find('.editor-publication')).textContent?.includes(cs.publicationOperationFailed!))
+  assert.ok(find('.test-editor > [role=alert]').textContent?.includes(cs.publicationOperationFailed!))
   failPublication = ''
   await click(publicationButton())
   assert.equal(stored.draft!.status, 'draft')
@@ -438,10 +442,11 @@ try {
 
   await click(publicationButton())
   await click(find('#editor-tab-questions'))
-  const unpublish = [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes(cs.adminUnpublishEdit!))!
-  await click(unpublish)
+  assert.equal(publicationButton().textContent?.trim(), cs.publicationUnpublish)
+  assert.equal(find('.alert-warning').querySelector('button'), null)
+  await click(publicationButton())
   assert.equal(stored.draft!.status, 'draft')
-  assert.equal(router.currentRoute.value.query.tab, undefined, 'The existing question-tab unpublish shortcut is retained')
+  assert.equal(router.currentRoute.value.query.tab, undefined, 'Toolbar unpublish works from the questions tab')
   assert.ok(find('button[form=test-editor-form]'))
   await router.push('/elsewhere')
   failLessons = true
@@ -454,7 +459,7 @@ try {
   assert.equal(stored.draft!.groupId, 'b')
   assert.equal(stored.draft!.title, 'Saved without lesson names')
   failLessons = false
-  console.log('PASS AUTHOR DOM: published read-only settings/questions, explicit unpublish and optional lesson-list failure')
+  console.log('PASS AUTHOR DOM: published read-only settings/questions, toolbar unpublish and optional lesson-list failure')
 
   await router.push('/elsewhere')
   heldTestId = 'draft'

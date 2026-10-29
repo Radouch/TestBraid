@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
   <section ref="page" class="test-editor" :style="{ '--editor-scroll-offset': scrollOffset + 'px' }">
     <p v-if="loading" role="status">{{ t('loading') }}</p>
     <p v-if="error" class="alert alert-danger" role="alert">{{ error }}</p>
-    <p v-if="publicationError && activeTab !== 'settings'" class="alert alert-danger" role="alert">{{ publicationError }}</p>
+    <p v-if="publicationError" class="alert alert-danger" role="alert">{{ publicationError }}</p>
     <p v-if="success" class="alert alert-success" role="status">{{ success }}</p>
     <template v-if="test && draft && !loading">
       <nav class="editor-breadcrumbs mb-3" :aria-label="t('editorBreadcrumbs')">
@@ -345,12 +345,7 @@ onBeforeUnmount(() => {
           <RouterLink :to="catalogLocation" class="editor-back ms-md-auto"><AppIcon name="arrow-left" /> {{ t('editorBackToLesson') }}</RouterLink>
         </div>
       </header>
-      <div v-if="!editable" class="alert alert-warning d-flex flex-wrap gap-3 justify-content-between align-items-center">
-        <span>{{ t('adminPublishedReadonly') }}</span>
-        <button type="button" class="btn btn-outline-warning" :disabled="busy" @click="changePublication('unpublish')">
-          <AppIcon name="pencil-square" />{{ t('adminUnpublishEdit') }}
-        </button>
-      </div>
+      <div v-if="!editable" class="alert alert-warning">{{ t('adminPublishedReadonly') }}</div>
       <div class="nav nav-tabs mb-3" role="tablist" :aria-label="t('editorTabs')" @keydown="tabKeys">
         <button id="editor-tab-questions" type="button" class="nav-link" role="tab" aria-controls="editor-panel-questions"
           :class="{ active: activeTab === 'questions' }" :aria-selected="activeTab === 'questions'"
@@ -364,10 +359,17 @@ onBeforeUnmount(() => {
       <div ref="toolbar" class="editor-toolbar card mb-3" :aria-label="t('editorActions')">
         <div class="card-body p-2 p-sm-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
           <span class="editor-save-state small text-secondary" role="status">{{ editable ? saveState : t('adminPublishedReadonly') }}</span>
-          <div class="editor-primary-actions d-flex gap-2">
+          <div class="editor-primary-actions d-flex flex-wrap gap-2">
             <RouterLink class="btn btn-outline-secondary btn-sm" :class="{ disabled: busy }" :aria-disabled="busy" :to="previewLocation" :aria-label="t('editorPreviewSaved')">
               <AppIcon name="eye" />{{ t('editorPreview') }}
             </RouterLink>
+            <button id="editor-publication-action" type="button" class="btn btn-sm"
+              :class="editable ? 'btn-outline-primary' : 'btn-outline-warning'"
+              :disabled="busy || (editable && (dirty || publicationIncomplete))"
+              :title="editable && dirty ? t('editorPublicationSaveFirst') : editable && publicationIncomplete ? t('publicationReadinessHint') : undefined"
+              @click="changePublication(editable ? 'publish' : 'unpublish')">
+              <AppIcon :name="editable ? 'upload' : 'arrow-counterclockwise'" />{{ t(publicationAction ? 'editorChangingPublication' : editable ? 'publicationPublish' : 'publicationUnpublish') }}
+            </button>
             <button v-if="editable" type="submit" form="test-editor-form" class="btn btn-primary btn-sm" :disabled="busy || !dirty">
               <AppIcon name="floppy" />{{ t('editorSaveChanges') }}
             </button>
@@ -383,7 +385,7 @@ onBeforeUnmount(() => {
             <p v-if="lessonsUnavailable" class="small text-secondary" role="status">{{ t('editorLessonsUnavailable') }}</p>
             <TestSettingsFields :settings="draft" :lessons="lessons" :lessons-unavailable="lessonsUnavailable || lessonsLoading" />
           </fieldset>
-          <!-- Publication stays operable while published settings are locked. -->
+          <!-- Keep guidance and the public link in settings; the publication action is in the toolbar. -->
           <section class="editor-publication card mt-3" aria-labelledby="test-settings-publication" :aria-busy="Boolean(publicationAction)">
             <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
               <h2 id="test-settings-publication" class="h6 mb-0">{{ t('editorPublication') }}</h2>
@@ -400,17 +402,8 @@ onBeforeUnmount(() => {
                 <p v-if="invalidMediaReference(questions)" class="mb-1">{{ t('editorIncompleteMedia') }}</p>
                 <button type="button" class="btn btn-link btn-sm p-0" @click="switchTab('questions')">{{ t('editorQuestionsTab', { count: questions.length }) }}</button>
               </div>
-              <p v-if="publicationError" class="alert alert-danger" role="alert">{{ publicationError }}</p>
-              <div class="d-flex flex-wrap gap-2">
-                <button id="editor-publication-action" type="button" class="btn" :class="editable ? 'btn-outline-primary' : 'btn-outline-warning'"
-                  :disabled="busy || (editable && (dirty || publicationIncomplete))"
-                  :aria-describedby="['editor-publication-description', editable && dirty ? 'editor-publication-unsaved' : '', editable && publicationIncomplete ? 'editor-publication-incomplete' : ''].filter(Boolean).join(' ')"
-                  @click="changePublication(editable ? 'publish' : 'unpublish')">
-                  <AppIcon :name="editable ? 'upload' : 'arrow-counterclockwise'" />{{ t(publicationAction ? 'editorChangingPublication' : editable ? 'publicationPublish' : 'publicationUnpublish') }}
-                </button>
-                <RouterLink v-if="!editable" class="btn btn-outline-secondary" target="_blank" rel="noopener"
-                  :to="{ name: 'test', params: { id: test.id }, query: languageQuery }"><AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}</RouterLink>
-              </div>
+              <RouterLink v-if="!editable" class="btn btn-outline-secondary" target="_blank" rel="noopener"
+                :to="{ name: 'test', params: { id: test.id }, query: languageQuery }"><AppIcon name="box-arrow-up-right" />{{ t('publicationOpenPublic') }}</RouterLink>
             </div>
           </section>
         </div>

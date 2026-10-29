@@ -107,7 +107,8 @@ jobs:
 
   publish:
     name: Publish GitHub Release for a version tag
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # A tag may be dispatched explicitly when it was created by GITHUB_TOKEN (tag pushes alone cannot trigger Actions).
+    if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: package
     runs-on: ubuntu-latest
     permissions:
