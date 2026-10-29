@@ -17,47 +17,61 @@ You do **not** need a database, Node.js or Composer on the server. The release Z
 Download `testbraid-vX.Y.Z-install.zip` from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). It contains:
 
 ```text
-www/                       Public website files
-testbraid-backend/         Private part, never served directly
+www/                       Website files; their contents go into your public folder
+testbraid-backend/         The private folder, never opened by browsers
 ├── config/app.json        Settings you may edit
 ├── storage/               Lessons, tests and uploaded originals (starts with the demo lesson)
 ├── vendor/                PHP libraries
-├── templates/index.html   Page template that belongs to the files in www/assets/
+├── templates/index.html   Page template that belongs to the files in assets/
 └── …                      Application code
 ```
 
-The install package also contains a published demo lesson. Its files are in `testbraid-backend/storage/` and `www/media/`. See [Author guide](author-guide.md#remove-the-demo-content) for how to remove it.
+The install package also contains a published demo lesson. Its files are in `testbraid-backend/storage/` and in the `media` folder of the public folder. See [Author guide](author-guide.md#remove-the-demo-content) for how to remove it.
 
 ## Where to put the files
 
-Upload the **contents** of `www/` into the folder your domain serves (the *public folder*, often `www`, `public_html` or `htdocs`). Upload `testbraid-backend/` **outside** that folder. By default TestBraid expects it right next to the public folder:
+The **public folder** is the folder on your hosting whose files anyone can open in a web browser at your site address. Your hosting provider chose its name, often `www`, `public_html`, `htdocs` or `web`. The ZIP's `www` is just a placeholder name.
+
+Upload the **contents** of the ZIP's `www/` into your public folder. Upload the whole `testbraid-backend` folder (the **private folder**) **outside** it. By default TestBraid expects it right next to the public folder, for example:
 
 ```text
 hosting-account/
-├── www/                   # public folder
-└── testbraid-backend/     # private, next to it
+├── public_html/           # your public folder, with the contents of the ZIP's www/
+└── testbraid-backend/     # the private folder, next to it
 ```
 
 Keep all hidden `.htaccess` files.
 
-PHP must be able to write to the private `config/` and `storage/` folders and to the public `media/` folder. On most shared hosting, files uploaded with your account are already writable by PHP. Otherwise ask your provider. Never use blanket permissions such as `777`.
+PHP must be able to write to the `config` and `storage` folders in the private folder and to the `media` folder in the public folder. On most shared hosting, files uploaded with your account are already writable by PHP. Otherwise ask your provider. Never use blanket permissions such as `777`.
 
-### Backend in a different place
+### Private folder in a different place
 
-If the private folder cannot sit next to the public folder, copy `www/bootstrap.local.example.php` to `www/bootstrap.local.php`. Set its `backendPath` to the private folder's location on disk, written relative to the public application folder. See [Configuration](configuration.md#advanced-installation-path-and-backend-location).
+If the private folder cannot sit next to the public folder, copy `bootstrap.local.example.php` in your public folder to `bootstrap.local.php`. Set its `backendPath` to the private folder's location on disk, written relative to the folder that holds TestBraid's public files. See [Configuration](configuration.md#advanced-installation-path-and-private-folder-location).
 
 ### Installing into a subfolder
 
-To run TestBraid at an address such as `https://example.org/courses/`, put the `www/` contents into that subfolder. Set `basePath` in `testbraid-backend/config/app.json` to `"/courses"`. The default `"/"` means the domain root. The same files work for both.
+To run TestBraid at an address such as `https://example.org/courses/`:
+
+1. Put the contents of the ZIP's `www/` into a `courses` folder inside your public folder.
+2. Keep the private folder **outside** the public folder, for example next to it as usual.
+3. TestBraid looks for the private folder next to the folder that holds its public files, which is now `courses`. That place is inside your public folder, so you must tell it where the private folder really is. Copy `courses/bootstrap.local.example.php` to `courses/bootstrap.local.php` and set `backendPath` to `'../../testbraid-backend'` (up from `courses`, up from the public folder, then into the private folder).
+4. Set `basePath` in `testbraid-backend/config/app.json` to `"/courses"`. The default `"/"` means TestBraid runs at the site address itself.
+
+```text
+hosting-account/
+├── public_html/              # your public folder
+│   └── courses/              # contents of the ZIP's www/, plus bootstrap.local.php
+└── testbraid-backend/        # the private folder
+```
 
 ## Create the first author
 
-TestBraid has no public registration. The first author account is created with a one-time key:
+TestBraid has no public registration. The first author account is created with a one-time **setup key**:
 
-1. Create a text file `testbraid-backend/config/setup.key` containing one line of **32–256 random characters**.
+1. Create a text file `testbraid-backend/config/setup.key` containing the setup key: one line of **32–256 random characters**.
 2. Open `/admin` on your site.
-3. Enter the key, a username and a password of at least **12 characters**.
-4. Sign in. The key file is deleted automatically. Delete it yourself if it is still there.
+3. Choose any username (letters, digits, `.`, `_` or `-`, no spaces) and any password of at least **12 characters**, and enter the setup key.
+4. Select **Create first author**. You are signed in, and `setup.key` is deleted automatically. Delete it yourself if it is still there.
 
 After the first author exists, this browser setup is disabled. The account is stored in the private `config/authors.json` with a hashed password. Do not delete that file to "reset" access. Further accounts can be created by an operator with SSH access, see [Security and backups](security-and-backups.md#protect-author-accounts).
 

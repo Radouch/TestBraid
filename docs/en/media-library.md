@@ -31,6 +31,6 @@ You may delete a media item only when **no draft or published test references it
 
 ## Private and published media
 
-Uploaded originals are stored in the **private backend**. Authors can preview them while signed in. When a test is published, copies of its referenced media become available to its learners. Public copies no longer used by any published test can be cleaned up, while private originals remain.
+Uploaded originals are stored in the **private folder** (`testbraid-backend`). Authors can preview them while signed in. When a test is published, copies of its referenced media become available to its learners. Public copies no longer used by any published test can be cleaned up, while private originals remain.
 
 For upload limits, see [Configuration](configuration.md). For hosting issues, see [Troubleshooting](troubleshooting.md).

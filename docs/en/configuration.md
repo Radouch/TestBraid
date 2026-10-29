@@ -22,7 +22,7 @@ Keep the file valid JSON: quotes around texts, commas between entries and no com
 
 `site.name` is shown as the website title and in the browser tab. `site.description` is the introduction on the home page.
 
-Give one text per interface language, as above. Visitors see the text for the language they choose. You can also use a single text for all languages:
+Give one text per interface language (the language of the site's buttons and menus), as above. Visitors see the text for the language they choose. You can also use a single text for all languages:
 
 ```json
 "name": "Our training tests"
@@ -30,12 +30,12 @@ Give one text per interface language, as above. Visitors see the text for the la
 
 ## Interface languages
 
-`uiLanguages` lists the languages the website interface offers. English (`en`) and Czech (`cs`) are supplied. To offer only one, list only that one: `["en"]`.
+`uiLanguages` lists the languages offered for the site's buttons and menus (the *interface languages*). English (`en`) and Czech (`cs`) are supplied. To offer only one, list only that one: `["en"]`.
 
 To add a language:
 
-1. Copy the public `locales/en.json` and translate the texts. Keep the keys on the left unchanged.
-2. Upload it as `locales/<code>.json`, for example `locales/de.json`.
+1. Copy `locales/en.json` from your public folder and translate the texts. Keep the keys on the left unchanged.
+2. Upload it to the same `locales` folder as `<code>.json`, for example `locales/de.json`.
 3. Add the code to `uiLanguages` and reload.
 
 The interface language does **not** translate tests. Each test has its own content language, set by its author.
@@ -44,7 +44,7 @@ The interface language does **not** translate tests. Each test has its own conte
 
 `uploads.maxImageSizeMiB` and `uploads.maxVideoSizeMiB` set the largest image and video file allowed, in MiB. Your hosting's PHP limits (`upload_max_filesize` and `post_max_size`) may set a lower limit. Raising those is a hosting setting, not a TestBraid one. Limits apply to each file separately, see [Media library](media-library.md).
 
-## Advanced: installation path and backend location
+## Advanced: installation path and private folder location
 
 Most sites never need to change these.
 
@@ -53,8 +53,8 @@ Most sites never need to change these.
 - `"/"` for `https://example.org/` (default).
 - `"/courses/tests"` for `https://example.org/courses/tests/`.
 
-It must match the folder you uploaded `www/` into.
+It must match where in your public folder you put the contents of the ZIP's `www/`.
 
-**Backend location.** The public files look for the private folder `testbraid-backend` next to the public folder. If your host needs a different place, copy `www/bootstrap.local.example.php` to `www/bootstrap.local.php`. Set `backendPath` to the private folder's location on disk, relative to the public application folder. Keep `bootstrap.local.php` during upgrades.
+**Private folder location.** TestBraid looks for the private folder `testbraid-backend` next to the public folder. If your host needs a different place, copy `bootstrap.local.example.php` in your public folder to `bootstrap.local.php`. Set `backendPath` to the private folder's location on disk, relative to the folder that holds TestBraid's public files. Keep `bootstrap.local.php` during upgrades.
 
 For routing or path problems, see [Troubleshooting](troubleshooting.md).
