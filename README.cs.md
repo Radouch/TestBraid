@@ -6,6 +6,8 @@ TestBraid je aplikace pro tvorbu a vyplňování multimediálních testů k samo
 
 Je to jednoduchý nástroj na testy, ne systém pro řízení výuky: studenti nepotřebují účty a žádné výsledky se neukládají. Obrázky a videa jsou vaše vlastní soubory, ne odkazy na videoplatformu. V části **[Proč TestBraid](docs/cs/why-testbraid.md)** zjistíte, zda vám vyhovuje.
 
+**[Vyzkoušejte ukázku](https://radouch.github.io/TestBraid/?lang=cs)**: vyplňte ukázkové testy přímo v prohlížeči, bez jakékoli instalace.
+
 ## Dokumentace
 
 **Nový uživatel? Začněte [Rychlým startem](docs/cs/quick-start.md).** Provede vás instalací TestBraidu pouhým nahráním souborů, bez příkazové řádky a bez databáze.

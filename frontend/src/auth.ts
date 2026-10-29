@@ -1,5 +1,6 @@
 import { appBaseUrl } from './deployment-base'
 import { ref } from 'vue'
+import { STATIC_DEMO } from './static-demo'
 
 export interface AuthorSession {
   authenticated: boolean
@@ -19,6 +20,12 @@ export const authorSession = ref<AuthorSession | null>(null)
 export const sessionChecked = ref(false)
 
 export async function refreshAuthorSession(): Promise<void> {
+  // The static demo has no server to sign in to; skip the doomed request.
+  if (STATIC_DEMO) {
+    authorSession.value = null
+    sessionChecked.value = true
+    return
+  }
   try {
     const response = await fetch(appBaseUrl() + 'api/auth/session', {
       credentials: 'same-origin',

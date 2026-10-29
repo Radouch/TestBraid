@@ -427,5 +427,7 @@
   "mediaUploading": "Nahrávání",
   "mediaUploadComplete": "Nahrávání dokončeno",
   "mediaUploadFile": "Nahrát soubor",
-  "mediaUploadRetry": "Zkusit znovu"
+  "mediaUploadRetry": "Zkusit znovu",
+  "demoBanner": "Toto je ukázka TestBraidu jen pro čtení. Chcete-li vytvářet vlastní testy, nainstalujte si TestBraid na vlastní webhosting.",
+  "demoBannerLink": "Jak nainstalovat"
 }

@@ -9,6 +9,7 @@ import { languageOptions } from './i18n'
 import { navigationSection } from './navigation'
 import { APP_VERSION } from './version'
 import { localizeSiteText, siteIdentity } from './site-identity'
+import { STATIC_DEMO } from './static-demo'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +21,10 @@ const activeSection = computed(() => route.name === 'not-found' ? null : navigat
 const siteName = computed(() => localizeSiteText(siteIdentity.value.name, locale.value) || 'TestBraid')
 const appVersion = APP_VERSION
 const brandMarkUrl = `${appBaseUrl()}testbraid-mark.svg`
+// The demo banner links to the README in the visitor's interface language.
+const installGuideUrl = computed(() => locale.value === 'cs'
+  ? 'https://github.com/Radouch/TestBraid/blob/main/README.cs.md'
+  : 'https://github.com/Radouch/TestBraid#readme')
 
 watch([siteName, locale, () => route.name], ([name, , page]) => {
   document.title = page === 'not-found' ? `${t('notFoundTitle')} | ${name}` : name
@@ -99,6 +104,10 @@ watch(() => route.path, () => void refreshAuthorSession())
       </div>
     </header>
     <main class="container app-main">
+      <p v-if="STATIC_DEMO" class="alert alert-info demo-banner">
+        {{ t('demoBanner') }}
+        <a :href="installGuideUrl" target="_blank" rel="noopener noreferrer">{{ t('demoBannerLink') }}</a>
+      </p>
       <p v-if="authError" class="alert alert-danger" role="alert">{{ authError }}</p>
       <RouterView />
     </main>
@@ -112,7 +121,7 @@ watch(() => route.path, () => void refreshAuthorSession())
           </a>
           <span>{{ t('version') }} {{ appVersion }}</span>
         </span>
-        <RouterLink v-if="sessionChecked" to="/admin">
+        <RouterLink v-if="sessionChecked && !STATIC_DEMO" to="/admin">
           {{ authorSession?.authenticated ? t('author') : t('signIn') }}
         </RouterLink>
       </div>
