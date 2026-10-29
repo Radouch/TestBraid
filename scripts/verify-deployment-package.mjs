@@ -57,7 +57,7 @@ try {
   for (const required of [
     'www/index.php',
     'www/backend-path.php',
-     'testbraid-backend/security-probe.txt',
+    'testbraid-backend/security-probe.txt',
     'testbraid-backend/templates/index.html',
     'www/.htaccess',
     'www/api/index.php',
