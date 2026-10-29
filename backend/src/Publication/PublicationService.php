@@ -218,7 +218,7 @@ class PublicationService
      * escape through a list endpoint. Each test's detail route independently
      * checks its current published status after a withdrawal.
      *
-     * @return array{groups: list<array{id: string, name: string, tests: list<array{id: string, title: string, language: string}>}>}
+     * @return array{groups: list<array{id: string, name: string, tests: list<array{id: string, title: string, language: string, questionCount: int}>}>}
      */
     public function publicCatalog(): array
     {
@@ -237,6 +237,7 @@ class PublicationService
                 'id' => $test->id,
                 'title' => $test->title,
                 'language' => $test->language,
+                'questionCount' => count($test->questions ?? []),
                 'position' => $test->position ?? null,
             ];
         }

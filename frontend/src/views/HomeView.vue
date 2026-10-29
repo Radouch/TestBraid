@@ -7,16 +7,24 @@ import { useRoute } from 'vue-router'
 import { localizeSiteText, siteIdentity } from '../site-identity'
 import {
   fetchPublicCatalog, publicLessonAnchor, publicLessonForHash, publicLessonHash,
-  PUBLIC_CATALOG_ANCHOR, type PublicLesson,
+  PUBLIC_CATALOG_ANCHOR, publicLessonsForLanguage, type PublicLesson,
 } from '../public-catalog'
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const route = useRoute()
 const introduction = computed(() => localizeSiteText(siteIdentity.value.description, locale.value))
 const groups = ref<PublicLesson[]>([])
+const visibleGroups = computed(() => publicLessonsForLanguage(groups.value, locale.value))
 const loading = ref(true)
 const error = ref('')
 let activeRequest: AbortController | undefined
+
+function questionCountLabel(count: number): string {
+  const category = new Intl.PluralRules(locale.value).select(count)
+  const key = `publicCatalogQuestionCount_${category}`
+  // A newly installed locale may not have every plural category translated.
+  return t(te(key) ? key : 'publicCatalogQuestionCount_other', { count })
+}
 
 async function loadCatalog(): Promise<void> {
   activeRequest?.abort()
@@ -36,10 +44,10 @@ async function loadCatalog(): Promise<void> {
   }
 }
 
-watch([loading, () => route.hash], async ([pending]) => {
+watch([loading, () => route.hash, visibleGroups], async ([pending]) => {
   const hash = route.hash
   if (pending || !hash) return
-  const lesson = publicLessonForHash(groups.value, hash)
+  const lesson = publicLessonForHash(visibleGroups.value, hash)
   // The destination does not exist until the asynchronous catalog is rendered.
   await nextTick()
   if (activeRequest?.signal.aborted || route.hash !== hash) return
@@ -63,11 +71,11 @@ onBeforeUnmount(() => activeRequest?.abort())
         <AppIcon name="arrow-counterclockwise" />{{ t('publicCatalogRetry') }}
       </button>
     </div>
-    <p v-else-if="groups.length === 0" class="text-secondary" role="status">
+    <p v-else-if="visibleGroups.length === 0" class="text-secondary" role="status">
       {{ t('publicCatalogEmpty') }}
     </p>
     <div v-else class="d-grid gap-4">
-      <section v-for="group in groups" :key="group.id" class="card public-lesson"
+      <section v-for="group in visibleGroups" :key="group.id" class="card public-lesson"
         :class="{ 'public-lesson-current': route.hash === publicLessonHash(group.id) }"
         :aria-labelledby="publicLessonAnchor(group.id)">
         <div class="card-body">
@@ -80,7 +88,7 @@ onBeforeUnmount(() => activeRequest?.abort())
                   class="fw-semibold" :lang="test.language">
                   {{ test.title }}
                 </RouterLink>
-                <span class="ms-2 small text-secondary">({{ test.language }})</span>
+                <span class="ms-2 small text-secondary">({{ questionCountLabel(test.questionCount) }})</span>
               </div>
               <RouterLink class="btn btn-outline-primary btn-sm"
                 :to="{ name: 'test', params: { id: test.id } }">

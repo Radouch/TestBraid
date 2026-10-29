@@ -14,7 +14,7 @@ These instructions apply to source code, tests, documentation, issues and PRs.
 
 - Vue 3 + TypeScript + Vite, Bootstrap 5 CSS, Vue Router and Vue I18n.
 - Slim 4 API with native PHP sessions; no SQL database or persistent Node.js runtime.
-- JSON Schema Draft 2020-12; Ajv client validation and Opis PHP validation (not implemented yet).
+- JSON Schema Draft 2020-12; Ajv client validation and Opis PHP validation.
 - FilePond must be hidden behind a local `MediaUploader` abstraction.
 - Use an application-owned, typed text/image/video block editor.
 - Keep private backend code, credentials, JSON and original media outside the public document root.
@@ -24,7 +24,7 @@ These instructions apply to source code, tests, documentation, issues and PRs.
 
 ## Delivery and testing
 
-- Distinguish the approved functional specification from still-proposed implementation details.
+- Document the current implementation and verified behavior; treat historical proposals as context, not current specifications.
 - Do not claim that a component has been installed, built, deployed or tested unless it actually has been.
 - Treat the shared-hosting Apache/PHP environment as a compatibility requirement.
 - Keep `frontend/package-lock.json` and `backend/composer.lock` once generated from real dependency resolution.
