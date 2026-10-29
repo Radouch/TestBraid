@@ -8,6 +8,13 @@ export interface AuthorSession {
   user?: { id: string; username: string }
 }
 
+/**
+ * Allowed author usernames. Must match the check in backend/public/index.php
+ * (setup and login routes): the server rejects anything else, but with only a
+ * generic error, so the setup form validates first to explain the rule.
+ */
+export const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/
+
 export const authorSession = ref<AuthorSession | null>(null)
 export const sessionChecked = ref(false)
 

@@ -20,7 +20,8 @@
     "test:base": "tsx scripts/test-deployment-base.ts",
     "test:branding": "tsx scripts/test-site-identity.ts",
     "test:locales": "tsx scripts/test-ui-languages.ts",
-    "test:security": "node scripts/run-dom-tests.mjs scripts/test-security-diagnostics-dom.ts"
+    "test:security": "node scripts/run-dom-tests.mjs scripts/test-security-diagnostics-dom.ts",
+    "test:setup": "node scripts/run-dom-tests.mjs scripts/test-first-author-setup-dom.ts"
   },
   "dependencies": {
     "ajv": "^8.17.1",

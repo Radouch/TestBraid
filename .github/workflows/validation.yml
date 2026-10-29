@@ -41,6 +41,9 @@ jobs:
       - name: Author security diagnostics UX and optional HTTP probe
         run: npm run test:security
         working-directory: frontend
+      - name: First-author setup form username validation
+        run: npm run test:setup
+        working-directory: frontend
       - name: Question composition and private media interaction regression
         run: npm run test:content
         working-directory: frontend
