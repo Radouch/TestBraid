@@ -12,6 +12,8 @@ backend/vendor/
 .env.*
 !.env.example
 storage/
+# Committed demo lesson for install packages (see demo/README.md); not runtime data.
+!demo/storage/
 private/
 backend/private/
 backend/storage/
