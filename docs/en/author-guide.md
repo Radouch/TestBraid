@@ -1,12 +1,18 @@
 # Author guide
 
-Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in [Installation](installation.md).
+**English** · [Čeština](../cs/author-guide.md)
+
+Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in the [Quick start](quick-start.md).
+
+## Start from the demo tests
+
+A new installation has a published **demo lesson** with two short tests, including images and videos: one with choice questions and one with matching questions. Open them in the author area to see how questions are put together. Published tests are read-only, so use **Duplicate** to get a draft copy you can change freely.
 
 ## Organize lessons and tests
 
-A **lesson** groups related tests. Create or rename lessons in the author catalog and change their order as needed. A lesson cannot be deleted while it contains tests.
+A **lesson** groups related tests. Create or rename lessons on the **Edit tests** page and change their order as needed. A lesson cannot be deleted while it contains tests.
 
-Choose a lesson and select **New test**. Set its title, optional description, content language and whether the overall score should be shown. The test starts as a **draft**, invisible to anonymous visitors.
+Choose a lesson and select **New test**. Set its title, optional description, content language and whether the overall test result should be shown. The test starts as a **draft**, invisible to anonymous visitors.
 
 You can reorder tests within lessons, duplicate an existing test or move a draft to another lesson. Duplicating a test reuses its referenced media; it does not upload copies of the files.
 
@@ -15,7 +21,7 @@ You can reorder tests within lessons, duplicate an existing test or move a draft
 The test workspace combines two tabs:
 
 - **Questions** — create, reorder, duplicate and remove questions.
-- **Test settings** — change title, lesson, description, content language, score visibility and publication status.
+- **Test settings** — change title, lesson, description, content language, overall result visibility and publication status.
 
 Both tabs use the same **Save changes** action. Changes are **not autosaved**. The preview displays the **last saved version**, so save before previewing. The editor warns about unsaved changes when leaving.
 
@@ -48,8 +54,17 @@ A published test is read-only in the author editor. **Unpublish it before editin
 
 Media used by other published tests remains available when a test is withdrawn. Original uploads remain in the private library.
 
+## Remove the demo content
+
+Remove the demo lesson before you share your site:
+
+1. Open each demo test and select **Unpublish**.
+2. Delete both demo tests on the **Edit tests** page.
+3. Delete the now empty demo lesson.
+4. In the [Media library](media-library.md), delete the demo images and videos. A file can be deleted only after no test uses it, including any copies you made with **Duplicate**.
+
 ## Scoring
 
-Each fully correct question earns one point; there is no partial credit. Disabling **Show overall score** hides overall point statistics, while learners still see which answers were right or wrong.
+A question counts as correctly answered only when it is fully correct; there is no partial credit. Turning off **Show overall test result** hides the number of correctly answered questions, while learners still see which answers were right or wrong.
 
 TestBraid is designed for **self-assessment**, not for storing student results or conducting secret examinations. See [Learner guide](learner-guide.md).

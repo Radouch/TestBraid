@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { appBaseUrl } from '../deployment-base'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminCatalog from '../components/AdminCatalog.vue'
 import SecurityDiagnostics from '../components/SecurityDiagnostics.vue'
-import { authorSession } from '../auth'
+import { authorSession, USERNAME_PATTERN } from '../auth'
 
 interface Author {
   id: string
@@ -29,6 +29,8 @@ const loading = ref(true)
 const busy = ref(false)
 const error = ref('')
 const api = (route: string): string => `${appBaseUrl()}api/${route}`
+// Flag a bad username as soon as something is typed, not while it is empty.
+const usernameInvalid = computed(() => username.value !== '' && !USERNAME_PATTERN.test(username.value))
 
 async function readSession(): Promise<void> {
   loading.value = true
@@ -99,6 +101,10 @@ async function signIn(): Promise<void> {
 
 async function createFirstAuthor(): Promise<void> {
   if (busy.value) return
+  if (usernameInvalid.value) {
+    document.getElementById('setup-username')?.focus()
+    return
+  }
   busy.value = true
   error.value = ''
   try {
@@ -136,7 +142,10 @@ onMounted(() => void readSession())
         <div>
           <label class="form-label" for="setup-username">{{ t('username') }}</label>
           <input id="setup-username" v-model="username" class="form-control" autocomplete="username"
-            required maxlength="64" />
+            required maxlength="64" :class="{ 'is-invalid': usernameInvalid }" :aria-invalid="usernameInvalid"
+            aria-describedby="setup-username-help" />
+          <p v-if="usernameInvalid" id="setup-username-help" class="invalid-feedback mb-0">{{ t('usernameInvalid') }}</p>
+          <p v-else id="setup-username-help" class="form-text mb-0">{{ t('usernameRules') }}</p>
         </div>
         <div>
           <label class="form-label" for="setup-password">{{ t('password') }}</label>

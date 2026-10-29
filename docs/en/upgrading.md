@@ -1,21 +1,16 @@
 # Upgrading
 
-Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases), not the first-install package. Read the release notes first in case the new version requires special steps.
+**English** · [Čeština](../cs/upgrading.md)
+
+Use the **upgrade ZIP** from [GitHub Releases](https://github.com/Radouch/TestBraid/releases). Never upload the install ZIP over a running site: it would replace your `config/app.json` and bring the demo lesson back. Read the release notes first in case the new version requires special steps.
 
 ## 1. Back up your installation
 
-Before upgrading, make a consistent backup of:
-
-- Private `config/` (settings and author accounts).
-- Private `storage/` (lessons, tests, media metadata and original uploads).
-- Public `media/` (published media and its `.htaccess`).
-- Public `bootstrap.local.php`, if you configured a custom backend path.
-
-Avoid editing tests during the backup and upgrade. See [Security and backups](security-and-backups.md).
+Download a copy of the folders listed in [Security and backups](security-and-backups.md#back-up-and-restore), mainly `config` and `storage` in the private folder and `media` in the public folder. Don't edit tests while you back up and upgrade.
 
 ## 2. Replace application files
 
-Extract the upgrade archive. Upload its `www/` contents to your actual public application directory and its `testbraid-backend/` contents to the private backend.
+Extract the upgrade archive. Upload the contents of its `www/` into your public folder (the same place as during installation) and the contents of its `testbraid-backend/` into your private folder.
 
 **Important:**
 
@@ -30,6 +25,6 @@ The release ZIP already contains PHP dependencies. No Composer or frontend build
 
 ## 3. Check the result
 
-Reload the application, sign in, and check that an existing lesson, draft and published test still work. Verify that images and videos are accessible, and try reloading a direct link to a test. Check that your site title, UI languages and URL path remain correct.
+Reload the application, sign in, and check that an existing lesson, draft and published test still work. Verify that images and videos are accessible, and try reloading a direct link to a test. Check that your site title, interface languages and address remain correct.
 
 If the site fails, compare the uploaded files with the archive and consult [Troubleshooting](troubleshooting.md). Restore a known-good, compatible application version and backup if needed; do not delete persistent files to repair a failed upgrade.

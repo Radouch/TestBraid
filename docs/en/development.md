@@ -1,6 +1,6 @@
 # Development
 
-This guide is for contributors working on TestBraid's **source code**. Users installing the application should start with [Installation](installation.md) and the prebuilt release ZIP.
+This guide is for contributors working on TestBraid's **source code**. Users installing the application should start with the [Quick start](quick-start.md) and the prebuilt release ZIP.
 
 ## Prerequisites and project layout
 
@@ -10,6 +10,7 @@ Use Node.js, npm, PHP and Composer versions compatible with the repository's pac
 - `backend/` — Slim/PHP application, Composer dependencies and PHP tests.
 - `schemas/` — shared JSON Schema files and fixtures.
 - `deploy/` — public PHP bootstraps and Apache rules.
+- `demo/` — the demo lesson shipped in install packages, see [demo/README.md](../../demo/README.md).
 - `scripts/` — deployment assembly and verification.
 - `.github/workflows/` — validation and release automation.
 
