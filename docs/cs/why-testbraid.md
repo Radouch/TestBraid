@@ -6,7 +6,7 @@ TestBraid je **jednoduchý nástroj na tvorbu testů**. Testy sestavíte z textu
 
 ## Proč vznikl
 
-Mnoho online nástrojů na formuláře a kvízy omezuje, odkud může obsah pocházet. Například Google Formuláře umí zobrazit jen videa z YouTube. Pokud je vaším materiálem vlastní video, nahrávka, kterou nesmíte zveřejnit na videoplatformě, nebo prostě obrázek ve vašem počítači, takové nástroje překážejí.
+Mnoho online nástrojů na formuláře a kvízy omezuje, odkud může obsah pocházet. Například Google Formuláře umí zobrazit jen videa z YouTube. Pokud je vaším materiálem vlastní video, nahrávka, kterou nesmíte zveřejnit na videoplatformě, nebo prostě obrázek ve vašem počítači, takové nástroje vám házejí klacky pod nohy.
 
 TestBraid taková omezení nemá. Každý obrázek a video v testu je soubor, který **sami nahrajete** na svůj hosting (obrázky JPEG, PNG nebo WebP, videa MP4 nebo WebM). Nic není potřeba nejdřív zveřejnit na YouTube ani jinde. Vaše testy a soubory zůstávají na vašem hostingu, pod vaší kontrolou.
 
