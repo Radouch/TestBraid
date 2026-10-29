@@ -202,7 +202,7 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
 .question-body { display: grid; gap: 1.5rem; }
 .question-prompt { background: var(--bs-tertiary-bg); }
 .question-prompt:has(.editor-menu[open]) { position: relative; z-index: 45; }
-.question-toggle:focus-visible { box-shadow: 0 0 0 .2rem rgb(13 110 253 / .25); }
+.question-toggle:focus-visible { box-shadow: 0 0 0 .2rem var(--bs-focus-ring-color); }
 .question-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65ch; }
 .choice-mode { width: auto; max-width: 100%; }
 .choice-mode-control { min-width: 0; max-width: 100%; }

@@ -203,9 +203,9 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
 .paired-content, .pair-correction, .mobile-source { --content-media-landscape-height: 140px; --content-media-portrait-height: 360px; }
 .selection-card { border: 2px solid var(--bs-border-color); }
 .left-pool .selection-card, .candidate-ready { cursor: pointer; }
-.item-active { border-color: var(--bs-primary); background: rgb(13 110 253 / .04); }
-.pair-correct { border-color: var(--bs-success) !important; background: rgb(var(--bs-success-rgb) / .06); }
-.pair-incorrect { border-color: var(--bs-danger) !important; background: rgb(var(--bs-danger-rgb) / .06); }
+.item-active { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .04); }
+.pair-correct { border-color: var(--bs-success) !important; background: rgba(var(--bs-success-rgb), .06); }
+.pair-incorrect { border-color: var(--bs-danger) !important; background: rgba(var(--bs-danger-rgb), .06); }
 .pair-unanswered { background: var(--bs-tertiary-bg); }
 .pair-correction { border: 1px solid var(--bs-success-border-subtle); background: var(--bs-success-bg-subtle); }
 .working-area, .right-pool { scroll-margin-top: var(--runner-scroll-offset, 1rem); }
