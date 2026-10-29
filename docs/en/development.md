@@ -10,6 +10,7 @@ Use Node.js, npm, PHP and Composer versions compatible with the repository's pac
 - `backend/` — Slim/PHP application, Composer dependencies and PHP tests.
 - `schemas/` — shared JSON Schema files and fixtures.
 - `deploy/` — public PHP bootstraps and Apache rules.
+- `demo/` — the demo lesson shipped in install packages, see [demo/README.md](../../demo/README.md).
 - `scripts/` — deployment assembly and verification.
 - `.github/workflows/` — validation and release automation.
 

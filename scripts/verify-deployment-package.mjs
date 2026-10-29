@@ -15,6 +15,10 @@ const root = resolve(paths[0] ?? join(project, 'deployment-package'))
 const web = join(root, 'www')
 const installationConfigDirectory = join(root, 'testbraid-backend/config')
 const vendorDirectory = join(root, 'testbraid-backend/vendor')
+const storageDirectory = join(root, 'testbraid-backend/storage')
+const demoStorage = join(project, 'demo/storage')
+// Only an initial-install package carries config/ and, with it, the demo lesson.
+const initialInstall = existsSync(installationConfigDirectory)
 
 function fail(reason) { throw new Error('Deployment package rejected: ' + reason) }
 function file(path) {
@@ -22,6 +26,21 @@ function file(path) {
 }
 function absent(path) {
   if (existsSync(path)) fail('must not stage ' + relative(root, path))
+}
+/** Require a staged directory to match a source directory file for file. */
+function sameTree(source, staged) {
+  if (!existsSync(staged) || !lstatSync(staged).isDirectory()) fail('missing directory ' + relative(root, staged))
+  const sourceEntries = readdirSync(source).sort()
+  const stagedEntries = readdirSync(staged).sort()
+  if (sourceEntries.join('\n') !== stagedEntries.join('\n')) fail('unexpected contents in ' + relative(root, staged))
+  for (const entry of sourceEntries) {
+    const from = join(source, entry)
+    const to = join(staged, entry)
+    if (lstatSync(from).isDirectory()) sameTree(from, to)
+    else if (!lstatSync(to).isFile() || !readFileSync(from).equals(readFileSync(to))) {
+      fail('staged file differs from source: ' + relative(root, to))
+    }
+  }
 }
 
 try {
@@ -41,7 +60,8 @@ try {
         // Only the initial-install package may have the single reviewed
         // default config/app.json, never author secrets or runtime settings.
         const insideComposerPackage = path.startsWith(vendorDirectory + sep)
-        if (['.git', 'node_modules', 'storage'].includes(entry)
+        if (['.git', 'node_modules'].includes(entry)
+          || (entry === 'storage' && (!initialInstall || path !== storageDirectory))
           || (entry === 'vendor' && (!releaseMode || path !== vendorDirectory))
           || (entry === 'config' && path !== installationConfigDirectory && !insideComposerPackage)) {
           fail('runtime or development directory: ' + relative(root, path))
@@ -85,7 +105,6 @@ try {
   }
 
   for (const forbidden of [
-    'testbraid-backend/storage',
     'www/index.html',
     'www/bootstrap.local.php',
     'www/config',
@@ -99,7 +118,7 @@ try {
   // The bootstrap template accompanies only an initial installation.
   // An upgrade must not copy the example or overwrite the operator's local settings.
   const bootstrapExample = join(web, 'bootstrap.local.example.php')
-  if (existsSync(installationConfigDirectory)) {
+  if (initialInstall) {
     file(bootstrapExample)
     if (readFileSync(bootstrapExample, 'utf8')
         !== readFileSync(join(project, 'deploy/www/bootstrap.local.example.php'), 'utf8')) {
@@ -120,10 +139,25 @@ try {
     absent(bootstrapExample)
   }
 
-  // The media directory in the release must not contain uploaded files.
-  const stagedMedia = readdirSync(join(web, 'media'))
-  if (stagedMedia.length !== 1 || stagedMedia[0] !== '.htaccess') {
-    fail('public media directory contains something other than its deny policy')
+  // The demo lesson's private storage must be an exact copy of demo/storage,
+  // so a package can never ship author accounts, drafts or other runtime data.
+  if (initialInstall) {
+    sameTree(demoStorage, storageDirectory)
+  } else {
+    absent(storageDirectory)
+  }
+
+  // Public media holds only its deny policy, plus in an initial install the
+  // demo lesson's published copies, identical to the private originals.
+  const stagedMedia = readdirSync(join(web, 'media')).sort()
+  const expectedMedia = ['.htaccess', ...(initialInstall ? readdirSync(join(demoStorage, 'media-files')) : [])].sort()
+  if (stagedMedia.join('\n') !== expectedMedia.join('\n')) {
+    fail('public media directory contains something other than its deny policy and demo media')
+  }
+  for (const name of expectedMedia.filter(name => name !== '.htaccess')) {
+    if (!readFileSync(join(web, 'media', name)).equals(readFileSync(join(demoStorage, 'media-files', name)))) {
+      fail('staged demo media differs from demo/storage: ' + name)
+    }
   }
   const rule = readFileSync(join(web, 'media/.htaccess'), 'utf8')
   const sourceRule = readFileSync(join(project, 'deploy/www/media/.htaccess'), 'utf8')

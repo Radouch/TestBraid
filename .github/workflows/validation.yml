@@ -83,6 +83,7 @@ jobs:
           test ! -e deployment-package/testbraid-backend/config
           test ! -e deployment-package/testbraid-backend/config/authors.json
           test ! -e deployment-package/testbraid-backend/vendor
+          test ! -e deployment-package/testbraid-backend/storage
       - name: Audit upgrade-safe SFTP deployment package
         run: node scripts/verify-deployment-package.mjs
       - name: Stage and audit a fresh installation with default config
@@ -92,6 +93,7 @@ jobs:
           test -f deployment-package/www/bootstrap.local.example.php
           test ! -e deployment-package/testbraid-backend/config/authors.json
           cmp backend/config/app.json deployment-package/testbraid-backend/config/app.json
+          test -d deployment-package/testbraid-backend/storage/tests
           node scripts/verify-deployment-package.mjs
 
   backend:
@@ -121,6 +123,9 @@ jobs:
         working-directory: backend
       - name: Shared schema fixtures (Opis)
         run: composer run test:schemas
+        working-directory: backend
+      - name: Demo lesson shipped in install packages
+        run: composer run test:demo
         working-directory: backend
       # Uses an isolated loopback PHP server and disposable credentials.
       - name: One-file backend bootstrap path configuration

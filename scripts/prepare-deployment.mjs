@@ -64,6 +64,7 @@ try {
   }
 
   if (includeVendor) requireFile('backend/vendor/autoload.php')
+  if (initialInstall) requireFile('demo/storage/groups/e7472376-d56a-4384-ad1c-a1606dabddb7.json')
 
   rmSync(output, { recursive: true, force: true })
 
@@ -98,6 +99,13 @@ try {
     const configDirectory = join(privateBackend, 'config')
     mkdirSync(configDirectory, { recursive: true })
     cpSync(join(root, 'backend/config/app.json'), join(configDirectory, 'app.json'))
+
+    // A fresh site starts with the published demo lesson from demo/storage.
+    // Its private records go to storage/, and the public copies that
+    // publication would have made go to www/media/<uuid>.<ext>. Upgrades
+    // never include either, so they cannot touch an operator's own data.
+    copyDirectory('demo/storage', 'testbraid-backend/storage')
+    copyDirectory('demo/storage/media-files', 'www/media')
   }
 
   console.log('Deployment files staged at deployment-package/')
