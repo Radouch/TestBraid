@@ -4,6 +4,8 @@
 
 TestBraid je aplikace pro tvorbu a vyplňování multimediálních testů k samostatnému ověřování znalostí, kterou provozujete na vlastním webhostingu.
 
+Je to jednoduchý nástroj na testy, ne systém pro řízení výuky: studenti nepotřebují účty a žádné výsledky se neukládají. Obrázky a videa jsou vaše vlastní soubory, ne odkazy na videoplatformu. V části **[Proč TestBraid](docs/cs/why-testbraid.md)** zjistíte, zda vám vyhovuje.
+
 ## Dokumentace
 
 **Nový uživatel? Začněte [Rychlým startem](docs/cs/quick-start.md).** Provede vás instalací TestBraidu pouhým nahráním souborů, bez příkazové řádky a bez databáze.
@@ -26,8 +28,6 @@ TestBraid je aplikace pro tvorbu a vyplňování multimediálních testů k samo
 
 - [Architecture](docs/en/architecture.md) — součásti, data a API.
 - [Development](docs/en/development.md) — vývojové prostředí, testy a vydávání verzí.
-
-Podrobné představení projektu bude doplněno později.
 
 ## Licence
 
