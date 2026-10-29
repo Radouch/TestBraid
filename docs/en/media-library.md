@@ -8,7 +8,7 @@ The library accepts **JPEG, PNG and WebP images** and **MP4 and WebM videos**. F
 
 To upload several files:
 
-1. Choose a **home lesson** if you want the files organized under a particular lesson.
+1. Choose a **Media lesson** if you want the files organized under a particular lesson.
 2. Select or drop **multiple images and videos**.
 3. Click **Upload selected files** once to start the batch.
 4. Review the result. Successfully uploaded files stay available even if others fail; retry failed files as needed.
@@ -19,7 +19,7 @@ The uploader inside a **test question** works differently: it attaches and uploa
 
 ## Organize and find media
 
-Media can be assigned to one **home lesson**, or left unassigned. This acts like a virtual folder: changing the lesson does **not** move the file or restrict where it can be used. A test may use media assigned to another lesson.
+Media can be assigned to one **media lesson**, or left unassigned. This acts like a virtual folder: changing the lesson does **not** move the file or restrict where it can be used. A test may use media assigned to another lesson.
 
 Filter by lesson and file type, or search for part of the original filename. The library also shows which tests use each item.
 

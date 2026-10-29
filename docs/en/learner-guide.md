@@ -20,15 +20,15 @@ For a **single-choice** question, select one option. For **multiple-choice**, se
 
 ### Match pairs
 
-Select a source item, then select its corresponding counterpart. The completed match moves into **Your pairs**. Use **Unpair** if you want to change it. On phones the groups may appear above and below one another.
+Press **Select** on an item in the first group, then **Assign** on its counterpart in the second group. The finished pair moves into **Your pairs**. Use **Unpair** if you want to change it. On phones the groups may appear above and below one another.
 
 You can review and change your choices until you submit the test.
 
-## Evaluate your answers
+## Check your answers
 
-Select **Evaluate** when ready. The test shows correct, incorrect and unanswered questions. For a wrong matching pair, it also shows the correct counterpart.
+Select **Check answers** when ready. The test shows correct, incorrect and unanswered questions. For a wrong matching pair, it also shows the correct counterpart.
 
-A question earns one point only when fully correct. Some tests hide the **overall score**, but still show feedback on individual answers.
+A question counts as correctly answered only when it is fully correct. Some tests hide the **overall result** (the number of correctly answered questions), but still show feedback on individual answers.
 
 Use **Try again** to start a new attempt. Your previous choices are cleared; matching items may appear in a different order.
 

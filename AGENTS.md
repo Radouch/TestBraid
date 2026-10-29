@@ -5,6 +5,7 @@ These instructions apply to source code, tests, documentation, issues and PRs.
 ## Language and comments
 
 - Write source code, identifiers, code comments, documentation and commit messages in **English**.
+- User documentation is maintained in English (`docs/en/`) and Czech (`docs/cs/`, same file names). Change both together, and quote button and screen names exactly as the matching `frontend/public/locales/*.json` shows them. Developer documentation is English only.
 - **Include useful comments in code**: explain the purpose of non-obvious functions and modules, algorithms, security-sensitive decisions, path handling, API contracts and important trade-offs.
 - Document public or tricky interfaces with concise docblocks where appropriate.
 - Avoid comments that merely restate obvious statements. Keep comments accurate when code changes.
