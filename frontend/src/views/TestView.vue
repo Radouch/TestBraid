@@ -67,26 +67,20 @@ onBeforeUnmount(() => activeRequest?.abort())
 
 <template>
   <section>
+    <!-- The one way back sits above the test. It names the lesson once the
+         catalog has loaded and falls back to a generic label otherwise. -->
     <nav :aria-label="t('runnerCatalogNavigation')" class="mb-3">
       <RouterLink :to="catalogLocation" class="d-inline-flex align-items-center gap-2">
-        <AppIcon name="arrow-left" />{{ t('runnerBackToCatalog') }}
+        <AppIcon name="arrow-left" />{{ lesson ? lesson.name : t('runnerBackToCatalog') }}
       </RouterLink>
     </nav>
     <p v-if="loading" role="status">{{ t('loading') }}</p>
     <p v-if="error" role="alert" class="alert alert-warning">{{ error }}</p>
     <TestRunner v-if="test && !loading" :key="test.id" :test="test"
       :media-urls="mediaUrls">
-      <template #context>
-        <p v-if="lesson" class="small text-secondary mb-2">
-          {{ t('catalogGroup') }}:
-          <RouterLink :to="catalogLocation">{{ lesson.name }}</RouterLink>
-        </p>
+      <template #results-actions>
+        <RouterLink :to="catalogLocation" class="btn btn-outline-secondary">{{ t('runnerBackToCatalog') }}</RouterLink>
       </template>
     </TestRunner>
-    <nav v-if="test && !loading" :aria-label="t('runnerCatalogNavigation')" class="border-top pt-3 mt-4">
-      <RouterLink :to="catalogLocation" class="d-inline-flex align-items-center gap-2">
-        <AppIcon name="arrow-left" />{{ t('runnerBackToCatalog') }}
-      </RouterLink>
-    </nav>
   </section>
 </template>

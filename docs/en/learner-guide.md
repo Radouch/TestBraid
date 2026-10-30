@@ -6,7 +6,7 @@ TestBraid lets you complete published multimedia tests **without registering or 
 
 ## Open a test
 
-Choose a lesson and test from the home page, or follow a link shared by an author. Only published tests are available to learners.
+Choose a lesson and test from the home page, or follow a link shared by an author. Only published tests are available to learners. The link with the lesson name above the test takes you back to the test list.
 
 The website interface may offer different languages. Changing the interface language does not translate the questions themselves.
 
@@ -28,7 +28,7 @@ You can review and change your choices until you submit the test.
 
 ## Check your answers
 
-Select **Check answers** when ready. The test shows correct, incorrect and unanswered questions. A correct option you did not select is marked **Correct option – not selected** and has a dashed orange border. For a wrong matching pair, the test also shows the correct counterpart.
+Select **Check answers** when ready. A summary at the top shows how many questions you answered correctly, and each question shows whether it is correct, incorrect or unanswered. **Review mistakes** takes you to the first question you answered wrongly or left unanswered, and **Back to test list** returns to the test list. A correct option you did not select is marked **Correct option – not selected** and has a dashed orange border. For a wrong matching pair, the test also shows the correct counterpart.
 
 A question counts as correctly answered only when it is fully correct. Some tests hide the **overall result** (the number of correctly answered questions), but still show feedback on individual answers.
 

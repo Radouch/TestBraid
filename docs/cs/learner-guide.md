@@ -6,7 +6,7 @@ V TestBraidu můžete vyplňovat publikované multimediální testy **bez regist
 
 ## Otevření testu
 
-Na úvodní stránce vyberte lekci a test, nebo použijte odkaz, který vám poslal autor. Studentům jsou dostupné jen publikované testy.
+Na úvodní stránce vyberte lekci a test, nebo použijte odkaz, který vám poslal autor. Studentům jsou dostupné jen publikované testy. Odkaz s názvem lekce nad testem vás vrátí na seznam testů.
 
 Web může nabízet rozhraní v různých jazycích. Změna jazyka rozhraní ale nepřekládá samotné otázky.
 
@@ -28,7 +28,7 @@ Své odpovědi můžete kontrolovat a měnit, dokud test neodešlete.
 
 ## Vyhodnocení odpovědí
 
-Až budete hotovi, klikněte na **Vyhodnotit odpovědi**. Test ukáže správně, nesprávně a nezodpovězené otázky. Správnou možnost, kterou jste nevybrali, označí textem **Správná možnost – nezvoleno** a přerušovaným oranžovým rámečkem. U chybné dvojice ukáže i správný protějšek.
+Až budete hotovi, klikněte na **Vyhodnotit odpovědi**. Souhrn nahoře ukáže, kolik otázek jste zodpověděli správně, a u každé otázky uvidíte, zda je správně, nesprávně, nebo bez odpovědi. Tlačítko **Projít chyby** vás přesune na první otázku, kterou máte špatně nebo bez odpovědi, a **Zpět na seznam testů** vás vrátí na seznam testů. Správnou možnost, kterou jste nevybrali, označí textem **Správná možnost – nezvoleno** a přerušovaným oranžovým rámečkem. U chybné dvojice ukáže i správný protějšek.
 
 Otázka se počítá jako správně zodpovězená, jen když je zodpovězena zcela správně. Některé testy skrývají **celkový výsledek** (počet správně zodpovězených otázek), ale zpětnou vazbu k jednotlivým odpovědím zobrazují vždy.
 
