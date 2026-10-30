@@ -144,6 +144,25 @@ try {
   assert.equal(snapshot(), initial, 'Opening/closing cards and measuring media never rewrites content or answer keys')
   console.log('PASS CONTENT DOM: neutral completeness, separate prompt/answers, private portrait previews and retained collapsed media')
 
+  // Every chosen picture or video gets a description field; clearing it removes the property.
+  const altInput = find<HTMLInputElement>('#alt-photo', block('photo'))
+  assert.equal(find(`label[for="alt-photo"]`, block('photo')).textContent?.trim(), cs.editorAltText)
+  assert.equal(find('#' + altInput.getAttribute('aria-describedby')).textContent?.trim(), cs.editorAltHelp_image)
+  assert.equal(altInput.maxLength, 500)
+  assert.ok(find('#alt-clip', block('clip')))
+  const photo = () => choice.prompt.find(item => item.id === 'photo')!
+  altInput.value = 'A maple leaf'
+  altInput.dispatchEvent(new Event('input', { bubbles: true }))
+  await settle()
+  const described = photo()
+  assert.equal(described.type !== 'text' ? described.alt : undefined, 'A maple leaf')
+  altInput.value = ''
+  altInput.dispatchEvent(new Event('input', { bubbles: true }))
+  await settle()
+  assert.equal('alt' in photo(), false, 'An emptied description is not stored')
+  assert.equal(snapshot(), initial)
+  console.log('PASS CONTENT DOM: description fields for pictures and videos, stored on the block and removed when emptied')
+
   let actions = await menu('.block-actions', block('prompt-start'))
   assert.ok(find<HTMLButtonElement>('.move-block-up', actions).disabled)
   await click(find('[data-insert-kind=text]', actions))

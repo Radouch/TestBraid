@@ -69,7 +69,8 @@
             {
               "id": "b-6",
               "type": "video",
-              "mediaId": "media-video-1"
+              "mediaId": "media-video-1",
+              "alt": "A dog running across a meadow"
             }
           ]
         },
@@ -79,7 +80,8 @@
             {
               "id": "b-7",
               "type": "video",
-              "mediaId": "media-video-2"
+              "mediaId": "media-video-2",
+              "alt": "A cat climbing a tree"
             }
           ]
         }

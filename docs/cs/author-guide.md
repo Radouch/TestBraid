@@ -41,6 +41,8 @@ U obou typů otázek editor upozorňuje na neúplnost. Rozpracovaný test lze ul
 
 Vyberte existující obrázek nebo video z knihovny médií, nebo nahrajte nový soubor přímo v editoru otázky. Média lze použít opakovaně v různých otázkách a lekcích.
 
+Pod každým obrázkem a videem vyplňte **Popis pro čtečky obrazovky**: napište, co obrázek zobrazuje nebo co se ve videu děje. Studenti, kteří používají čtečku obrazovky, uslyší tento text místo zobrazení média. Když obrázek nebo video tvoří celou odpověď nebo položku k přiřazení, je popis **pro publikování povinný**; bez něj by tito studenti odpovědi nerozlišili. Jinde je nepovinný, ale i tak užitečný.
+
 **Editor připojuje vždy jen jeden soubor.** Chcete-li vybrat a nahrát více souborů najednou, otevřete samostatnou [Knihovnu médií](media-library.md) a soubory pak vyberte v editoru.
 
 ## Náhled a publikování

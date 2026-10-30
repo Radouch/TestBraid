@@ -41,6 +41,8 @@ For both question types, the editor shows completeness warnings. A draft may be 
 
 Choose an existing image or video from the media library, or upload a new file from within the question editor. Media may be reused in different questions and lessons.
 
+Under each image or video, fill in **Description for screen readers**: say what the picture shows or what happens in the video. Learners who use a screen reader hear this text instead of seeing the media. When a picture or video is a whole answer or matching item, the description is **required for publishing**; without it, those learners cannot tell the answers apart. Elsewhere it is optional but still helpful.
+
 The **editor attaches one file at a time**. To select and upload several files together, open the standalone [Media library](media-library.md), then choose them from the editor.
 
 ## Preview and publish

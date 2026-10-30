@@ -48,6 +48,11 @@
           "minLength": 1,
           "maxLength": 128,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "alt": {
+          "description": "Text alternative for screen readers: the image's alt text or the video's accessible name. Required for publication when the media is the only content of a choice option or matching item.",
+          "type": "string",
+          "maxLength": 500
         }
       },
       "additionalProperties": false
@@ -74,6 +79,11 @@
           "minLength": 1,
           "maxLength": 128,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "alt": {
+          "description": "Text alternative for screen readers: the image's alt text or the video's accessible name. Required for publication when the media is the only content of a choice option or matching item.",
+          "type": "string",
+          "maxLength": 500
         }
       },
       "additionalProperties": false

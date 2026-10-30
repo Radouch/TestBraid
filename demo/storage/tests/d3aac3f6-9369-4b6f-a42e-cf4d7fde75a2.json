@@ -82,7 +82,8 @@
                         {
                             "id": "block-7",
                             "type": "image",
-                            "mediaId": "f8dae869-472e-4880-bc0d-dd088106fc24"
+                            "mediaId": "f8dae869-472e-4880-bc0d-dd088106fc24",
+                            "alt": "Modrý čtverec"
                         }
                     ]
                 },
@@ -92,7 +93,8 @@
                         {
                             "id": "block-8",
                             "type": "image",
-                            "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37"
+                            "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37",
+                            "alt": "Červený kruh"
                         }
                     ]
                 },
@@ -102,7 +104,8 @@
                         {
                             "id": "block-9",
                             "type": "image",
-                            "mediaId": "7775be41-c799-473b-a4ae-f38fdb7120e1"
+                            "mediaId": "7775be41-c799-473b-a4ae-f38fdb7120e1",
+                            "alt": "Modrý kruh"
                         }
                     ]
                 },
@@ -112,7 +115,8 @@
                         {
                             "id": "block-10",
                             "type": "image",
-                            "mediaId": "07a23619-a0d3-4d4d-964e-0d571b79f577"
+                            "mediaId": "07a23619-a0d3-4d4d-964e-0d571b79f577",
+                            "alt": "Zelený trojúhelník"
                         }
                     ]
                 }
