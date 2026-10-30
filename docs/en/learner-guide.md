@@ -12,13 +12,13 @@ The website interface may offer different languages. Changing the interface lang
 
 ## Answer questions
 
-All questions appear on **one scrollable page**. Use the question overview to jump between questions, and expand or collapse question cards as needed. Your answers are preserved while navigating the page.
+All questions appear on **one scrollable page**. Tests with six or more questions also have a **Question overview** for jumping between questions and seeing which ones you have answered. Next to **Check answers**, the page shows how many questions you have answered. Your answers are preserved while navigating the page.
 
 Tests may contain text, images and playable videos.
 
 ### Choose answers
 
-For a **single-choice** question, select one option. For **multiple-choice**, select all the options you think are correct.
+For a **single-choice** question, select one option. For **multiple-choice**, select all the options you think are correct. Options are marked A, B, C and so on; you can select one by clicking anywhere on it.
 
 ### Match pairs
 
@@ -28,7 +28,7 @@ You can review and change your choices until you submit the test.
 
 ## Check your answers
 
-Select **Check answers** when ready. The test shows correct, incorrect and unanswered questions. For a wrong matching pair, it also shows the correct counterpart.
+Select **Check answers** when ready. The test shows correct, incorrect and unanswered questions. A correct option you did not select is marked **Correct option – not selected** and has a dashed orange border. For a wrong matching pair, the test also shows the correct counterpart.
 
 A question counts as correctly answered only when it is fully correct. Some tests hide the **overall result** (the number of correctly answered questions), but still show feedback on individual answers.
 

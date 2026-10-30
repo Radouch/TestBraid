@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
 import MatchingQuestionRunner from './MatchingQuestionRunner.vue'
 import { createMatchingOrder } from '../learner/presentation'
-import { choiceFeedback, questionProgress, type ProgressState } from '../learner/overview'
+import { choiceFeedback, questionProgress, type ChoiceFeedback, type ProgressState } from '../learner/overview'
 import { showsOverallScore, type ChoiceQuestion, type DraftTest, type Question } from '../editor/model'
 import {
   freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer,
@@ -18,6 +18,8 @@ const props = defineProps<{
   mediaUrls?: Record<string, string>
 }>()
 const { t } = useI18n()
+/** Short tests fit on the page without a navigator; longer ones get the question overview. */
+const OVERVIEW_MIN_QUESTIONS = 6
 const root = ref<HTMLElement | null>(null)
 const overview = ref<HTMLElement | null>(null)
 const overviewToggle = ref<HTMLButtonElement | null>(null)
@@ -25,7 +27,6 @@ const overviewList = ref<HTMLOListElement | null>(null)
 const summaryHeading = ref<HTMLElement | null>(null)
 const answers = ref<Answers>(freshAnswers())
 const submitted = ref(false)
-const collapsed = ref(new Set<string>())
 const overviewOpen = ref(false)
 const activeQuestionId = ref('')
 const scrollOffset = ref(16)
@@ -34,6 +35,7 @@ const result = computed(() => grade(props.test.questions, answers.value))
 const resultsById = computed(() => new Map(result.value.results.map(item => [item.questionId, item])))
 const incompleteDraft = computed(() => props.privatePreview && props.test.questions.length === 0)
 const scoreVisible = computed(() => showsOverallScore(props.test))
+const showOverview = computed(() => props.test.questions.length >= OVERVIEW_MIN_QUESTIONS)
 const progress = computed(() => new Map(props.test.questions.map(question =>
   [question.id, questionProgress(question, answers.value)])))
 const completed = computed(() => [...progress.value.values()].filter(item => item.state === 'answered').length)
@@ -43,10 +45,15 @@ const progressLabel = computed(() => submitted.value ? t('runnerReviewAnswers')
   : t('runnerAnsweredProgress', { count: completed.value, total: props.test.questions.length }))
 
 type QuestionState = ProgressState | 'correct' | 'incorrect' | 'ungraded'
-const statusIcons = {
-  unanswered: 'circle', partial: 'circle-half', answered: 'check-lg',
-  correct: 'check2-circle', incorrect: 'x-lg', ungraded: 'dash-lg',
-} as const
+// Only states with a meaning of their own carry an icon. An empty circle for
+// "unanswered" sat right above the radio buttons and looked like one of them.
+const statusIcons: Partial<Record<QuestionState, 'check-lg' | 'x-lg'>> = {
+  answered: 'check-lg', correct: 'check-lg', incorrect: 'x-lg',
+}
+const feedbackIcons: Record<ChoiceFeedback, 'check-lg' | 'x-lg' | 'exclamation-circle'> = {
+  neutral: 'check-lg', selected: 'check-lg', 'chosen-correct': 'check-lg',
+  'chosen-incorrect': 'x-lg', 'correct-unselected': 'exclamation-circle',
+}
 
 function resultFor(question: Question): QuestionResult | undefined {
   return resultsById.value.get(question.id)
@@ -56,6 +63,9 @@ function questionState(question: Question): QuestionState {
   if (!hasValidAnswerKey(question)) return 'ungraded'
   const feedback = resultFor(question)
   return feedback?.correct ? 'correct' : feedback?.answered ? 'incorrect' : 'unanswered'
+}
+function statusIcon(question: Question): 'check-lg' | 'x-lg' | undefined {
+  return statusIcons[questionState(question)]
 }
 function questionFeedback(question: Question): string {
   const feedback = resultFor(question)
@@ -67,6 +77,14 @@ function statusLabel(question: Question): string {
   const item = progress.value.get(question.id)
   if (item?.state === 'partial') return t('runnerPartialPairs', { count: item.completed, total: item.total })
   return t(item?.state === 'answered' ? 'runnerAnswered' : 'runnerUnanswered')
+}
+/** A, B, C… label choice options; past Z, numbers keep every label unique. */
+function optionLetter(index: number): string {
+  return index < 26 ? String.fromCharCode(65 + index) : String(index + 1)
+}
+/** Text answers read best one per row; pictures and videos sit two per row. */
+function hasMediaOptions(question: ChoiceQuestion): boolean {
+  return question.options.some(option => option.content.some(block => block.type !== 'text'))
 }
 function optionState(question: ChoiceQuestion, id: string) {
   return choiceFeedback(question, answers.value.choices[question.id] ?? [], id, submitted.value)
@@ -98,15 +116,8 @@ function sectionFor(id: string): HTMLElement | undefined {
     .find(section => section.dataset.runnerQuestion === id)
 }
 function pauseMedia(element: HTMLElement | null | undefined = root.value): void {
-  // v-show preserves playback position and child matching state while hidden.
+  // Grading, a new attempt or leaving the page stops playback but keeps the position.
   element?.querySelectorAll<HTMLMediaElement>('video, audio').forEach(media => media.pause())
-}
-function toggleQuestion(id: string): void {
-  activeQuestionId.value = id
-  const next = new Set(collapsed.value)
-  if (next.has(id)) next.delete(id)
-  else { pauseMedia(sectionFor(id)); next.add(id) }
-  collapsed.value = next
 }
 function mobileOverview(): boolean {
   return window.matchMedia('(max-width: 991.98px)').matches
@@ -115,7 +126,6 @@ function measureOverview(): void {
   scrollOffset.value = mobileOverview() ? (overview.value?.getBoundingClientRect().height ?? 0) + 16 : 16
 }
 async function jumpToQuestion(id: string): Promise<void> {
-  collapsed.value = new Set([...collapsed.value].filter(item => item !== id))
   overviewOpen.value = false
   activeQuestionId.value = id
   await nextTick()
@@ -125,7 +135,7 @@ async function jumpToQuestion(id: string): Promise<void> {
   await nextTick()
   const section = sectionFor(id)
   section?.scrollIntoView({ block: 'start', behavior: 'instant' })
-  section?.querySelector<HTMLButtonElement>('.question-toggle')?.focus({ preventScroll: true })
+  section?.querySelector<HTMLElement>('.question-position')?.focus({ preventScroll: true })
 }
 function closeOverview(event: KeyboardEvent): void {
   if (event.key !== 'Escape' || !overviewOpen.value || !mobileOverview()) return
@@ -139,8 +149,8 @@ function updateActiveQuestion(): void {
   frame = 0
   if (overviewOpen.value && mobileOverview()) return
   const sections = Array.from(root.value?.querySelectorAll<HTMLElement>('[data-runner-question]') ?? [])
-  // The question crossing the reading line is current. For very short or
-  // collapsed cards, the first visible card takes precedence over one above it.
+  // The question crossing the reading line is current. For very short cards,
+  // the first visible card takes precedence over one above it.
   const line = scrollOffset.value + 32
   const current = sections.find(section => section.getBoundingClientRect().bottom > line) ?? sections.at(-1)
   if (current?.dataset.runnerQuestion) activeQuestionId.value = current.dataset.runnerQuestion
@@ -163,7 +173,6 @@ function reset(): void {
   pauseMedia()
   answers.value = freshAnswers()
   submitted.value = false
-  collapsed.value = new Set()
   overviewOpen.value = false
   activeQuestionId.value = props.test.questions[0]?.id ?? ''
   matchingOrder.value = createMatchingOrder(props.test.questions)
@@ -173,8 +182,8 @@ async function restart(): Promise<void> {
   const first = props.test.questions[0]
   if (first) await jumpToQuestion(first.id)
 }
-// Only a newly loaded test or explicit retry resets an attempt. Locale changes,
-// answer updates and collapsing questions must not reshuffle matching items.
+// Only a newly loaded test or explicit retry resets an attempt. Locale changes
+// and answer updates must not reshuffle matching items.
 watch(() => props.test, reset, { immediate: true })
 watch(activeQuestionId, async () => {
   await nextTick()
@@ -221,7 +230,7 @@ onBeforeUnmount(() => {
     <p v-if="incompleteDraft" class="alert alert-warning" role="status">{{ t('runnerEmptyDraft') }}</p>
 
     <form class="runner-layout" @submit.prevent="submit">
-      <aside v-if="test.questions.length" ref="overview" class="runner-overview card" @keydown="closeOverview">
+      <aside v-if="showOverview" ref="overview" class="runner-overview card" @keydown="closeOverview">
         <nav :aria-label="t('runnerOverview')">
           <div class="overview-desktop p-3 border-bottom">
             <h2 class="h6 mb-2"><AppIcon name="list-check" /> {{ t('runnerOverview') }}</h2>
@@ -245,9 +254,8 @@ onBeforeUnmount(() => {
                 <span class="overview-number" aria-hidden="true">{{ index + 1 }}</span>
                 <span class="overview-description">
                   <span class="fw-semibold d-block">{{ t('runnerQuestion', { index: index + 1 }) }}</span>
-                  <span class="question-status small" :class="'status-' + questionState(question)">
-                    <AppIcon :name="submitted && questionState(question) === 'unanswered' ? 'dash-lg' : statusIcons[questionState(question)]" />
-                    {{ statusLabel(question) }}
+                  <span class="question-status" :class="'status-' + questionState(question)">
+                    <AppIcon v-if="statusIcon(question)" :name="statusIcon(question)!" />{{ statusLabel(question) }}
                   </span>
                 </span>
               </button>
@@ -271,44 +279,42 @@ onBeforeUnmount(() => {
           class="runner-question card mb-4" :class="submitted ? 'result-' + questionState(question) : ''"
           :data-runner-question="question.id" :aria-labelledby="'runner-question-' + question.id"
           @focusin="activeQuestionId = question.id">
-          <h2 class="h5 mb-0">
-            <button :id="'runner-question-' + question.id" type="button" class="question-toggle"
-              :aria-expanded="!collapsed.has(question.id)" :aria-controls="'runner-body-' + question.id" @click="toggleQuestion(question.id)">
-              <span class="question-heading-text">
-                <span class="fw-semibold">{{ t('runnerQuestionPosition', { index: index + 1, total: test.questions.length }) }}</span>
-                <span class="question-status small" :class="'status-' + questionState(question)">
-                  <AppIcon :name="submitted && questionState(question) === 'unanswered' ? 'dash-lg' : statusIcons[questionState(question)]" />
-                  {{ statusLabel(question) }}
-                </span>
-              </span>
-              <span class="visually-hidden">{{ t(collapsed.has(question.id) ? 'runnerExpandQuestion' : 'runnerCollapseQuestion') }}</span>
-              <AppIcon :name="collapsed.has(question.id) ? 'chevron-down' : 'chevron-up'" />
-            </button>
-          </h2>
-          <div v-show="!collapsed.has(question.id)" :id="'runner-body-' + question.id" class="question-body card-body">
+          <!-- The question's own text leads; its position and status are small labels above it. -->
+          <div class="question-header">
+            <h2 :id="'runner-question-' + question.id" class="question-position" tabindex="-1">
+              {{ t('runnerQuestionPosition', { index: index + 1, total: test.questions.length }) }}
+            </h2>
+            <span class="question-status" :class="'status-' + questionState(question)">
+              <AppIcon v-if="statusIcon(question)" :name="statusIcon(question)!" />{{ statusLabel(question) }}
+            </span>
+          </div>
+          <div :id="'runner-body-' + question.id" class="question-body">
             <ContentBlocksViewer class="question-prompt" :blocks="question.prompt"
               :private-preview="privatePreview" :media-urls="mediaUrls" />
 
             <template v-if="question.type === 'choice'">
               <p class="small text-secondary mt-3">{{ t(question.mode === 'single' ? 'runnerPickOne' : 'runnerPickMultiple') }}</p>
-              <div class="choice-options">
+              <div class="choice-options" :class="{ 'choice-options-media': hasMediaOptions(question) }">
                 <div v-for="(option, optionIndex) in question.options" :key="option.id" class="choice-option rounded"
                   :class="'option-' + optionState(question, option.id)" @click="chooseFromCard($event, question, option.id)">
-                  <div class="d-flex gap-2 align-items-start mb-2">
-                    <input :id="'runner-option-' + question.id + '-' + option.id" class="form-check-input mt-1"
-                      :type="question.mode === 'single' ? 'radio' : 'checkbox'" :name="'runner-choice-' + question.id"
-                      :checked="(answers.choices[question.id] ?? []).includes(option.id)" :disabled="submitted"
-                      :aria-describedby="optionLabel(question, option.id) ? 'runner-feedback-' + question.id + '-' + option.id : undefined"
-                      @change="choose(question, option.id, ($event.target as HTMLInputElement).checked)" />
-                    <label class="fw-semibold flex-grow-1" :for="'runner-option-' + question.id + '-' + option.id">
-                      {{ t('runnerAnswer', { index: optionIndex + 1 }) }}
-                    </label>
-                  </div>
+                  <!-- The accessible name is "Answer A" followed by the answer's own content. -->
+                  <input :id="'runner-option-' + question.id + '-' + option.id" class="form-check-input"
+                    :type="question.mode === 'single' ? 'radio' : 'checkbox'" :name="'runner-choice-' + question.id"
+                    :checked="(answers.choices[question.id] ?? []).includes(option.id)" :disabled="submitted"
+                    :aria-labelledby="'runner-option-label-' + question.id + '-' + option.id + ' runner-option-content-' + question.id + '-' + option.id"
+                    :aria-describedby="optionLabel(question, option.id) ? 'runner-feedback-' + question.id + '-' + option.id : undefined"
+                    @change="choose(question, option.id, ($event.target as HTMLInputElement).checked)" />
+                  <label :id="'runner-option-label-' + question.id + '-' + option.id" class="option-letter"
+                    :for="'runner-option-' + question.id + '-' + option.id">
+                    <span aria-hidden="true">{{ optionLetter(optionIndex) }}</span>
+                    <span class="visually-hidden">{{ t('runnerAnswer', { index: optionLetter(optionIndex) }) }}</span>
+                  </label>
                   <!-- Keep native video controls outside the input label. -->
-                  <ContentBlocksViewer :blocks="option.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
+                  <ContentBlocksViewer :id="'runner-option-content-' + question.id + '-' + option.id" class="option-content"
+                    :blocks="option.content" :private-preview="privatePreview" :media-urls="mediaUrls" />
                   <p v-if="optionLabel(question, option.id)" :id="'runner-feedback-' + question.id + '-' + option.id"
-                    class="option-feedback small fw-semibold mb-0 mt-2">
-                    <AppIcon :name="optionState(question, option.id) === 'chosen-incorrect' ? 'x-lg' : 'check-lg'" />
+                    class="option-feedback small fw-semibold mb-0">
+                    <AppIcon :name="feedbackIcons[optionState(question, option.id)]" />
                     {{ optionLabel(question, option.id) }}
                   </p>
                 </div>
@@ -326,11 +332,12 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <div v-if="test.questions.length" class="runner-actions d-flex gap-2 flex-wrap align-items-center">
-          <button v-if="!submitted" class="btn btn-primary" type="submit"><AppIcon name="check2-circle" />{{ t('runnerSubmit') }}</button>
+        <div v-if="test.questions.length" class="runner-actions d-flex gap-2 gap-sm-3 flex-wrap align-items-center">
+          <button v-if="!submitted" class="btn btn-primary runner-submit" type="submit"><AppIcon name="check2-circle" />{{ t('runnerSubmit') }}</button>
           <button v-else type="button" class="btn btn-outline-primary" @click="restart">
             <AppIcon name="arrow-counterclockwise" />{{ t('runnerTryAgain') }}
           </button>
+          <span v-if="!submitted" class="runner-progress small text-secondary">{{ progressLabel }}</span>
         </div>
         <p class="text-secondary small mt-3 mb-0">{{ t('runnerNoStorage') }}</p>
       </div>
@@ -350,41 +357,53 @@ onBeforeUnmount(() => {
 .overview-question { display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 3.5rem; padding: .5rem; border: 2px solid transparent; border-radius: var(--bs-border-radius); background: transparent; color: var(--bs-body-color); text-align: start; }
 .overview-question:hover { background: var(--bs-tertiary-bg); }
 .overview-question.is-current { border-color: var(--bs-primary); background: var(--bs-primary-bg-subtle); }
+.overview-question .question-status { margin-top: .2rem; }
+/* The current item's tint would swallow a tinted tag. */
+.overview-question.is-current .question-status { background: var(--bs-body-bg); }
 .overview-number { display: grid; place-items: center; width: 2rem; height: 2rem; flex-shrink: 0; border: 1px solid var(--bs-border-color); border-radius: .375rem; background: var(--bs-body-bg); font-weight: 600; }
 .is-current .overview-number { color: var(--bs-white); background: var(--bs-primary); border-color: var(--bs-primary); }
-.question-status { display: flex; align-items: center; gap: .35rem; font-weight: 400; color: var(--bs-secondary-color); }
-.status-answered, .status-partial { color: var(--bs-body-color); }
-.status-correct { color: var(--bs-success-text-emphasis); }
-.status-incorrect { color: var(--bs-danger-text-emphasis); }
+.overview-question:focus-visible { position: relative; outline: 3px solid var(--bs-primary); outline-offset: -3px; }
+/* Status tags carry the state in words; colour only supports it. Rounded
+   rectangles rather than pills, so longer texts can wrap in the overview. */
+.question-status { display: inline-flex; align-items: center; gap: .3rem; width: fit-content; padding: .125rem .5rem; border-radius: var(--bs-border-radius-sm); font-size: .8125rem; font-weight: 500; line-height: 1.4; color: var(--bs-secondary-color); background: var(--bs-secondary-bg); }
+.status-answered, .status-partial { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); }
+.status-correct { color: var(--bs-success-text-emphasis); background: var(--bs-success-bg-subtle); }
+.status-incorrect { color: var(--bs-danger-text-emphasis); background: var(--bs-danger-bg-subtle); }
+.status-ungraded { color: var(--bs-warning-text-emphasis); background: var(--bs-warning-bg-subtle); }
 .runner-question { overflow-wrap: anywhere; scroll-margin-top: var(--runner-scroll-offset); }
-.question-toggle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 4.5rem; border: 0; border-bottom: 1px solid var(--bs-border-color); border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0; padding: 1rem 1.25rem; text-align: start; color: var(--bs-body-color); background: var(--bs-tertiary-bg); }
-.question-heading-text { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; flex-grow: 1; gap: .5rem 1rem; }
-.question-toggle .question-status { font-size: .875rem; }
-.question-toggle[aria-expanded="false"] { border-bottom: 0; border-radius: var(--bs-card-inner-border-radius); }
-.question-toggle:focus-visible, .overview-question:focus-visible { position: relative; outline: 3px solid var(--bs-primary); outline-offset: -3px; }
-.question-body { padding: 1.25rem; }
-.question-prompt { padding-bottom: .5rem; border-bottom: 1px solid var(--bs-border-color); }
+.question-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding: 1rem 1.25rem 0; }
+.question-position { margin: 0; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--bs-secondary-color); }
+.question-position:focus-visible { outline: 3px solid var(--bs-primary); outline-offset: 2px; border-radius: 2px; }
+.question-body { padding: .5rem 1.25rem 1.25rem; }
+.question-prompt { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
 .question-prompt :deep(> :last-child) { margin-bottom: 0 !important; }
-/* 18rem keeps two options side by side next to the overview within the 60rem reading column. */
-.choice-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: .75rem; }
-.choice-option { min-width: 0; padding: 1rem; border: 2px solid var(--bs-border-color); background: var(--bs-body-bg); }
+.choice-options { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+/* Exactly two per row: without the overview, auto-fit would spread pictures into three columns. */
+.choice-options-media { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Input, letter and content share the first row; feedback sits under the content. */
+.choice-option { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: .75rem; align-items: start; min-width: 0; padding: .875rem 1rem; border: 2px solid var(--bs-border-color); background: var(--bs-body-bg); }
 .choice-option:not(:has(input:disabled)) { cursor: pointer; }
+.choice-option:not(:has(input:disabled)):hover { border-color: var(--bs-primary-border-subtle); }
 .choice-option:focus-within { outline: 2px solid var(--bs-primary); outline-offset: 2px; }
-.choice-option .form-check-input { flex-shrink: 0; }
-.choice-option label { min-height: 1.5rem; cursor: pointer; }
+/* Centre the 1em control and the letter on the 1.5rem first line of the content. */
+.choice-option .form-check-input { margin-top: .25rem; }
+.option-letter { min-width: 1ch; font-size: .875rem; font-weight: 700; line-height: 1.5rem; color: var(--bs-secondary-color); cursor: pointer; }
+.option-feedback { grid-column: 3; display: flex; align-items: center; gap: .35rem; margin-top: .5rem; }
 .option-selected { border-color: var(--bs-primary); background: rgba(var(--bs-primary-rgb), .06); }
 .option-selected .option-feedback { color: var(--bs-primary-text-emphasis); }
 .result-correct { border-color: var(--bs-success-border-subtle); }
-.result-correct .question-toggle { background: var(--bs-success-bg-subtle); border-color: var(--bs-success-border-subtle); }
 .result-incorrect { border-color: var(--bs-danger-border-subtle); }
-.result-incorrect .question-toggle { background: var(--bs-danger-bg-subtle); border-color: var(--bs-danger-border-subtle); }
-.option-chosen-correct, .option-correct-unselected { border-color: var(--bs-success); background: rgba(var(--bs-success-rgb), .06); }
+.option-chosen-correct { border-color: var(--bs-success); background: rgba(var(--bs-success-rgb), .06); }
 .option-chosen-incorrect { border-color: var(--bs-danger); background: rgba(var(--bs-danger-rgb), .06); }
-.option-chosen-correct .option-feedback, .option-correct-unselected .option-feedback { color: var(--bs-success-text-emphasis); }
+/* A correct answer the learner missed must not read as a success: dashed amber, not green. */
+.option-correct-unselected { border-style: dashed; border-color: var(--app-amber); background: var(--app-amber-bg); }
+.option-chosen-correct .option-feedback { color: var(--bs-success-text-emphasis); }
 .option-chosen-incorrect .option-feedback { color: var(--bs-danger-text-emphasis); }
+.option-correct-unselected .option-feedback { color: var(--app-amber-strong); }
 .runner-summary { background: var(--bs-tertiary-bg); }
 #runner-summary-heading { scroll-margin-top: var(--runner-scroll-offset); }
 .runner-actions .btn { min-height: 2.75rem; }
+.runner-actions .runner-submit { min-height: 3rem; padding: .5rem 1.5rem; font-size: 1.125rem; font-weight: 600; }
 @media (max-width: 991.98px) {
   /* A block container lets the sticky overview travel with the entire form. */
   .runner-layout { display: block; }
@@ -395,10 +414,11 @@ onBeforeUnmount(() => {
   .overview-list.overview-open { display: block; }
 }
 @media (max-width: 575.98px) {
-  .question-toggle, .question-body { padding: 1rem; }
-  .question-heading-text { display: block; }
-  .question-heading-text .question-status { margin-top: .35rem; }
-  .choice-options { grid-template-columns: minmax(0, 1fr); }
-  .choice-option { padding: .75rem; }
+  .question-header { padding: 1rem 1rem 0; }
+  .question-body { padding: .5rem 1rem 1rem; }
+  .question-prompt { font-size: 1.125rem; }
+  .choice-options-media { grid-template-columns: minmax(0, 1fr); }
+  .choice-option { column-gap: .625rem; padding: .75rem; }
+  .runner-actions .runner-submit { width: 100%; }
 }
 </style>

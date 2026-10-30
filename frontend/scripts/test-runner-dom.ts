@@ -21,11 +21,18 @@ const matching: MatchingQuestion = {
   rightItems: ['r1', 'r2', 'r3'].map(id => ({ id, content: [text(id, 'Counterpart ' + id)] })),
   matches: [1, 2, 3].map(index => ({ leftId: 'l' + index, rightId: 'r' + index })),
 }
+// Text-only options are laid out one per row; options with media two per row.
+const textOnly: ChoiceQuestion = {
+  id: 'text', type: 'choice', mode: 'single', prompt: [text('tp', 'Pick a word')],
+  options: ['x', 'y', 'z'].map(id => ({ id, content: [text(id, 'Word ' + id)] })),
+  correctOptionIds: ['x'],
+}
+// Six questions: the question overview appears from OVERVIEW_MIN_QUESTIONS (6) on.
 const test = shallowRef<DraftTest>({
   schemaVersion: 1, id: 'test', groupId: 'lesson', language: 'cs', title: 'Test', description: '',
   status: 'published', createdAt: '', updatedAt: '', publishedAt: '',
   questions: [choice, { ...choice, id: 'correct', mode: 'single', correctOptionIds: ['b'] }, matching,
-    { ...choice, id: 'missing' }],
+    { ...choice, id: 'missing' }, textOnly, { ...textOnly, id: 'last' }],
 })
 const privatePreview = shallowRef(false)
 const mediaUrls = shallowRef({ [mediaId]: '/training/media/example.mp4', [imageId]: '/training/media/example.jpg' })
@@ -65,7 +72,8 @@ function find<T extends Element = HTMLElement>(selector: string, parent: ParentN
   return element
 }
 const question = (id: string) => find<HTMLElement>('#runner-section-' + id)
-const toggle = (id: string) => find<HTMLButtonElement>('.question-toggle', question(id))
+const heading = (id: string) => find<HTMLElement>('.question-position', question(id))
+const status = (id: string) => find<HTMLElement>('.question-header .question-status', question(id))
 const input = (id: string, option: string) => find<HTMLInputElement>('#runner-option-' + id + '-' + option)
 const tile = (id: string, option: string) => input(id, option).closest<HTMLElement>('.choice-option')!
 async function click(element: Element) {
@@ -94,14 +102,30 @@ async function retry() { await click(find('.runner-actions button')) }
 
 try {
   await settle()
-  assert.equal(host.querySelectorAll('[data-runner-question]').length, 4)
-  assert.equal(host.querySelectorAll('.question-toggle[aria-expanded=true]').length, 4)
-  assert.equal(host.querySelectorAll('.status-unanswered').length, 8)
+  assert.equal(host.querySelectorAll('[data-runner-question]').length, 6)
+  assert.equal(host.querySelectorAll('.runner-question [aria-expanded]').length, 0, 'Question cards cannot collapse')
+  assert.equal(heading('choice').id, question('choice').getAttribute('aria-labelledby'))
+  assert.equal(host.querySelectorAll('.status-unanswered').length, 12)
+  assert.equal(host.querySelectorAll('.status-unanswered .app-icon').length, 0, 'Unanswered has no radio-like icon')
+  assert.equal(status('choice').textContent?.trim(), 'Nezodpovězeno')
   assert.equal(find('.overview-question[aria-current=location]').getAttribute('aria-controls'), 'runner-section-choice')
   assert.ok(find('header a').getAttribute('href')?.endsWith('#lesson-lesson'))
   assert.equal(find('video').closest('label'), null)
   assert.equal(find('video').getAttribute('controls'), '')
   assert.equal(find('video').getAttribute('src'), '/training/media/example.mp4')
+
+  // Options show a letter; the input's accessible name is "Odpověď A" plus the option content.
+  const labelledBy = input('choice', 'a').getAttribute('aria-labelledby')?.split(' ') ?? []
+  assert.deepEqual(labelledBy, ['runner-option-label-choice-a', 'runner-option-content-choice-a'])
+  const letter = find('#' + labelledBy[0])
+  assert.equal(letter.tagName, 'LABEL')
+  assert.equal(letter.getAttribute('for'), 'runner-option-choice-a')
+  assert.equal(find('[aria-hidden=true]', letter).textContent, 'A')
+  assert.equal(find('.visually-hidden', letter).textContent, 'Odpověď A')
+  assert.equal(find('#' + labelledBy[1]).textContent?.trim(), 'Option a')
+  assert.equal(find('.visually-hidden', find('#runner-option-label-choice-d')).textContent, 'Odpověď D')
+  assert.ok(find('.choice-options', question('choice')).classList.contains('choice-options-media'))
+  assert.equal(find('.choice-options', question('text')).classList.contains('choice-options-media'), false)
 
   // Real intrinsic dimensions arrive after media loading, independently of
   // block IDs and response state. Exercise both media types and source reuse.
@@ -149,7 +173,8 @@ try {
 
   await choose('choice', 'a')
   assert.ok(tile('choice', 'a').classList.contains('option-selected'))
-  assert.ok(toggle('choice').textContent?.includes('Zodpovězeno'))
+  assert.equal(status('choice').textContent?.trim(), 'Zodpovězeno')
+  assert.ok(status('choice').classList.contains('status-answered'))
   assert.equal(host.querySelectorAll('.option-chosen-correct, .option-correct-unselected, .status-correct').length, 0)
   await click(find('video', tile('choice', 'b')))
   assert.equal(input('choice', 'b').checked, false, 'Media controls must not select their answer')
@@ -163,29 +188,24 @@ try {
   clip.currentTime = 12
   let pauses = 0
   clip.pause = () => { pauses++ }
-  await click(toggle('choice'))
-  assert.equal(find<HTMLElement>('#runner-body-choice').style.display, 'none')
-  assert.equal(pauses, 1)
-  assert.equal(clip.currentTime, 12)
-  assert.ok(input('choice', 'a').checked)
   await click(find('.overview-question[aria-controls=runner-section-choice]'))
-  assert.equal(toggle('choice').getAttribute('aria-expanded'), 'true')
-  assert.equal(document.activeElement, toggle('choice'))
-  assert.equal(find('video', question('choice')), clip, 'Collapse/jump preserves native media nodes')
+  assert.equal(document.activeElement, heading('choice'))
+  assert.equal(find('video', question('choice')), clip, 'Jumping preserves native media nodes')
   assert.equal(clip.currentTime, 12)
+  assert.equal(pauses, 0, 'Navigation does not stop playback')
+  assert.ok(input('choice', 'a').checked)
   console.log('PASS DOM: continuous questions, neutral completion, native media controls, preserved answers/media and keyboard focus')
 
   await pair('l1', 'r1')
-  assert.ok(toggle('matching').textContent?.includes('1 ze 3 dvojic'))
-  assert.equal(find('.overview-desktop').textContent?.includes('Zodpovězeno 2 ze 4'), true)
-  await click(toggle('matching'))
-  await click(toggle('matching'))
+  assert.ok(status('matching').textContent?.includes('1 ze 3 dvojic'))
+  assert.equal(find('.overview-desktop').textContent?.includes('Zodpovězeno 2 ze 6'), true)
+  assert.equal(find('.runner-progress').textContent?.trim(), 'Zodpovězeno 2 ze 6')
   assert.equal(question('matching').querySelectorAll('.learner-pair').length, 1)
   await pair('l2', 'r3')
   const order = [...question('matching').querySelectorAll('.right-pool .selection-card')].map(card => card.textContent)
   i18n.global.locale.value = 'en'
   await settle()
-  assert.ok(toggle('matching').textContent?.includes('2 of 3 pairs'))
+  assert.ok(status('matching').textContent?.includes('2 of 3 pairs'))
   assert.ok(input('choice', 'b').checked)
   assert.deepEqual([...question('matching').querySelectorAll('.right-pool .selection-card')].map(card => card.textContent?.replace('Assign', 'Přiřadit')), order)
   i18n.global.locale.value = 'cs'
@@ -209,14 +229,12 @@ try {
   assert.equal(find<HTMLElement>('.test-runner').style.getPropertyValue('--runner-scroll-offset'), '96px')
   await click(find('.overview-mobile'))
   assert.equal(find('.overview-mobile').getAttribute('aria-expanded'), 'true')
-  await click(toggle('missing'))
   let jumpOffset = ''
   question('missing').scrollIntoView = () => { jumpOffset = find<HTMLElement>('.test-runner').style.getPropertyValue('--runner-scroll-offset') }
   await click(find('.overview-question[aria-controls=runner-section-missing]'))
   assert.equal(find('.overview-mobile').getAttribute('aria-expanded'), 'false')
   assert.equal(jumpOffset, '96px', 'Jump uses collapsed mobile-bar height')
-  assert.equal(toggle('missing').getAttribute('aria-expanded'), 'true')
-  assert.equal(document.activeElement, toggle('missing'))
+  assert.equal(document.activeElement, heading('missing'))
   await click(find('.overview-mobile'))
   find('.overview-question').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
   await settle()
@@ -226,17 +244,24 @@ try {
   window.dispatchEvent(new Event('resize'))
   await settle()
   assert.equal(find<HTMLElement>('.test-runner').style.getPropertyValue('--runner-scroll-offset'), '16px')
-  console.log('PASS DOM: partial matching, stable attempt/locale, scroll tracking, mobile jump offset, expansion and Escape focus')
+  console.log('PASS DOM: partial matching, stable attempt/locale, scroll tracking, mobile jump offset and Escape focus')
 
-  await click(toggle('choice'))
   await submit()
   assert.equal(document.activeElement, find('#runner-summary-heading'))
-  assert.ok(find('#runner-summary-heading').textContent?.includes('Správně zodpovězené otázky: 1 ze 4'))
+  assert.ok(pauses > 0, 'Checking answers pauses playback')
+  assert.ok(find('#runner-summary-heading').textContent?.includes('Správně zodpovězené otázky: 1 ze 6'))
+  assert.equal(host.querySelector('.runner-progress'), null)
   assert.equal(/\bbod\w*\b/.test(host.textContent ?? ''), false)
   assert.ok(question('choice').classList.contains('result-incorrect'))
   assert.ok(question('correct').classList.contains('result-correct'))
   assert.ok(question('missing').classList.contains('result-unanswered'))
-  assert.equal(toggle('choice').getAttribute('aria-expanded'), 'false', 'Grading preserves manual collapse')
+  // Status tags end without a full stop; only results with a meaning carry an icon.
+  assert.equal(status('choice').textContent?.trim(), 'Nesprávně')
+  assert.equal(find('.app-icon', status('choice')).dataset.icon, 'x-lg')
+  assert.equal(status('correct').textContent?.trim(), 'Správně')
+  assert.equal(find('.app-icon', status('correct')).dataset.icon, 'check-lg')
+  assert.equal(status('missing').textContent?.trim(), 'Bez odpovědi')
+  assert.equal(status('missing').querySelector('.app-icon'), null)
   assert.ok(tile('choice', 'a').classList.contains('option-chosen-correct'))
   assert.ok(tile('choice', 'b').classList.contains('option-chosen-incorrect'))
   assert.ok(tile('choice', 'c').classList.contains('option-correct-unselected'))
@@ -244,6 +269,9 @@ try {
   assert.ok(tile('choice', 'a').textContent?.includes('Vaše volba – správně'))
   assert.ok(tile('choice', 'b').textContent?.includes('Vaše volba – nesprávně'))
   assert.ok(tile('choice', 'c').textContent?.includes('Správná možnost – nezvoleno'))
+  // A missed correct answer has its own icon, distinct from a correct choice.
+  assert.equal(find('.option-feedback .app-icon', tile('choice', 'c')).dataset.icon, 'exclamation-circle')
+  assert.equal(find('.option-feedback .app-icon', tile('choice', 'a')).dataset.icon, 'check-lg')
   assert.ok([...host.querySelectorAll<HTMLInputElement>('input')].every(control => control.disabled))
   assert.equal(question('matching').querySelectorAll('.pair-correct').length, 1)
   assert.equal(question('matching').querySelectorAll('.pair-incorrect').length, 1)
@@ -262,9 +290,8 @@ try {
   await retry()
   assert.equal(host.querySelector('.runner-summary'), null)
   assert.equal(host.querySelectorAll('input:checked').length, 0)
-  assert.equal(host.querySelectorAll('.question-toggle[aria-expanded=true]').length, 4)
   assert.equal(question('matching').querySelectorAll('.learner-pair').length, 0)
-  assert.equal(document.activeElement, toggle('choice'))
+  assert.equal(document.activeElement, heading('choice'))
   console.log('PASS DOM: exact grading, selected/missed correct answers, neutral missing responses, pair corrections, locking and retry')
 
   test.value = { ...test.value, showOverallScore: false }
@@ -276,11 +303,13 @@ try {
   assert.ok(question('correct').classList.contains('result-correct'))
   assert.ok(tile('correct', 'b').textContent?.includes('Vaše volba – správně'))
   assert.equal(question('matching').textContent?.includes(cs.runnerNoPairsYet!), false)
-  assert.ok(toggle('missing').textContent?.includes(cs.runnerQuestionUnansweredNoScore!))
+  assert.equal(status('missing').textContent?.trim(), cs.runnerQuestionUnansweredNoScore)
 
   privatePreview.value = true
   test.value = { ...test.value, status: 'draft', questions: [{ ...choice, correctOptionIds: [] }, { ...matching, matches: [] }] }
   await settle()
+  assert.equal(host.querySelector('.runner-overview'), null, 'Short tests have no question overview')
+  assert.equal(find('.runner-progress').textContent?.trim(), 'Zodpovězeno 0 ze 2')
   assert.equal(find('video').getAttribute('src'), '/training/api/admin/media/' + mediaId + '/preview')
   await choose('choice', 'a')
   await submit()
