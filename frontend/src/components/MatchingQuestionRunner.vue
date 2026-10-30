@@ -99,7 +99,6 @@ watch(() => props.submitted, value => { if (value) activeLeft.value = '' })
     <p v-if="!submitted" class="small text-secondary">{{ t('runnerPairsEditable') }}</p>
     <p class="visually-hidden" role="status" aria-live="polite">{{ announcement }}</p>
     <section class="paired-items" :aria-labelledby="'your-pairs-' + question.id">
-      <p v-if="!submitted && !state.pairs.length" class="small text-secondary">{{ t('runnerNoPairsYet') }}</p>
       <div v-for="(pair, pairIndex) in state.pairs" :key="pair.left.id" class="learner-pair border rounded p-2 mb-2"
         :class="submitted && validKey ? (expected.get(pair.left.id) === pair.right.id ? 'pair-correct' : 'pair-incorrect') : ''"
         role="group" :aria-label="t('runnerPairNumber', { index: pairIndex + 1 })">
