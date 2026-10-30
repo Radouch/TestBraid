@@ -12,7 +12,7 @@ Nová instalace obsahuje dvě publikované **ukázkové lekce**, českou a angli
 
 **Lekce** sdružuje související testy. Lekce vytváříte a přejmenováváte v přehledu **Editace testů** a podle potřeby měníte jejich pořadí. Lekci, která obsahuje testy, nelze smazat.
 
-Vyberte lekci a klikněte na **Nový test**. Nastavte název, nepovinný popis, jazyk obsahu a to, zda se má zobrazovat celkový výsledek testu. Nový test je **rozpracovaný** a anonymní návštěvníci ho nevidí.
+Vyberte lekci a klikněte na **Nový test**. Nastavte název, nepovinný popis, **Jazyk obsahu** a to, zda se má zobrazovat celkový výsledek testu. Jazyk obsahu vybíráte z jazyků rozhraní webu; předvyplněný je jazyk, ve kterém web právě používáte. Úvodní stránka test ukáže jen návštěvníkům, kteří mají zvolený jeho jazyk. Nový test je **rozpracovaný** a anonymní návštěvníci ho nevidí.
 
 Testy můžete v rámci lekce přeřazovat, existující test duplikovat nebo rozpracovaný test přesunout do jiné lekce. Duplikovaný test používá stejná média; soubory se znovu nenahrávají.
 

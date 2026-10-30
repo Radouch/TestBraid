@@ -294,6 +294,8 @@
   "catalogTitle": "Název testu",
   "catalogDescription": "Úvodní text / popis",
   "catalogContentLanguage": "Jazyk obsahu",
+  "catalogLanguageNotOffered": "{code} – web nenabízí",
+  "catalogLanguageNotOfferedHelp": "Úvodní stránka zobrazuje testy jen v jazycích webu, takže tento test na ní není vidět. Vyberte jeden z jazyků webu.",
   "catalogShowOverallScore": "Zobrazovat celkový výsledek testu",
   "catalogShowOverallScoreHelp": "Při vypnutí se zobrazí správné a nesprávné odpovědi, ale ne celkový počet správně zodpovězených otázek.",
   "catalogCzech": "Čeština",

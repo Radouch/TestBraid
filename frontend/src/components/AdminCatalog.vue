@@ -28,7 +28,7 @@ interface ErrorPayload {
 }
 
 const props = defineProps<{ csrfToken: string }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
@@ -51,7 +51,8 @@ const notice = ref('')
 const renamingId = ref('')
 const renameValue = ref('')
 const groupFilter = ref('')
-const newTest = ref<TestSettings>({ groupId: '', title: '', description: '', language: 'cs', showOverallScore: true })
+// New tests start in the interface language the author is using.
+const newTest = ref<TestSettings>({ groupId: '', title: '', description: '', language: locale.value, showOverallScore: true })
 const filteredTests = computed(() => groupFilter.value ? tests.value.filter(test => test.groupId === groupFilter.value) : tests.value)
 const selectedGroup = computed(() => groups.value.find(group => group.id === groupFilter.value))
 const languageQuery = computed(() => {
@@ -87,7 +88,7 @@ async function openCreate(event: MouseEvent): Promise<void> {
   if (busy.value || !groups.value.length) return
   rememberOrigin(event)
   dialogError.value = ''
-  newTest.value = { groupId: groupFilter.value || groups.value[0]!.id, title: '', description: '', language: 'cs', showOverallScore: true }
+  newTest.value = { groupId: groupFilter.value || groups.value[0]!.id, title: '', description: '', language: locale.value, showOverallScore: true }
   await nextTick()
   createDialog.value?.showModal()
   createDialog.value?.querySelector<HTMLInputElement>('#test-settings-title')?.focus()

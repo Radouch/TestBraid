@@ -40,7 +40,7 @@ To add a language:
 2. Upload it to the same `locales` folder as `<code>.json`, for example `locales/de.json`.
 3. Add the code to `uiLanguages` and reload.
 
-The interface language does **not** translate tests. Each test has its own content language, set by its author.
+The interface language does **not** translate tests. Each test has its own content language, which its author chooses from the interface languages. The home page lists only the tests in the language the visitor has chosen. If you remove a language from `uiLanguages`, tests in that language no longer appear on the home page, and their settings in the editor show a warning.
 
 ## Upload limits
 

@@ -1,9 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { EditorLesson, TestSettings } from '../editor/test-settings'
+import { languageOptions } from '../i18n'
 
-defineProps<{ settings: TestSettings; lessons: EditorLesson[]; lessonsUnavailable?: boolean }>()
+const props = defineProps<{ settings: TestSettings; lessons: EditorLesson[]; lessonsUnavailable?: boolean }>()
 const { t } = useI18n()
+// The home page lists a test only under the interface language with the same
+// code, so the content language is chosen from the site's languages. A stored
+// value outside them (an older free-text entry, or a language later removed
+// from uiLanguages) stays selectable and is never changed silently.
+const unofferedLanguage = computed(() => props.settings.language
+  && !languageOptions.value.some(option => option.code === props.settings.language)
+  ? props.settings.language : '')
 </script>
 
 <template>
@@ -28,8 +37,18 @@ const { t } = useI18n()
           </div>
           <div class="col-md-4">
             <label for="test-settings-language" class="form-label">{{ t('catalogContentLanguage') }}</label>
-            <input id="test-settings-language" v-model="settings.language" class="form-control" maxlength="35"
-              pattern="[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*" required />
+            <select id="test-settings-language" v-model="settings.language" class="form-select" required
+              :aria-describedby="unofferedLanguage ? 'test-settings-language-help' : undefined">
+              <option v-if="unofferedLanguage" :value="unofferedLanguage">
+                {{ t('catalogLanguageNotOffered', { code: unofferedLanguage }) }}
+              </option>
+              <option v-for="option in languageOptions" :key="option.code" :value="option.code" :lang="option.code">
+                {{ option.label }}
+              </option>
+            </select>
+            <p v-if="unofferedLanguage" id="test-settings-language-help" class="form-text text-warning-emphasis mb-0">
+              {{ t('catalogLanguageNotOfferedHelp') }}
+            </p>
           </div>
         </div>
         <div>

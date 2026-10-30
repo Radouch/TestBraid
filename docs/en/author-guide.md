@@ -12,7 +12,7 @@ A new installation has two published **demo lessons**, one in English and one in
 
 A **lesson** groups related tests. Create or rename lessons on the **Edit tests** page and change their order as needed. A lesson cannot be deleted while it contains tests.
 
-Choose a lesson and select **New test**. Set its title, optional description, content language and whether the overall test result should be shown. The test starts as a **draft**, invisible to anonymous visitors.
+Choose a lesson and select **New test**. Set its title, optional description, **Content language** and whether the overall test result should be shown. The content language is one of the site's interface languages and starts as the language you are using the site in. The home page shows a test only to visitors who have chosen its language. The test starts as a **draft**, invisible to anonymous visitors.
 
 You can reorder tests within lessons, duplicate an existing test or move a draft to another lesson. Duplicating a test reuses its referenced media; it does not upload copies of the files.
 

@@ -7,6 +7,7 @@ import AdminCatalog from '../src/components/AdminCatalog.vue'
 import TestQuestionsView from '../src/views/TestQuestionsView.vue'
 import TestPreviewView from '../src/views/TestPreviewView.vue'
 import { retainExplicitLanguage } from '../src/navigation'
+import { languageOptions } from '../src/i18n'
 import type { DraftTest } from '../src/editor/model'
 
 const cs = JSON.parse(readFileSync('public/locales/cs.json', 'utf8')) as Record<string, string>
@@ -25,7 +26,10 @@ const fixture: DraftTest = {
       matches: [{ leftId: 'l1', rightId: 'r1' }, { leftId: 'l2', rightId: 'r2' }] },
   ],
 }
-const stored: Record<string, DraftTest> = { draft: structuredClone(fixture), other: { ...structuredClone(fixture), id: 'other', title: 'Other test', groupId: 'b' } }
+// "other" keeps a content language the site does not offer, as older free-text entries may.
+const stored: Record<string, DraftTest> = { draft: structuredClone(fixture), other: { ...structuredClone(fixture), id: 'other', title: 'Other test', groupId: 'b', language: 'de' } }
+// The site's interface languages, as loadInterfaceTranslations() sets them at startup.
+languageOptions.value = [{ code: 'en', label: 'English' }, { code: 'cs', label: 'Čeština' }]
 const lessons = [{ id: 'a', name: 'Lesson A' }, { id: 'b', name: 'Lesson B' }]
 const calls: Array<{ method: string; path: string; body?: Record<string, unknown> }> = []
 let authenticated = true
@@ -168,6 +172,13 @@ try {
   assert.equal(find<HTMLInputElement>('#test-settings-title').value, 'Original title')
   assert.equal(find<HTMLInputElement>('#test-settings-score').checked, true, 'Legacy tests keep visible scoring')
   assert.ok(find<HTMLSelectElement>('#test-settings-lesson').disabled)
+  // The content language is chosen from the site's languages, shown by their names.
+  const language = find<HTMLSelectElement>('#test-settings-language')
+  assert.equal(language.tagName, 'SELECT')
+  assert.deepEqual([...language.options].map(option => [option.value, option.textContent?.trim(), option.lang]),
+    [['en', 'English', 'en'], ['cs', 'Čeština', 'cs']])
+  assert.equal(language.value, 'cs')
+  assert.equal(host.querySelector('#test-settings-language-help'), null)
   await fill('#test-settings-title', 'Updated title')
   await click(find('#test-settings-score'))
   find('#editor-tab-settings').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }))
@@ -301,12 +312,18 @@ try {
   assert.ok(find('#tests-heading').textContent?.includes('Renamed lesson'))
   assert.equal(document.activeElement, renameButton)
   const newButton = [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes(cs.adminNewTest!))!
+  // A new test starts in the interface language the author is using, not a fixed one.
+  i18n.global.locale.value = 'en'
   await click(newButton)
   const creation = find<HTMLDialogElement>('dialog[aria-labelledby=create-test-heading]')
   assert.ok(creation.open)
   assert.equal(find<HTMLSelectElement>('#test-settings-lesson').value, 'b')
+  assert.equal(find<HTMLSelectElement>('#test-settings-language', creation).value, 'en')
   await fill('#test-settings-title', 'Created test')
   await submit(find<HTMLFormElement>('form', creation))
+  assert.equal(calls.find(call => call.method === 'POST' && call.path === 'admin/tests')?.body?.language, 'en')
+  i18n.global.locale.value = 'cs'
+  await settle()
   assert.equal(router.currentRoute.value.params.id, 'created')
   assert.equal(find('h1').textContent, 'Created test')
   assert.equal(calls.filter(call => call.method === 'POST' && call.path === 'admin/tests').length, 1)
@@ -472,6 +489,13 @@ try {
   resolveTest!(Response.json(stored.draft))
   await settle()
   assert.equal(find('h1').textContent, 'Other test')
+  // A stored language outside the site's languages is kept as an extra option, with a warning.
+  const unoffered = find<HTMLSelectElement>('#test-settings-language')
+  assert.equal(unoffered.value, 'de')
+  assert.deepEqual([...unoffered.options].map(option => option.value), ['de', 'en', 'cs'])
+  assert.ok(unoffered.options[0]!.textContent?.includes(cs.catalogLanguageNotOffered!.replace('{code}', 'de')))
+  assert.equal(unoffered.getAttribute('aria-describedby'), 'test-settings-language-help')
+  assert.equal(find('#test-settings-language-help').textContent?.trim(), cs.catalogLanguageNotOfferedHelp)
   await router.push('/elsewhere')
   authenticated = false
   const beforeAnonymous = calls.length
