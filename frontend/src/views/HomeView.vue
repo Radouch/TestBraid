@@ -81,18 +81,15 @@ onBeforeUnmount(() => activeRequest?.abort())
         <div class="card-body">
           <h2 :id="publicLessonAnchor(group.id)" class="h4 public-lesson-heading" tabindex="-1">{{ group.name }}</h2>
           <ul class="list-group list-group-flush">
-            <li v-for="test in group.tests" :key="test.id"
-              class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 px-0">
-              <div>
-                <RouterLink :to="{ name: 'test', params: { id: test.id } }"
-                  class="fw-semibold" :lang="test.language">
-                  {{ test.title }}
-                </RouterLink>
-                <span class="ms-2 small text-secondary">({{ questionCountLabel(test.questionCount) }})</span>
+            <li v-for="test in group.tests" :key="test.id" class="list-group-item public-test px-0">
+              <div class="public-test-text">
+                <span class="public-test-title" :lang="test.language">{{ test.title }}</span>
+                <span class="small text-secondary">{{ questionCountLabel(test.questionCount) }}</span>
               </div>
-              <RouterLink class="btn btn-outline-primary btn-sm"
-                :to="{ name: 'test', params: { id: test.id } }">
-                <AppIcon name="play-btn" />{{ t('publicCatalogStart') }}
+              <!-- The only link per test. Every row says "Start test", so the hidden
+                   title tells screen reader users which test each link starts. -->
+              <RouterLink class="btn btn-primary public-test-start" :to="{ name: 'test', params: { id: test.id } }">
+                {{ t('publicCatalogStart') }}<span class="visually-hidden">: <span :lang="test.language">{{ test.title }}</span></span>
               </RouterLink>
             </li>
           </ul>
@@ -104,5 +101,13 @@ onBeforeUnmount(() => activeRequest?.abort())
 
 <style scoped>
 .public-lesson-current { border-color: var(--bs-primary-border-subtle); }
+.public-test { display: flex; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-block: 1rem; }
+.public-test-text { display: flex; flex-direction: column; gap: .125rem; min-width: 0; }
+.public-test-title { font-size: 1.125rem; font-weight: 600; }
+.public-test-start { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; min-height: 2.75rem; }
+/* On phones every row stacks the same way, whatever the title length. */
+@media (max-width: 575.98px) {
+  .public-test { flex-direction: column; align-items: stretch; }
+}
 .public-lesson-heading, .public-catalog-heading { scroll-margin-block-start: 1.5rem; }
 </style>
