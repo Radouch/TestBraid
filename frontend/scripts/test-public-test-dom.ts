@@ -3,12 +3,14 @@ import { readFileSync } from 'node:fs'
 import { createApp, h, nextTick } from 'vue'
 import { createI18n } from 'vue-i18n'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
+import HomeView from '../src/views/HomeView.vue'
 import TestView from '../src/views/TestView.vue'
 import type { DraftTest } from '../src/editor/model'
 import { publicLessonHash } from '../src/public-catalog'
 
-// The public test page: one way back above the test, named after the lesson,
-// and the same destination offered again with the results.
+// Public pages. Home: each test is a plain title with exactly one "Start test"
+// link. Test page: one way back above the test, named after the lesson, and
+// the same destination offered again with the results.
 const cs = JSON.parse(readFileSync('public/locales/cs.json', 'utf8')) as Record<string, string>
 const en = JSON.parse(readFileSync('public/locales/en.json', 'utf8')) as Record<string, string>
 const text = (id: string, value: string) => ({ id, type: 'text' as const, text: value })
@@ -29,6 +31,7 @@ globalThis.fetch = (async (input: string | URL | Request) => {
     return catalogAvailable
       ? Response.json({ groups: [{ id: 'lesson-1', name: 'Ukázková lekce', tests: [
         { id: 'shapes', title: 'Tvary', language: 'cs', questionCount: 1 },
+        { id: 'pairs', title: 'Dvojice s velmi dlouhým názvem, který se na telefonu zalomí', language: 'cs', questionCount: 2 },
       ] }] })
       : new Response('', { status: 500 })
   }
@@ -39,10 +42,10 @@ globalThis.fetch = (async (input: string | URL | Request) => {
 
 const i18n = createI18n({ legacy: false, locale: 'cs', fallbackLocale: 'en', messages: { cs, en } })
 const router = createRouter({ history: createMemoryHistory('/training/'), routes: [
-  { path: '/', name: 'home', component: { render: () => h('p', 'Home') } },
+  { path: '/', name: 'home', component: HomeView },
   { path: '/tests/:id', name: 'test', component: TestView },
 ] })
-await router.push('/tests/shapes')
+await router.push('/')
 const host = document.createElement('div')
 document.body.append(host)
 const app = createApp({ render: () => h(RouterView) }).use(router).use(i18n)
@@ -65,6 +68,29 @@ const backNavigation = () => [...host.querySelectorAll('nav')]
 const occurrences = (needle: string) => (host.textContent ?? '').split(needle).length - 1
 
 try {
+  await settle()
+  const rows = [...host.querySelectorAll<HTMLElement>('.public-test')]
+  assert.equal(rows.length, 2)
+  for (const row of rows) {
+    const links = row.querySelectorAll('a')
+    assert.equal(links.length, 1, 'One link per test')
+    assert.ok(links[0]!.classList.contains('btn-primary'))
+    assert.equal(links[0]!.querySelector('.app-icon'), null, 'No play icon')
+  }
+  const title = find('.public-test-title', rows[0])
+  assert.equal(title.textContent, 'Tvary')
+  assert.equal(title.getAttribute('lang'), 'cs')
+  assert.equal(title.closest('a'), null, 'The title is plain text')
+  assert.ok(rows[0]!.textContent?.includes('1 otázka'))
+  assert.ok(rows[1]!.textContent?.includes('2 otázky'))
+  // Every row says "Start test"; the hidden title names the test for screen readers.
+  const start = find<HTMLAnchorElement>('a', rows[0])
+  assert.equal(start.textContent?.trim(), 'Spustit test: Tvary')
+  assert.equal(find('.visually-hidden [lang=cs]', start).textContent, 'Tvary')
+  assert.ok(start.getAttribute('href')?.endsWith('/tests/shapes'))
+  console.log('PASS DOM: home lists each test as a plain title with one named Start test link')
+
+  await router.push('/tests/shapes')
   await settle()
   assert.equal(backNavigation().length, 1, 'One way back above the test, none below it')
   const back = find<HTMLAnchorElement>('a', backNavigation()[0]!)
