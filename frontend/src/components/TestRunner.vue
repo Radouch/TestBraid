@@ -43,6 +43,10 @@ const activeIndex = computed(() => Math.max(0, props.test.questions.findIndex(qu
 const positionLabel = computed(() => t('runnerQuestionPosition', { index: activeIndex.value + 1, total: props.test.questions.length }))
 const progressLabel = computed(() => submitted.value ? t('runnerReviewAnswers')
   : t('runnerAnsweredProgress', { count: completed.value, total: props.test.questions.length }))
+/** After grading, the first question to revisit: answered wrongly or not at all, never ungradable. */
+const firstMistake = computed(() => submitted.value
+  ? props.test.questions.find(question => ['incorrect', 'unanswered'].includes(questionState(question)))
+  : undefined)
 
 type QuestionState = ProgressState | 'correct' | 'incorrect' | 'ungraded'
 // Only states with a meaning of their own carry an icon. An empty circle for
@@ -177,6 +181,9 @@ function reset(): void {
   activeQuestionId.value = props.test.questions[0]?.id ?? ''
   matchingOrder.value = createMatchingOrder(props.test.questions)
 }
+async function reviewMistakes(): Promise<void> {
+  if (firstMistake.value) await jumpToQuestion(firstMistake.value.id)
+}
 async function restart(): Promise<void> {
   reset()
   const first = props.test.questions[0]
@@ -221,7 +228,6 @@ onBeforeUnmount(() => {
   <article ref="root" class="test-runner" :style="{ '--runner-scroll-offset': scrollOffset + 'px' }">
     <header class="card mb-4">
       <div class="card-body p-md-4">
-        <slot name="context" />
         <h1 class="h3" :class="{ 'mb-0': !test.description }">{{ test.title }}</h1>
         <p v-if="test.description" class="mb-0" style="white-space: pre-wrap">{{ test.description }}</p>
       </div>
@@ -267,11 +273,26 @@ onBeforeUnmount(() => {
       <div class="runner-content">
         <section v-if="submitted" class="runner-summary card mb-4" aria-labelledby="runner-summary-heading">
           <div class="card-body">
-            <h2 id="runner-summary-heading" ref="summaryHeading" class="h5" tabindex="-1">
-              <AppIcon name="list-check" />
-              {{ scoreVisible ? t('runnerScore', { score: result.correct, total: result.total }) : t('runnerEvaluated') }}
+            <!-- The large score is visual; screen readers hear the full sentence instead. -->
+            <h2 id="runner-summary-heading" ref="summaryHeading" class="summary-heading" tabindex="-1">
+              <template v-if="scoreVisible">
+                <span class="summary-score" aria-hidden="true">{{ result.correct }}<span class="summary-total"> / {{ result.total }}</span></span>
+                <span class="summary-caption" aria-hidden="true">{{ t('runnerScoreCaption') }}</span>
+                <span class="visually-hidden">{{ t('runnerScore', { score: result.correct, total: result.total }) }}</span>
+              </template>
+              <template v-else>{{ t('runnerEvaluated') }}</template>
             </h2>
             <p class="mb-0 text-secondary">{{ t('runnerResultsHint') }}</p>
+            <div class="summary-actions">
+              <button v-if="firstMistake" type="button" class="btn btn-primary" data-review-mistakes @click="reviewMistakes">
+                <AppIcon name="arrow-down" />{{ t('runnerReviewMistakes') }}
+              </button>
+              <button type="button" class="btn btn-outline-primary" @click="restart">
+                <AppIcon name="arrow-counterclockwise" />{{ t('runnerTryAgain') }}
+              </button>
+              <!-- The public test page adds its way back to the test list here. -->
+              <slot name="results-actions" />
+            </div>
           </div>
         </section>
 
@@ -401,8 +422,13 @@ onBeforeUnmount(() => {
 .option-chosen-correct .option-feedback { color: var(--bs-success-text-emphasis); }
 .option-chosen-incorrect .option-feedback { color: var(--bs-danger-text-emphasis); }
 .option-correct-unselected .option-feedback { color: var(--app-amber-strong); }
-.runner-summary { background: var(--bs-tertiary-bg); }
-#runner-summary-heading { scroll-margin-top: var(--runner-scroll-offset); }
+.runner-summary { border-color: var(--bs-primary-border-subtle); }
+.summary-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem; margin-bottom: .5rem; font-size: 1.25rem; font-weight: 600; scroll-margin-top: var(--runner-scroll-offset); }
+.summary-score { font-size: 2.75rem; font-weight: 700; line-height: 1; color: var(--bs-primary-text-emphasis); font-variant-numeric: tabular-nums; }
+.summary-total { font-size: 1.75rem; font-weight: 600; color: var(--bs-secondary-color); }
+.summary-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+/* Links styled as buttons (from the page's slot) must centre like real buttons. */
+.summary-actions :deep(.btn) { display: inline-flex; align-items: center; min-height: 2.75rem; }
 .runner-actions .btn { min-height: 2.75rem; }
 .runner-actions .runner-submit { min-height: 3rem; padding: .5rem 1.5rem; font-size: 1.125rem; font-weight: 600; }
 @media (max-width: 991.98px) {

@@ -56,7 +56,7 @@ document.body.append(host)
 const app = createApp({ render: () => h(TestRunner, {
   test: test.value, privatePreview: privatePreview.value,
   mediaUrls: privatePreview.value ? {} : mediaUrls.value,
-}, { context: () => h('a', { href: '/training/#lesson-lesson' }, 'Back to lesson') }) }).use(i18n)
+}, { 'results-actions': () => h('a', { href: '/training/#lesson-lesson', class: 'results-back' }, 'Back to lesson') }) }).use(i18n)
 const errors: unknown[] = []
 app.config.errorHandler = error => { errors.push(error) }
 app.mount(host)
@@ -109,7 +109,8 @@ try {
   assert.equal(host.querySelectorAll('.status-unanswered .app-icon').length, 0, 'Unanswered has no radio-like icon')
   assert.equal(status('choice').textContent?.trim(), 'Nezodpovězeno')
   assert.equal(find('.overview-question[aria-current=location]').getAttribute('aria-controls'), 'runner-section-choice')
-  assert.ok(find('header a').getAttribute('href')?.endsWith('#lesson-lesson'))
+  assert.equal(host.querySelector('header a'), null, 'The test header has no lesson line')
+  assert.equal(host.querySelector('.results-back'), null, 'Page actions appear only with the results')
   assert.equal(find('video').closest('label'), null)
   assert.equal(find('video').getAttribute('controls'), '')
   assert.equal(find('video').getAttribute('src'), '/training/media/example.mp4')
@@ -250,6 +251,12 @@ try {
   assert.equal(document.activeElement, find('#runner-summary-heading'))
   assert.ok(pauses > 0, 'Checking answers pauses playback')
   assert.ok(find('#runner-summary-heading').textContent?.includes('Správně zodpovězené otázky: 1 ze 6'))
+  // The large score is visual only; the heading's sentence is what screen readers hear.
+  assert.equal(find('.summary-score').textContent, '1 / 6')
+  assert.equal(find('.summary-score').getAttribute('aria-hidden'), 'true')
+  assert.equal(find('.visually-hidden', find('#runner-summary-heading')).textContent, 'Správně zodpovězené otázky: 1 ze 6')
+  assert.ok(find('.summary-actions .results-back').getAttribute('href')?.endsWith('#lesson-lesson'))
+  assert.ok(find('.summary-actions').textContent?.includes('Zkusit znovu'))
   assert.equal(host.querySelector('.runner-progress'), null)
   assert.equal(/\bbod\w*\b/.test(host.textContent ?? ''), false)
   assert.ok(question('choice').classList.contains('result-incorrect'))
@@ -286,24 +293,38 @@ try {
   assert.ok(find('.pair-unanswered .pair-correction', question('matching')).textContent?.includes('Counterpart r3'))
   await click(tile('choice', 'd'))
   assert.equal(input('choice', 'd').checked, false)
+  // "Review mistakes" jumps to the first wrong or unanswered question.
+  assert.ok(find('[data-review-mistakes]').textContent?.includes('Projít chyby'))
+  await click(find('[data-review-mistakes]'))
+  assert.equal(document.activeElement, heading('choice'))
   assert.equal(JSON.stringify(test.value), original)
   await retry()
   assert.equal(host.querySelector('.runner-summary'), null)
   assert.equal(host.querySelectorAll('input:checked').length, 0)
   assert.equal(question('matching').querySelectorAll('.learner-pair').length, 0)
   assert.equal(document.activeElement, heading('choice'))
-  console.log('PASS DOM: exact grading, selected/missed correct answers, neutral missing responses, pair corrections, locking and retry')
+  console.log('PASS DOM: exact grading, results summary, review of mistakes, selected/missed correct answers, neutral missing responses, pair corrections, locking and retry')
 
   test.value = { ...test.value, showOverallScore: false }
   await settle()
   await choose('correct', 'b')
   await submit()
   assert.equal(find('#runner-summary-heading').textContent?.trim(), 'Test je vyhodnocen')
+  assert.equal(host.querySelector('.summary-score'), null)
   assert.equal(/\bbod\w*\b|\bpoint\w*\b|Správně zodpovězené otázky/.test(host.textContent ?? ''), false)
   assert.ok(question('correct').classList.contains('result-correct'))
   assert.ok(tile('correct', 'b').textContent?.includes('Vaše volba – správně'))
   assert.equal(question('matching').textContent?.includes(cs.runnerNoPairsYet!), false)
   assert.equal(status('missing').textContent?.trim(), cs.runnerQuestionUnansweredNoScore)
+
+  // Without mistakes there is nothing to review, but the attempt can still be repeated.
+  test.value = { ...test.value, showOverallScore: true, questions: [textOnly] }
+  await settle()
+  await choose('text', 'x')
+  await submit()
+  assert.equal(find('.summary-score').textContent, '1 / 1')
+  assert.equal(host.querySelector('[data-review-mistakes]'), null)
+  assert.ok(find('.summary-actions').textContent?.includes('Zkusit znovu'))
 
   privatePreview.value = true
   test.value = { ...test.value, status: 'draft', questions: [{ ...choice, correctOptionIds: [] }, { ...matching, matches: [] }] }
@@ -314,6 +335,7 @@ try {
   await choose('choice', 'a')
   await submit()
   assert.equal(host.querySelectorAll('.result-ungraded').length, 2)
+  assert.equal(host.querySelector('[data-review-mistakes]'), null, 'Ungradable questions are not mistakes')
   assert.equal(host.querySelectorAll('.pair-correct, .pair-incorrect, .option-chosen-correct, .option-chosen-incorrect, .option-correct-unselected').length, 0)
   assert.ok(tile('choice', 'a').classList.contains('option-selected'))
   assert.ok(host.textContent?.includes(cs.runnerMissingAnswerKey!))

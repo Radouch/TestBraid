@@ -39,6 +39,9 @@ jobs:
       - name: Continuous learner page interaction regression
         run: npm run test:runner
         working-directory: frontend
+      - name: Public test page navigation and results actions
+        run: npm run test:public
+        working-directory: frontend
       - name: Shared author editor and lesson dialogs regression
         run: npm run test:author
         working-directory: frontend

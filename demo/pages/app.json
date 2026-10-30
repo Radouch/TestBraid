@@ -5,8 +5,8 @@
       "en": "TestBraid demo"
     },
     "description": {
-      "cs": "Vyzkoušejte si, jak TestBraid funguje: vyplňte ukázkové testy níže. Odpovědi se vyhodnotí přímo ve vašem prohlížeči a nikam se neukládají.",
-      "en": "See how TestBraid works: take the demo tests below. Your answers are checked right in your browser and are not stored anywhere."
+      "cs": "Vyzkoušejte si, jak TestBraid funguje: vyplňte ukázkové testy níže.",
+      "en": "See how TestBraid works: take the demo tests below."
     }
   },
   "uploads": {
