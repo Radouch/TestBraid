@@ -12,6 +12,7 @@ import chevronDown from 'bootstrap-icons/icons/chevron-down.svg?raw'
 import circle from 'bootstrap-icons/icons/circle.svg?raw'
 import circleHalf from 'bootstrap-icons/icons/circle-half.svg?raw'
 import dash from 'bootstrap-icons/icons/dash-lg.svg?raw'
+import exclamationCircle from 'bootstrap-icons/icons/exclamation-circle.svg?raw'
 import copy from 'bootstrap-icons/icons/copy.svg?raw'
 import eye from 'bootstrap-icons/icons/eye.svg?raw'
 import filePlus from 'bootstrap-icons/icons/file-earmark-plus.svg?raw'
@@ -34,7 +35,7 @@ const icons = {
   'arrow-up': arrowUp, 'arrow-down': arrowDown, 'arrow-left': arrowLeft, 'arrow-left-right': arrowLeftRight,
   'arrow-counterclockwise': arrowCounterclockwise, 'box-arrow-up-right': boxArrowUpRight,
   'check-lg': checkLg, 'check2-circle': checkCircle, 'chevron-up': chevronUp, 'chevron-down': chevronDown,
-  circle, 'circle-half': circleHalf, 'dash-lg': dash,
+  circle, 'circle-half': circleHalf, 'dash-lg': dash, 'exclamation-circle': exclamationCircle,
   copy, eye, 'file-earmark-plus': filePlus, 'folder-plus': folderPlus, image,
   'link-45deg': link, 'list-check': listCheck, 'pencil-square': pencil, 'play-btn': play,
   'plus-lg': plus, floppy: save, 'text-left': text, 'three-dots': threeDots,

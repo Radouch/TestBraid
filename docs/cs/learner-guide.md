@@ -12,13 +12,13 @@ Web může nabízet rozhraní v různých jazycích. Změna jazyka rozhraní ale
 
 ## Odpovídání na otázky
 
-Všechny otázky jsou na **jedné stránce**, kterou posouváte. Pomocí **Přehled otázek** můžete přeskakovat mezi otázkami a karty otázek podle potřeby rozbalovat a sbalovat. Při pohybu po stránce se vaše odpovědi zachovávají.
+Všechny otázky jsou na **jedné stránce**, kterou posouváte. Testy se šesti a více otázkami mají navíc **Přehled otázek**, pomocí kterého můžete přeskakovat mezi otázkami a vidíte, které už máte zodpovězené. Vedle tlačítka **Vyhodnotit odpovědi** stránka ukazuje, kolik otázek jste už zodpověděli. Při pohybu po stránce se vaše odpovědi zachovávají.
 
 Testy mohou obsahovat text, obrázky a videa k přehrání.
 
 ### Výběr odpovědí
 
-U otázky s **jednou správnou odpovědí** vyberte jednu možnost. U otázky s **více správnými odpověďmi** vyberte všechny možnosti, které považujete za správné.
+U otázky s **jednou správnou odpovědí** vyberte jednu možnost. U otázky s **více správnými odpověďmi** vyberte všechny možnosti, které považujete za správné. Možnosti jsou označené písmeny A, B, C atd. a vybrat je můžete kliknutím kamkoli na možnost.
 
 ### Přiřazování dvojic
 
@@ -28,7 +28,7 @@ Své odpovědi můžete kontrolovat a měnit, dokud test neodešlete.
 
 ## Vyhodnocení odpovědí
 
-Až budete hotovi, klikněte na **Vyhodnotit odpovědi**. Test ukáže správně, nesprávně a nezodpovězené otázky. U chybné dvojice ukáže i správný protějšek.
+Až budete hotovi, klikněte na **Vyhodnotit odpovědi**. Test ukáže správně, nesprávně a nezodpovězené otázky. Správnou možnost, kterou jste nevybrali, označí textem **Správná možnost – nezvoleno** a přerušovaným oranžovým rámečkem. U chybné dvojice ukáže i správný protějšek.
 
 Otázka se počítá jako správně zodpovězená, jen když je zodpovězena zcela správně. Některé testy skrývají **celkový výsledek** (počet správně zodpovězených otázek), ale zpětnou vazbu k jednotlivým odpovědím zobrazují vždy.
 

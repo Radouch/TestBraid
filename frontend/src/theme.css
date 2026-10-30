@@ -24,6 +24,13 @@
   --app-control-border: #6b7280;
   --app-field-border: #868e96;
 
+  /* Amber for warnings and for correct answers a learner missed: 5.02:1 for
+     borders and text, the strong step 7.09:1 (6.84:1 on the amber tint). */
+  --app-amber: #b45309;
+  --app-amber-rgb: 180, 83, 9;
+  --app-amber-strong: #92400e;
+  --app-amber-bg: #fffbeb;
+
   /* The light frame approved in #63: grey canvas, white header, neutral footer. */
   --app-page-bg: #f1f3f5;
   --app-footer-bg: var(--bs-secondary-bg);
@@ -68,17 +75,17 @@
 }
 /* Bootstrap's yellow outline (#ffc107) is 1.63:1; dark amber text and border are 5.02:1. */
 .btn-outline-warning {
-  --bs-btn-color: #b45309;
-  --bs-btn-border-color: #b45309;
+  --bs-btn-color: var(--app-amber);
+  --bs-btn-border-color: var(--app-amber);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #b45309;
-  --bs-btn-hover-border-color: #b45309;
-  --bs-btn-focus-shadow-rgb: 180, 83, 9;
+  --bs-btn-hover-bg: var(--app-amber);
+  --bs-btn-hover-border-color: var(--app-amber);
+  --bs-btn-focus-shadow-rgb: var(--app-amber-rgb);
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #92400e;
-  --bs-btn-active-border-color: #92400e;
-  --bs-btn-disabled-color: #b45309;
-  --bs-btn-disabled-border-color: #b45309;
+  --bs-btn-active-bg: var(--app-amber-strong);
+  --bs-btn-active-border-color: var(--app-amber-strong);
+  --bs-btn-disabled-color: var(--app-amber);
+  --bs-btn-disabled-border-color: var(--app-amber);
 }
 
 .dropdown-menu { --bs-dropdown-link-active-bg: var(--app-accent); }
