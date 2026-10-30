@@ -3,7 +3,7 @@ import { validateDocument, type ValidationIssue, type ValidationResult } from '.
 // Types here describe only the validated parts used by publication rules.
 // JSON Schema remains the authoritative persisted-data contract.
 type Block = { id: string; type: 'text'; text: string }
-  | { id: string; type: 'image' | 'video'; mediaId: string }
+  | { id: string; type: 'image' | 'video'; mediaId: string; alt?: string }
 type Item = { id: string; content: Block[] }
 type Choice = { id: string; type: 'choice'; mode: 'single' | 'multiple'; prompt: Block[];
   options: Item[]; correctOptionIds: string[] }
@@ -57,6 +57,15 @@ export function validatePublication(value: unknown, context: PublicationContext)
       if (ids.has(item.id)) add(`${path}/${i}/id`, 'DUPLICATE_ITEM_ID', 'Item IDs must be unique within the collection.')
       ids.add(item.id)
       inspectBlocks(item.content, `${path}/${i}/content`)
+      // Media that is the whole item must be described: without text, screen
+      // reader users could not tell the answers or matching items apart.
+      if (!item.content.some(block => block.type === 'text' && block.text.trim().length > 0)) {
+        item.content.forEach((block, b) => {
+          if (block.type !== 'text' && !block.alt?.trim()) {
+            add(`${path}/${i}/content/${b}/alt`, 'MISSING_ALT', 'A picture or video that is the whole item needs a description.')
+          }
+        })
+      }
     })
     return ids
   }

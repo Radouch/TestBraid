@@ -6,7 +6,7 @@
 export type BlockKind = 'text' | 'image' | 'video'
 export type ContentBlock =
   | { id: string; type: 'text'; text: string }
-  | { id: string; type: 'image' | 'video'; mediaId: string }
+  | { id: string; type: 'image' | 'video'; mediaId: string; alt?: string }
 
 export interface ContentItem {
   id: string
@@ -186,9 +186,16 @@ export function publicationProblems(questions: Question[]): string[] {
   const problems: string[] = []
   const meaningful = (blocks: ContentBlock[]) =>
     blocks.some((block) => block.type === 'text' ? block.text.trim() !== '' : uuidPattern.test(block.mediaId))
+  // Pictures and videos that are a whole answer or matching item need a
+  // description, or screen reader users cannot tell the items apart.
+  const undescribedMedia = (blocks: ContentBlock[]) =>
+    !blocks.some((block) => block.type === 'text' && block.text.trim() !== '')
+    && blocks.some((block) => block.type !== 'text' && !block.alt?.trim())
   if (!questions.length) problems.push('noQuestions')
   for (const question of questions) {
     if (!meaningful(question.prompt)) problems.push('missingPrompt')
+    const items = question.type === 'choice' ? question.options : [...question.leftItems, ...question.rightItems]
+    if (items.some((item) => undescribedMedia(item.content))) problems.push('missingAlt')
     if (question.type === 'choice') {
       if (question.options.length < 2 || question.options.some((option) => !meaningful(option.content))) {
         problems.push('choiceOptions')

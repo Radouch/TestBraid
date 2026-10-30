@@ -175,4 +175,21 @@ assert.equal(validatePublication(draft, {
 }).valid, true)
 assert.equal(publicationProblems([createChoice()]).includes('missingPrompt'), true)
 
+// Pictures and videos that are a whole answer or matching item need a description.
+const mediaId = '11111111-1111-4111-8111-111111111111'
+const media = (alt?: string): ContentBlock => ({ id: crypto.randomUUID(), type: 'image', mediaId, ...(alt === undefined ? {} : { alt }) })
+const pictureChoice = createChoice()
+pictureChoice.prompt = [textBlock('Which leaf is from an oak?')]
+pictureChoice.options[0]!.content = [media()]
+pictureChoice.options[1]!.content = [textBlock('Beech'), media()]
+pictureChoice.correctOptionIds = [pictureChoice.options[0]!.id]
+assert.deepEqual(publicationProblems([pictureChoice]), ['missingAlt'])
+pictureChoice.options[0]!.content = [media('   ')]
+assert.deepEqual(publicationProblems([pictureChoice]), ['missingAlt'], 'Whitespace is not a description')
+pictureChoice.options[0]!.content = [media('Oak leaf with rounded lobes')]
+assert.deepEqual(publicationProblems([pictureChoice]), [], 'A picture next to answer text needs no description')
+const videoMatching = structuredClone(matching)
+videoMatching.leftItems[0]!.content = [{ id: crypto.randomUUID(), type: 'video', mediaId }]
+assert.deepEqual(publicationProblems([videoMatching]), ['missingAlt'])
+
 console.log('PASS: schema-compatible choice/matching editor models, media validation and assignment invariants')

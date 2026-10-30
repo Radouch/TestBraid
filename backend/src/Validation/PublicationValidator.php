@@ -56,6 +56,19 @@ final class PublicationValidator
                 }
                 $ids[$item->id] = true;
                 $inspectBlocks($item->content, $path . '/' . $i . '/content');
+                // Media that is the whole item must be described: without text, screen
+                // reader users could not tell the answers or matching items apart.
+                $hasText = false;
+                foreach ($item->content as $block) {
+                    $hasText = $hasText || ($block->type === 'text' && trim($block->text) !== '');
+                }
+                if (!$hasText) {
+                    foreach ($item->content as $b => $block) {
+                        if ($block->type !== 'text' && trim((string) ($block->alt ?? '')) === '') {
+                            $add($path . '/' . $i . '/content/' . $b . '/alt', 'MISSING_ALT', 'A picture or video that is the whole item needs a description.');
+                        }
+                    }
+                }
             }
             return $ids;
         };

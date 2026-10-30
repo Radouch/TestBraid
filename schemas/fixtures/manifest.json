@@ -85,6 +85,30 @@
       "publish": false
     },
     {
+      "path": "tests/media-answers-described.json",
+      "kind": "test",
+      "structural": true,
+      "publish": true
+    },
+    {
+      "path": "tests/media-answer-undescribed.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/matching-media-blank-alt.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
+      "path": "tests/alt-too-long.json",
+      "kind": "test",
+      "structural": false,
+      "publish": false
+    },
+    {
       "path": "groups/valid-group.json",
       "kind": "group",
       "structural": true

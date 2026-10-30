@@ -29,7 +29,8 @@
                         {
                             "id": "block-17",
                             "type": "image",
-                            "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37"
+                            "mediaId": "0821a7ae-ef1a-4c6d-8618-13d729a27d37",
+                            "alt": "Červený kruh"
                         }
                     ]
                 },
@@ -39,7 +40,8 @@
                         {
                             "id": "block-18",
                             "type": "image",
-                            "mediaId": "f8dae869-472e-4880-bc0d-dd088106fc24"
+                            "mediaId": "f8dae869-472e-4880-bc0d-dd088106fc24",
+                            "alt": "Modrý čtverec"
                         }
                     ]
                 },
@@ -49,7 +51,8 @@
                         {
                             "id": "block-19",
                             "type": "image",
-                            "mediaId": "07a23619-a0d3-4d4d-964e-0d571b79f577"
+                            "mediaId": "07a23619-a0d3-4d4d-964e-0d571b79f577",
+                            "alt": "Zelený trojúhelník"
                         }
                     ]
                 }
@@ -118,7 +121,8 @@
                         {
                             "id": "block-24",
                             "type": "video",
-                            "mediaId": "89dc324e-2d9d-4627-8807-2d72d4682c0c"
+                            "mediaId": "89dc324e-2d9d-4627-8807-2d72d4682c0c",
+                            "alt": "Oranžový míček se kutálí zleva doprava"
                         }
                     ]
                 },
@@ -128,7 +132,8 @@
                         {
                             "id": "block-25",
                             "type": "video",
-                            "mediaId": "0c0b43d6-8550-4e43-8b67-39f62060b93a"
+                            "mediaId": "0c0b43d6-8550-4e43-8b67-39f62060b93a",
+                            "alt": "Oranžový míček skáče nahoru a dolů"
                         }
                     ]
                 }

@@ -13,8 +13,10 @@ const choice: ChoiceQuestion = {
 }
 const mediaId = '11111111-1111-4111-8111-111111111111'
 const imageId = '22222222-2222-4222-8222-222222222222'
-choice.options[1]!.content.push({ id: 'clip', type: 'video', mediaId })
-choice.options[3]!.content.push({ id: 'image', type: 'image', mediaId: imageId })
+// Descriptions reach learners as the image's alt and the video's accessible name;
+// a description of only spaces counts as none.
+choice.options[1]!.content.push({ id: 'clip', type: 'video', mediaId, alt: '   ' })
+choice.options[3]!.content.push({ id: 'image', type: 'image', mediaId: imageId, alt: 'A stop sign' })
 const matching: MatchingQuestion = {
   id: 'matching', type: 'matching', prompt: [text('mp', 'Match the signs')],
   leftItems: ['l1', 'l2', 'l3'].map(id => ({ id, content: [text(id, 'Source ' + id)] })),
@@ -116,6 +118,8 @@ try {
   assert.equal(find('video').closest('label'), null)
   assert.equal(find('video').getAttribute('controls'), '')
   assert.equal(find('video').getAttribute('src'), '/training/media/example.mp4')
+  assert.equal(find('img', question('choice')).getAttribute('alt'), 'A stop sign')
+  assert.equal(find('video', question('choice')).hasAttribute('aria-label'), false)
 
   // Options show a letter; the input's accessible name is "Odpověď A" plus the option content.
   const labelledBy = input('choice', 'a').getAttribute('aria-labelledby')?.split(' ') ?? []

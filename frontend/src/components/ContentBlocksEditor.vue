@@ -62,6 +62,16 @@ function update(blocks: ContentBlock[]): void { emit('update:modelValue', blocks
 function setText(id: string, text: string): void {
   update(props.modelValue.map(b => b.id === id && b.type === 'text' ? { ...b, text } : b))
 }
+/** An emptied description removes the property instead of storing an empty string. */
+function setAlt(id: string, alt: string): void {
+  update(props.modelValue.map(b => {
+    if (b.id !== id || b.type === 'text') return b
+    const next = { ...b }
+    if (alt) next.alt = alt
+    else delete next.alt
+    return next
+  }))
+}
 async function insert(kind: BlockKind, index: number): Promise<void> {
   if (kind !== 'text') {
     void openPicker(kind, { beforeId: props.modelValue[index]?.id ?? null })
@@ -183,6 +193,13 @@ onUnmounted(() => libraryRequest?.abort())
             <AppIcon :name="uuidPattern.test(block.mediaId) ? 'pencil-square' : block.type === 'image' ? 'image' : 'play-btn'" />
             {{ uuidPattern.test(block.mediaId) ? t('editorReplaceMedia') : t('mediaChooseFromLibrary') }}
           </button>
+          <div v-if="uuidPattern.test(block.mediaId)" class="block-alt">
+            <label :for="'alt-' + block.id" class="form-label small mb-1">{{ t('editorAltText') }}</label>
+            <input :id="'alt-' + block.id" class="form-control form-control-sm" :value="block.alt ?? ''" maxlength="500"
+              :aria-describedby="'alt-help-' + block.id"
+              @input="setAlt(block.id, ($event.target as HTMLInputElement).value)" />
+            <p :id="'alt-help-' + block.id" class="form-text mb-0">{{ t('editorAltHelp_' + block.type) }}</p>
+          </div>
         </div>
       </div>
       <EditorMenu class="block-actions" :label="label + ' · ' + t('editorBlockActions', { index: index + 1 })">

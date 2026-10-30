@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "media-answer-undescribed",
+  "groupId": "group-lesson-1",
+  "language": "en",
+  "title": "Recognizing objects",
+  "description": "Identify the objects",
+  "status": "draft",
+  "createdAt": "2026-10-18T19:00:00Z",
+  "updatedAt": "2026-10-18T20:00:00Z",
+  "publishedAt": null,
+  "questions": [
+    {
+      "id": "question-1",
+      "type": "choice",
+      "mode": "single",
+      "prompt": [
+        {
+          "id": "b-1",
+          "type": "text",
+          "text": "Which tree is shown?"
+        },
+        {
+          "id": "b-2",
+          "type": "image",
+          "mediaId": "media-photo-1"
+        }
+      ],
+      "options": [
+        {
+          "id": "opt-1",
+          "content": [
+            {
+              "id": "u-1",
+              "type": "image",
+              "mediaId": "media-photo-1",
+              "alt": "Oak leaf with rounded lobes"
+            }
+          ]
+        },
+        {
+          "id": "opt-2",
+          "content": [
+            {
+              "id": "u-2",
+              "type": "image",
+              "mediaId": "media-photo-1"
+            }
+          ]
+        }
+      ],
+      "correctOptionIds": [
+        "opt-1"
+      ]
+    }
+  ]
+}

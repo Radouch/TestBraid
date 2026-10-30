@@ -18,7 +18,7 @@ function source(id: string, urls?: Record<string, string>, privatePreview = fals
     <template v-for="block in blocks" :key="block.id">
       <p v-if="block.type === 'text'" class="mb-1" style="white-space: pre-wrap">{{ block.text }}</p>
       <ContentMedia v-else-if="source(block.mediaId, mediaUrls, privatePreview)" :kind="block.type"
-        :src="source(block.mediaId, mediaUrls, privatePreview)" />
+        :src="source(block.mediaId, mediaUrls, privatePreview)" :label="block.alt?.trim() || undefined" />
     </template>
   </div>
 </template>
