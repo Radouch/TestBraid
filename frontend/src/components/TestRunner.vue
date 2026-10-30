@@ -378,8 +378,9 @@ onBeforeUnmount(() => {
 .question-prompt { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
 .question-prompt :deep(> :last-child) { margin-bottom: 0 !important; }
 .choice-options { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
-/* Exactly two per row: without the overview, auto-fit would spread pictures into three columns. */
-.choice-options-media { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* The available width decides how many fit, for any number of answers. 18rem keeps
+   two side by side next to the overview within the 60rem reading column. */
+.choice-options-media { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
 /* Input, letter and content share the first row; feedback sits under the content. */
 .choice-option { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: .75rem; align-items: start; min-width: 0; padding: .875rem 1rem; border: 2px solid var(--bs-border-color); background: var(--bs-body-bg); }
 .choice-option:not(:has(input:disabled)) { cursor: pointer; }
