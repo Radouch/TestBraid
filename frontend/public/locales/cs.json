@@ -44,7 +44,6 @@
   "runnerYourPairs": "Vaše dvojice",
   "runnerPairProgress": "{count} ze {total} přiřazeno",
   "runnerPairsEditable": "Přiřazení můžete před vyhodnocením změnit.",
-  "runnerNoPairsYet": "Zatím nemáte žádné dvojice. Začněte výběrem položky z první skupiny.",
   "runnerPairNumber": "Dvojice {index}",
   "runnerUnpairNumber": "Rozpojit dvojici {index}",
   "runnerUnpair": "Rozpojit",

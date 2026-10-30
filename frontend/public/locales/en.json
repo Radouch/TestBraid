@@ -44,7 +44,6 @@
   "runnerYourPairs": "Your pairs",
   "runnerPairProgress": "{count} of {total} paired",
   "runnerPairsEditable": "You can change your pairs before checking answers.",
-  "runnerNoPairsYet": "No pairs yet. Select an item from the first group to begin.",
   "runnerPairNumber": "Pair {index}",
   "runnerUnpairNumber": "Unpair pair {index}",
   "runnerUnpair": "Unpair",

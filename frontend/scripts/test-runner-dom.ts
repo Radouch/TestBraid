@@ -108,6 +108,8 @@ try {
   assert.equal(host.querySelectorAll('.status-unanswered').length, 12)
   assert.equal(host.querySelectorAll('.status-unanswered .app-icon').length, 0, 'Unanswered has no radio-like icon')
   assert.equal(status('choice').textContent?.trim(), 'Nezodpovězeno')
+  // The "Remaining to match" instructions are enough; no separate "no pairs yet" line.
+  assert.equal(question('matching').textContent?.includes('Zatím nemáte žádné dvojice'), false)
   assert.equal(find('.overview-question[aria-current=location]').getAttribute('aria-controls'), 'runner-section-choice')
   assert.equal(host.querySelector('header a'), null, 'The test header has no lesson line')
   assert.equal(host.querySelector('.results-back'), null, 'Page actions appear only with the results')
@@ -314,7 +316,7 @@ try {
   assert.equal(/\bbod\w*\b|\bpoint\w*\b|Správně zodpovězené otázky/.test(host.textContent ?? ''), false)
   assert.ok(question('correct').classList.contains('result-correct'))
   assert.ok(tile('correct', 'b').textContent?.includes('Vaše volba – správně'))
-  assert.equal(question('matching').textContent?.includes(cs.runnerNoPairsYet!), false)
+  assert.equal(question('matching').textContent?.includes('Zatím nemáte žádné dvojice'), false)
   assert.equal(status('missing').textContent?.trim(), cs.runnerQuestionUnansweredNoScore)
 
   // Without mistakes there is nothing to review, but the attempt can still be repeated.
