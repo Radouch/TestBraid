@@ -40,7 +40,7 @@ Přidání jazyka:
 2. Nahrajte ho do stejné složky `locales` jako `<kód>.json`, například `locales/de.json`.
 3. Přidejte kód do `uiLanguages` a stránku znovu načtěte.
 
-Jazyk rozhraní **nepřekládá** testy. Každý test má svůj vlastní jazyk obsahu, který nastavuje autor.
+Jazyk rozhraní **nepřekládá** testy. Každý test má svůj vlastní jazyk obsahu, který autor vybírá z jazyků rozhraní. Úvodní stránka zobrazuje jen testy v jazyce, který si návštěvník zvolil. Když jazyk z `uiLanguages` odeberete, testy v tomto jazyce se na úvodní stránce přestanou zobrazovat a jejich nastavení v editoru ukáže upozornění.
 
 ## Limity nahrávání
 

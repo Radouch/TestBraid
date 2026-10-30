@@ -294,6 +294,8 @@
   "catalogTitle": "Test title",
   "catalogDescription": "Introduction / description",
   "catalogContentLanguage": "Content language",
+  "catalogLanguageNotOffered": "{code} – not offered",
+  "catalogLanguageNotOfferedHelp": "The home page lists tests only in the site's languages, so it does not show this test. Choose one of the site's languages.",
   "catalogShowOverallScore": "Show overall test result",
   "catalogShowOverallScoreHelp": "If disabled, learners still see correct and incorrect answers, but not the overall number of correctly answered questions.",
   "catalogCzech": "Czech",
