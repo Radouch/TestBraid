@@ -19,7 +19,20 @@ export const USERNAME_PATTERN = /^[A-Za-z0-9._-]{1,64}$/
 export const authorSession = ref<AuthorSession | null>(null)
 export const sessionChecked = ref(false)
 
-export async function refreshAuthorSession(): Promise<void> {
+let pendingSession: Promise<void> | null = null
+
+/**
+ * Read the author session. Callers that ask while a read is in flight share
+ * it: without a session cookie, each request would start its own server
+ * session with its own CSRF token, the browser would keep only one of the
+ * cookies, and a form could then post a token from another session (#106).
+ */
+export function refreshAuthorSession(): Promise<void> {
+  pendingSession ??= readAuthorSession().finally(() => { pendingSession = null })
+  return pendingSession
+}
+
+async function readAuthorSession(): Promise<void> {
   // The static demo has no server to sign in to; skip the doomed request.
   if (STATIC_DEMO) {
     authorSession.value = null
