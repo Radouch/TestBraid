@@ -1,4 +1,5 @@
 import { appBaseUrl } from './deployment-base'
+import { followSystemColorScheme } from './color-scheme'
 import { createApp } from 'vue'
 import 'bootstrap/dist/css/bootstrap.min.css'
 // The theme overrides Bootstrap's colours, so it must load after Bootstrap.
@@ -10,6 +11,10 @@ import { i18n, loadInterfaceTranslations } from './i18n'
 import { mountAfterConfiguration } from './bootstrap'
 import { configuredUiLanguages, loadSiteIdentity, localizeSiteText, siteIdentity } from './site-identity'
 import { resolveUiLocale } from './ui-locale'
+
+// Pick the colour scheme first, so the page is already dark (for visitors with
+// a dark setting) while the configuration below is loading.
+followSystemColorScheme()
 
 // Resolve public installation branding before rendering the application.
 // This prevents a transient default "TestBraid" header on customized hosts.

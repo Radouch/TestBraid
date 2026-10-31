@@ -166,7 +166,7 @@ const server = computed(() => ({
 </script>
 
 <template>
-  <div>
+  <div class="media-uploader">
     <p v-if="limitsError" class="alert alert-danger" role="alert">{{ limitsError }}</p>
     <div v-if="limits?.warnings.length" class="alert alert-warning" role="alert">
       <strong>{{ t('mediaLimitsMismatch') }}</strong>
@@ -218,3 +218,10 @@ const server = computed(() => ({
     }) }}</p>
   </div>
 </template>
+
+<style scoped>
+/* FilePond paints its drop area and label in fixed light greys. Take them from
+   the Bootstrap theme instead, so the drop area also fits the dark scheme. */
+.media-uploader :deep(.filepond--panel-root) { background-color: var(--bs-secondary-bg); }
+.media-uploader :deep(.filepond--drop-label) { color: var(--bs-body-color); }
+</style>

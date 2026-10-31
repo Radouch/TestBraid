@@ -90,7 +90,7 @@ onUnmounted(() => { document.removeEventListener('click', outside); stopTracking
 .editor-menu-trigger { display: inline-flex; align-items: center; min-height: 2.75rem; list-style: none; color: var(--bs-secondary-color); }
 .editor-menu-trigger.icon-button { min-width: 2.75rem; min-height: 2.75rem; }
 .editor-menu-trigger::-webkit-details-marker { display: none; }
-.editor-menu-trigger:hover, .editor-menu[open] > summary { background: var(--bs-tertiary-bg); color: var(--bs-primary); }
+.editor-menu-trigger:hover, .editor-menu[open] > summary { background: var(--bs-tertiary-bg); color: var(--app-accent-text); }
 .editor-menu-panel { position: absolute; width: max-content; min-width: min(13rem, calc(100vw - 1rem)); max-width: min(24rem, calc(100vw - 1rem)); overflow-y: auto; z-index: 40; }
 .editor-menu-panel :slotted(button) { display: block; width: 100%; min-height: 2.75rem; text-align: start; white-space: normal; }
 </style>

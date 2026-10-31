@@ -163,7 +163,7 @@ onMounted(async () => {
         <div v-for="media in displayed" :key="media.id" class="col-sm-6 col-xl-4">
           <article class="card h-100">
             <img v-if="media.kind === 'image'" :src="preview(media.id)" :alt="media.originalName"
-              class="card-img-top object-fit-contain" style="height: 180px" />
+              class="card-img-top object-fit-contain media-preview" style="height: 180px" />
             <video v-else :src="preview(media.id)" controls preload="metadata"
               class="w-100" style="height: 180px" />
             <div class="card-body">

@@ -10,6 +10,8 @@ Na úvodní stránce vyberte lekci a test, nebo použijte odkaz, který vám pos
 
 Web může nabízet rozhraní v různých jazycích. Změna jazyka rozhraní ale nepřekládá samotné otázky.
 
+Web používá světlé nebo tmavé barvy podle nastavení vašeho zařízení.
+
 ## Odpovídání na otázky
 
 Všechny otázky jsou na **jedné stránce**, kterou posouváte. Testy se šesti a více otázkami mají navíc **Přehled otázek**, pomocí kterého můžete přeskakovat mezi otázkami a vidíte, které už máte zodpovězené. Vedle tlačítka **Vyhodnotit odpovědi** stránka ukazuje, kolik otázek jste už zodpověděli. Při pohybu po stránce se vaše odpovědi zachovávají.

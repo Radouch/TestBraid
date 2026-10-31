@@ -57,6 +57,9 @@ jobs:
       - name: Author session sharing and sign-in token recovery
         run: npm run test:session
         working-directory: frontend
+      - name: Colour contrast in both schemes and system colour-scheme sync
+        run: npm run test:theme
+        working-directory: frontend
       - name: Question composition and private media interaction regression
         run: npm run test:content
         working-directory: frontend

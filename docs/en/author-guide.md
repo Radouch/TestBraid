@@ -43,6 +43,8 @@ Choose an existing image or video from the media library, or upload a new file f
 
 Under each image or video, fill in **Description for screen readers**: say what the picture shows or what happens in the video. Learners who use a screen reader hear this text instead of seeing the media. When a picture or video is a whole answer or matching item, the description is **required for publishing**; without it, those learners cannot tell the answers apart. Elsewhere it is optional but still helpful.
 
+The site follows each visitor's light or dark device setting. In the dark colour scheme, pictures keep a **white background** behind any transparent areas, so a drawing made for a white page stays readable. Prepare pictures to look right on white.
+
 The **editor attaches one file at a time**. To select and upload several files together, open the standalone [Media library](media-library.md), then choose them from the editor.
 
 ## Preview and publish

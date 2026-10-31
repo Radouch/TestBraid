@@ -43,6 +43,8 @@ Vyberte existující obrázek nebo video z knihovny médií, nebo nahrajte nový
 
 Pod každým obrázkem a videem vyplňte **Popis pro čtečky obrazovky**: napište, co obrázek zobrazuje nebo co se ve videu děje. Studenti, kteří používají čtečku obrazovky, uslyší tento text místo zobrazení média. Když obrázek nebo video tvoří celou odpověď nebo položku k přiřazení, je popis **pro publikování povinný**; bez něj by tito studenti odpovědi nerozlišili. Jinde je nepovinný, ale i tak užitečný.
 
+Web se u každého návštěvníka řídí světlým nebo tmavým nastavením jeho zařízení. V tmavém zobrazení mají obrázky za průhlednými místy **bílé pozadí**, takže kresba připravená pro bílou stránku zůstane čitelná. Obrázky připravujte tak, aby dobře vypadaly na bílé.
+
 **Editor připojuje vždy jen jeden soubor.** Chcete-li vybrat a nahrát více souborů najednou, otevřete samostatnou [Knihovnu médií](media-library.md) a soubory pak vyberte v editoru.
 
 ## Náhled a publikování
