@@ -10,6 +10,8 @@ Choose a lesson and test from the home page, or follow a link shared by an autho
 
 The website interface may offer different languages. Changing the interface language does not translate the questions themselves.
 
+The site uses a light or dark colour scheme to match your device's setting.
+
 ## Answer questions
 
 All questions appear on **one scrollable page**. Tests with six or more questions also have a **Question overview** for jumping between questions and seeing which ones you have answered. Next to **Check answers**, the page shows how many questions you have answered. Your answers are preserved while navigating the page.

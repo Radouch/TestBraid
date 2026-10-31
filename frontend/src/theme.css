@@ -3,7 +3,12 @@
  *
  * One accent colour replaces Bootstrap's blue, and controls and secondary
  * text meet WCAG 2.1 AA contrast (3:1 for control borders, 4.5:1 for text).
- * Ratios in the comments are against white unless stated otherwise.
+ * Ratios in the comments are against white unless stated otherwise; in the
+ * dark block they are against Bootstrap's dark body background #212529.
+ *
+ * The dark scheme follows the visitor's system setting: color-scheme.ts sets
+ * data-bs-theme on <html>, which switches Bootstrap's own variables, and the
+ * [data-bs-theme=dark] block below gives TestBraid's tokens their dark values.
  *
  * Bootstrap's compiled CSS does not derive everything from --bs-primary: the
  * button variants, focus rings and checked inputs hardcode its blue. Those
@@ -19,6 +24,9 @@
   --app-accent-rgb: 79, 70, 229;
   --app-accent-hover: #4338ca;
   --app-accent-active: #3730a3;
+  /* The accent as text and outlines (links, outline buttons, .text-primary).
+     On white it can be the fill colour itself; the dark scheme needs a lighter one. */
+  --app-accent-text: var(--app-accent);
 
   /* Radio buttons and checkboxes 4.83:1; text fields and selects 3.32:1. */
   --app-control-border: #6b7280;
@@ -30,6 +38,8 @@
   --app-amber-rgb: 180, 83, 9;
   --app-amber-strong: #92400e;
   --app-amber-bg: #fffbeb;
+  /* Text on an amber fill (a hovered or pressed warning button). */
+  --app-amber-contrast: #fff;
 
   /* The light frame approved in #63: grey canvas, white header, neutral footer. */
   --app-page-bg: #f1f3f5;
@@ -41,7 +51,7 @@
   --bs-primary-text-emphasis: #3730a3;
   --bs-primary-bg-subtle: #eef2ff;
   --bs-primary-border-subtle: #c7d2fe;
-  --bs-link-color: var(--app-accent);
+  --bs-link-color: var(--app-accent-text);
   --bs-link-color-rgb: var(--app-accent-rgb);
   --bs-link-hover-color: var(--app-accent-active);
   --bs-link-hover-color-rgb: 55, 48, 163;
@@ -49,6 +59,58 @@
 
   /* .text-secondary: Bootstrap's #6c757d is 4.22:1 on the page canvas; this is 5.48:1. */
   --bs-secondary-rgb: 92, 99, 106;
+}
+
+/* Dark values. Cards and the header keep Bootstrap's #212529 and sit on a
+   darker canvas, as white cards sit on the grey canvas in the light scheme. */
+[data-bs-theme=dark] {
+  /* Button and checked-input fill: white text 4.82:1, against the body 3.20:1.
+     Hover and active steps darken towards the light scheme's accent (6.29:1). */
+  --app-accent: #615fec;
+  --app-accent-rgb: 97, 95, 236;
+  --app-accent-hover: #4f46e5;
+  --app-accent-active: #4338ca;
+  /* 7.74:1, and 5.77:1 on the secondary surface #343a40. */
+  --app-accent-text: #a5b4fc;
+
+  /* Radio buttons and checkboxes 5.02:1; text fields and selects 3.36:1. */
+  --app-control-border: #8b949e;
+  --app-field-border: #6e7681;
+
+  /* Amber 7.18:1; the strong step 10.17:1 on the amber tint, which is
+     Bootstrap's dark warning background. Text on an amber fill is dark: 7.18:1. */
+  --app-amber: #f59e0b;
+  --app-amber-rgb: 245, 158, 11;
+  --app-amber-strong: #fcd34d;
+  --app-amber-bg: #332701;
+  --app-amber-contrast: #212529;
+
+  --app-page-bg: #181b1f;
+  --app-footer-bg: var(--bs-tertiary-bg);
+
+  --bs-primary: var(--app-accent);
+  --bs-primary-rgb: var(--app-accent-rgb);
+  /* Emphasis text on the subtle background: 8.02:1. */
+  --bs-primary-text-emphasis: #a5b4fc;
+  --bs-primary-bg-subtle: #1e1b4b;
+  --bs-primary-border-subtle: #3730a3;
+  --bs-link-color: var(--app-accent-text);
+  --bs-link-color-rgb: 165, 180, 252;
+  --bs-link-hover-color: #c7d2fe;
+  --bs-link-hover-color-rgb: 199, 210, 254;
+  --bs-focus-ring-color: rgba(165, 180, 252, .4);
+
+  /* .text-secondary: Bootstrap keeps #6c757d (3.29:1) in the dark scheme; this is 7.43:1. */
+  --bs-secondary-rgb: 173, 181, 189;
+}
+
+/* Until the script sets data-bs-theme, keep the empty page dark for visitors
+   who use a dark setting, so it does not flash white while loading. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bs-theme]) {
+    --app-page-bg: #181b1f;
+    color-scheme: dark;
+  }
 }
 
 .btn-primary {
@@ -62,26 +124,27 @@
   --bs-btn-disabled-bg: var(--app-accent);
   --bs-btn-disabled-border-color: var(--app-accent);
 }
+/* Outline text and border use the accent text colour, the fill only on hover. */
 .btn-outline-primary {
-  --bs-btn-color: var(--app-accent);
-  --bs-btn-border-color: var(--app-accent);
+  --bs-btn-color: var(--app-accent-text);
+  --bs-btn-border-color: var(--app-accent-text);
   --bs-btn-hover-bg: var(--app-accent);
   --bs-btn-hover-border-color: var(--app-accent);
   --bs-btn-focus-shadow-rgb: var(--app-accent-rgb);
   --bs-btn-active-bg: var(--app-accent-hover);
   --bs-btn-active-border-color: var(--app-accent-hover);
-  --bs-btn-disabled-color: var(--app-accent);
-  --bs-btn-disabled-border-color: var(--app-accent);
+  --bs-btn-disabled-color: var(--app-accent-text);
+  --bs-btn-disabled-border-color: var(--app-accent-text);
 }
 /* Bootstrap's yellow outline (#ffc107) is 1.63:1; dark amber text and border are 5.02:1. */
 .btn-outline-warning {
   --bs-btn-color: var(--app-amber);
   --bs-btn-border-color: var(--app-amber);
-  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-color: var(--app-amber-contrast);
   --bs-btn-hover-bg: var(--app-amber);
   --bs-btn-hover-border-color: var(--app-amber);
   --bs-btn-focus-shadow-rgb: var(--app-amber-rgb);
-  --bs-btn-active-color: #fff;
+  --bs-btn-active-color: var(--app-amber-contrast);
   --bs-btn-active-bg: var(--app-amber-strong);
   --bs-btn-active-border-color: var(--app-amber-strong);
   --bs-btn-disabled-color: var(--app-amber);
@@ -113,5 +176,38 @@
   border-color: var(--app-accent);
 }
 /* A learner reviewing results must see what they chose: Bootstrap fades
-   disabled inputs to 50% (about 2:1); 75% keeps a checked accent at about 3.8:1. */
+   disabled inputs to 50% (about 2:1); 75% keeps a checked accent at about 3.8:1.
+   On the dark background any fading drops it below 3:1, so it stays opaque (3.20:1). */
 .form-check-input:checked:disabled { opacity: .75; }
+[data-bs-theme=dark] .form-check-input:checked:disabled { opacity: 1; }
+
+.text-primary { color: var(--app-accent-text) !important; }
+
+/* Bootstrap keeps its light-scheme text colours for these in the dark scheme
+   (#6c757d 3.29:1, #198754 3.40:1, #dc3545 3.41:1). Use its dark emphasis
+   colours for text (6.1:1 or more); borders keep the base colour, which is
+   above the 3:1 needed for outlines, and hovered buttons keep white on the fill. */
+[data-bs-theme=dark] .text-success { color: var(--bs-success-text-emphasis) !important; }
+[data-bs-theme=dark] .text-danger { color: var(--bs-danger-text-emphasis) !important; }
+[data-bs-theme=dark] .btn-outline-secondary {
+  --bs-btn-color: var(--bs-secondary-text-emphasis);
+  --bs-btn-disabled-color: var(--bs-secondary-text-emphasis);
+}
+[data-bs-theme=dark] .btn-outline-success {
+  --bs-btn-color: var(--bs-success-text-emphasis);
+  --bs-btn-disabled-color: var(--bs-success-text-emphasis);
+}
+[data-bs-theme=dark] .btn-outline-danger {
+  --bs-btn-color: var(--bs-danger-text-emphasis);
+  --bs-btn-disabled-color: var(--bs-danger-text-emphasis);
+}
+
+/* The TestBraid mark is a near-black drawing on a transparent background. */
+[data-bs-theme=dark] .app-brand-mark,
+[data-bs-theme=dark] .app-footer-mark { filter: invert(1); }
+
+/* Authors prepare pictures on a light page. In the dark scheme a picture keeps
+   a white backdrop behind its transparent areas, so dark lines and text in it
+   stay visible. Pictures are never inverted or dimmed: they are test content. */
+[data-bs-theme=dark] img.content-media,
+[data-bs-theme=dark] img.media-preview { background-color: #fff; }

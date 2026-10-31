@@ -238,7 +238,7 @@ onUnmounted(() => libraryRequest?.abort())
         <div v-for="media in matchingMedia" :key="media.id" class="col-6 col-md-4">
           <button type="button" class="btn btn-outline-secondary w-100 text-break" @click="chooseMedia(media.id)">
             <img v-if="media.kind === 'image'" :src="preview(media.id)" alt=""
-              class="w-100 object-fit-contain" style="height: 110px" />
+              class="w-100 object-fit-contain media-preview" style="height: 110px" />
             <video v-else :src="preview(media.id)" preload="metadata" class="w-100" style="height: 110px" />
             <span class="small d-block">{{ media.originalName }}</span>
             <span class="small text-secondary d-block">{{ lessonName(media.groupId) }}</span>
@@ -277,6 +277,6 @@ onUnmounted(() => libraryRequest?.abort())
 .block-media-preview :deep(.content-media) { border-radius: .25rem; }
 .replace-media { justify-self: start; min-height: 2.75rem; }
 .append-content { width: fit-content; }
-.media-dialog { width: min(92vw, 780px); max-height: 85vh; }
+.media-dialog { width: min(92vw, 780px); max-height: 85vh; background: var(--bs-body-bg); color: var(--bs-body-color); }
 .media-dialog::backdrop { background: rgb(0 0 0 / .35); }
 </style>

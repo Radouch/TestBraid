@@ -125,7 +125,7 @@ watch(() => route.path, () => void refreshAuthorSession())
         <span class="app-footer-branding">
           <a href="https://github.com/Radouch/TestBraid" target="_blank" rel="noopener noreferrer"
             class="d-inline-flex align-items-center gap-1">
-            <img :src="brandMarkUrl" alt="" aria-hidden="true" width="16" height="16" />
+            <img :src="brandMarkUrl" alt="" aria-hidden="true" width="16" height="16" class="app-footer-mark" />
             Powered by TestBraid
           </a>
           <span>{{ t('version') }} {{ appVersion }}</span>
