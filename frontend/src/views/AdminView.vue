@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminCatalog from '../components/AdminCatalog.vue'
 import SecurityDiagnostics from '../components/SecurityDiagnostics.vue'
-import { authorSession, USERNAME_PATTERN } from '../auth'
+import { authorSession, refreshAuthorSession, USERNAME_PATTERN } from '../auth'
 
 interface Author {
   id: string
@@ -35,21 +35,13 @@ const usernameInvalid = computed(() => username.value !== '' && !USERNAME_PATTER
 async function readSession(): Promise<void> {
   loading.value = true
   error.value = ''
-  try {
-    const response = await fetch(api('auth/session'), {
-      credentials: 'same-origin',
-      cache: 'no-store',
-    })
-    if (!response.ok) throw new Error('HTTP')
-    session.value = await response.json() as Session
-  } catch {
-    error.value = t('sessionUnavailable')
-  } finally {
-    loading.value = false
-  }
+  // Join the app-wide session read instead of starting a parallel one.
+  await refreshAuthorSession()
+  if (!session.value) error.value = t('sessionUnavailable')
+  loading.value = false
 }
 
-async function mutate(route: string, body?: unknown): Promise<Session | null> {
+async function mutate(route: string, body?: unknown, retry = true): Promise<Session | null> {
   const token = session.value?.csrfToken
   if (!token) {
     error.value = t('sessionUnavailable')
@@ -69,6 +61,12 @@ async function mutate(route: string, body?: unknown): Promise<Session | null> {
     const data = await response.json() as Session & ApiError
     if (!response.ok) {
       const code = data.error?.code
+      // A token from another or an expired session: read the session again
+      // (its cookie is settled by now) and send the request once more.
+      if (code === 'INVALID_CSRF' && retry) {
+        await refreshAuthorSession()
+        return mutate(route, body, false)
+      }
       error.value = code === 'RATE_LIMITED' ? t('tooManyAttempts')
         : code === 'INVALID_SETUP_KEY' ? t('invalidSetupKey')
         : code === 'SETUP_COMPLETE' ? t('setupAlreadyCompleted')
