@@ -331,6 +331,10 @@ try {
   console.log('PASS AUTHOR DOM: focused lesson rename/error/retry, selected-lesson creation dialog and direct editor handoff')
 
   await click(back())
+  // The test list uses the editor's status badge.
+  const listBadges = [...host.querySelectorAll('section[aria-labelledby=tests-heading] li .test-status-badge')]
+  assert.ok(listBadges.length >= 2)
+  assert.ok(listBadges.every(badge => badge.textContent?.trim() === cs.editorDraftStatus))
   const duplicateRow = [...host.querySelectorAll<HTMLLIElement>('section[aria-labelledby=tests-heading] li')]
     .find(row => row.querySelector('a')?.textContent?.trim() === stored.draft!.title)!
   const duplicate = [...duplicateRow.querySelectorAll<HTMLButtonElement>('button')]
@@ -421,8 +425,12 @@ try {
   assert.equal(publicationButton().textContent?.trim(), cs.publicationUnpublish)
   assert.equal(publicationButton().disabled, false, 'Read-only settings must not disable the unpublish action')
   assert.equal(publicationButton().closest('fieldset'), null)
-  assert.equal(find('.alert-warning').querySelector('button'), null, 'The published-test warning has no duplicate unpublish button')
-  assert.ok(find('.editor-publication').textContent?.includes(cs.catalogPublished!))
+  // The read-only notice appears once, in the toolbar next to Unpublish, and the
+  // header and publication settings share the same status badge.
+  assert.equal(find('.editor-save-state').textContent, cs.adminPublishedReadonly)
+  assert.equal((host.textContent ?? '').split(cs.adminPublishedReadonly!).length - 1, 1)
+  assert.equal(find('header .test-status-badge').textContent?.trim(), cs.catalogPublished)
+  assert.equal(find('.editor-publication .test-status-badge').textContent?.trim(), cs.catalogPublished)
   const publicLink = find<HTMLAnchorElement>('.editor-publication a')
   assert.equal(publicLink.getAttribute('href'), '/training/tests/draft?lang=cs')
   assert.equal(publicLink.target, '_blank')
@@ -460,7 +468,7 @@ try {
   await click(publicationButton())
   await click(find('#editor-tab-questions'))
   assert.equal(publicationButton().textContent?.trim(), cs.publicationUnpublish)
-  assert.equal(find('.alert-warning').querySelector('button'), null)
+  assert.equal((host.textContent ?? '').split(cs.adminPublishedReadonly!).length - 1, 1)
   await click(publicationButton())
   assert.equal(stored.draft!.status, 'draft')
   assert.equal(router.currentRoute.value.query.tab, undefined, 'Toolbar unpublish works from the questions tab')

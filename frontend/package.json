@@ -14,6 +14,7 @@
     "test:learner": "tsx scripts/test-learner-scoring.ts",
     "test:runner": "node scripts/run-dom-tests.mjs",
     "test:public": "node scripts/run-dom-tests.mjs scripts/test-public-test-dom.ts",
+    "test:shell": "node scripts/run-dom-tests.mjs scripts/test-app-shell-dom.ts",
     "test:author": "node scripts/run-dom-tests.mjs scripts/test-author-editor-dom.ts",
     "test:content": "node scripts/run-dom-tests.mjs scripts/test-content-editor-dom.ts",
     "test:upload": "node scripts/run-dom-tests.mjs scripts/test-upload-dom.ts",

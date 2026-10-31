@@ -130,8 +130,9 @@ watch(() => route.path, () => void refreshAuthorSession())
           </a>
           <span>{{ t('version') }} {{ appVersion }}</span>
         </span>
-        <RouterLink v-if="sessionChecked && !STATIC_DEMO" to="/admin">
-          {{ authorSession?.authenticated ? t('author') : t('signIn') }}
+        <!-- Signed-in authors already have the author area in the header navigation. -->
+        <RouterLink v-if="sessionChecked && !STATIC_DEMO && !authorSession?.authenticated" to="/admin">
+          {{ t('signIn') }}
         </RouterLink>
       </div>
     </footer>

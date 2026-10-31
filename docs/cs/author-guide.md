@@ -2,7 +2,7 @@
 
 [English](../en/author-guide.md) · **Čeština**
 
-Autoři vytvářejí lekce, sestavují testy s textem, obrázky a videi, prohlížejí si je v náhledu a publikují je pro studenty. Přihlaste se na `/admin`; založení prvního účtu popisuje [Rychlý start](quick-start.md).
+Autoři vytvářejí lekce, sestavují testy s textem, obrázky a videi, prohlížejí si je v náhledu a publikují je pro studenty. Přihlaste se na `/admin`; založení prvního účtu popisuje [Rychlý start](quick-start.md). Po přihlášení nabízí záhlaví **Veřejný web** (web tak, jak ho vidí studenti), **Editace testů** a **Knihovna médií**.
 
 ## Začněte ukázkovými testy
 

@@ -42,6 +42,9 @@ jobs:
       - name: Public test page navigation and results actions
         run: npm run test:public
         working-directory: frontend
+      - name: Shared header navigation and footer links
+        run: npm run test:shell
+        working-directory: frontend
       - name: Shared author editor and lesson dialogs regression
         run: npm run test:author
         working-directory: frontend

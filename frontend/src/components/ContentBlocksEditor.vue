@@ -175,7 +175,7 @@ onUnmounted(() => libraryRequest?.abort())
 <template>
   <div ref="root" class="content-composer" role="group" :aria-label="label">
     <p :class="hideLabel ? 'visually-hidden' : 'fw-semibold mb-2'">{{ label }}</p>
-    <div v-for="(block, index) in modelValue" :key="block.id" class="content-block border rounded p-2 p-sm-3" :data-block-id="block.id">
+    <div v-for="(block, index) in modelValue" :key="block.id" class="content-block" :data-block-id="block.id">
       <div class="block-content">
         <template v-if="block.type === 'text'">
           <textarea :id="'text-' + block.id" v-grow class="form-control block-text" :value="block.text"
@@ -259,8 +259,12 @@ onUnmounted(() => libraryRequest?.abort())
 .content-composer { min-width: 0; position: relative; }
 .content-composer:has(.editor-menu[open]) { z-index: 45; }
 /* The menu shares the content row in a reserved column. It neither adds a
-   header row nor covers text, image details or native video controls. */
-.content-block { display: grid; grid-template-columns: minmax(0, 1fr) 2.75rem; align-items: start; gap: .5rem; min-width: 0; background: var(--bs-body-bg); margin-bottom: .65rem; }
+   header row nor covers text, image details or native video controls.
+   Blocks have no box of their own: the answer, pair or prompt around them
+   is the single frame, so the editor does not nest box inside box. */
+.content-block { display: grid; grid-template-columns: minmax(0, 1fr) 2.75rem; align-items: start; gap: .5rem; min-width: 0; margin-bottom: .65rem; border-radius: var(--bs-border-radius); }
+/* Without a box, show which block a "⋯" menu belongs to only while it is in use. */
+.content-block:hover, .content-block:focus-within { outline: 1px dashed var(--bs-border-color); outline-offset: .375rem; }
 .block-content { min-width: 0; grid-column: 1; grid-row: 1; }
 .block-actions { grid-column: 2; grid-row: 1; }
 .block-text { min-height: 2.5rem; max-height: 24rem; overflow-y: auto; resize: vertical; }
