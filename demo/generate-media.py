@@ -26,8 +26,15 @@ STORAGE = Path(__file__).resolve().parent / 'storage'
 LESSON_ID = 'e7472376-d56a-4384-ad1c-a1606dabddb7'
 CREATED_AT = '2026-10-29T12:00:00Z'
 SIZE = 480
-BACKGROUND = (248, 249, 250)
-RED, BLUE, GREEN, ORANGE = (220, 53, 69), (13, 110, 253), (25, 135, 84), (253, 126, 20)
+# Pictures have transparent backgrounds, so they sit on whatever surface shows
+# them instead of looking like grey loading placeholders. H.264 has no
+# transparency, so video frames use a plain white stage.
+TRANSPARENT = (0, 0, 0, 0)
+VIDEO_BACKGROUND = (255, 255, 255)
+# Not the interface's colours (Bootstrap's blue, success green and danger red):
+# a blue shape must not look like a selected answer, nor a red or green one
+# like answer feedback.
+RED, BLUE, GREEN, ORANGE = (201, 42, 42), (25, 113, 194), (47, 158, 68), (247, 103, 7)
 
 IMAGES = {
     '0821a7ae-ef1a-4c6d-8618-13d729a27d37': ('red-circle.png', 'circle', RED),
@@ -80,7 +87,7 @@ def render_video(motion: str, target: Path) -> None:
     frames, fps = 75, 25  # three seconds
     with tempfile.TemporaryDirectory() as work:
         for index in range(frames):
-            image = Image.new('RGB', (SIZE, SIZE), BACKGROUND)
+            image = Image.new('RGB', (SIZE, SIZE), VIDEO_BACKGROUND)
             draw = ImageDraw.Draw(image)
             x, y = ball_position(motion, index / (frames - 1))
             shape(draw, 'circle', ORANGE, (x - 40, y - 40, x + 40, y + 40))
@@ -100,7 +107,7 @@ def main() -> None:
     (STORAGE / 'media').mkdir(parents=True, exist_ok=True)
     for media_id, (name, kind, colour) in IMAGES.items():
         path = STORAGE / 'media-files' / f'{media_id}.png'
-        image = Image.new('RGB', (SIZE, SIZE), BACKGROUND)
+        image = Image.new('RGBA', (SIZE, SIZE), TRANSPARENT)
         shape(ImageDraw.Draw(image), kind, colour, (90, 90, SIZE - 90, SIZE - 90))
         image.save(path, optimize=True)
         write_metadata(media_id, 'image', name, path)

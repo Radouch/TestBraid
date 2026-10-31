@@ -4,6 +4,8 @@ This folder holds the demo content that every **install** package ships with: an
 
 There is one lesson per language because the home page lists only tests whose content language matches the interface language the visitor chose.
 
+The pictures are simple coloured shapes on a transparent background; the videos show an orange ball on a white background. Their colours are deliberately not the interface's own, so a blue shape does not look like a selected answer, and a red or green one does not look like answer feedback.
+
 `storage/` has exactly the layout of a running installation's private `testbraid-backend/storage/`:
 
 | Path | Contents |
@@ -23,6 +25,7 @@ The same lessons also run as a read-only demo on GitHub Pages. `pages/app.json` 
 
 - Edit the test or lesson JSON directly. IDs of lessons, tests and media must be UUIDv4 values. Question, answer and block IDs only need to be unique where the schemas require.
 - Keep the English and Czech tests in step: a change to one test belongs in its counterpart in the other language too.
+- Give every picture or video that is a whole answer or matching item a description (`alt`) in the test's language. Publication requires it, and screen readers read it instead of showing the media.
 - To change the pictures or videos, edit and run `generate-media.py` (needs Python with Pillow, and ffmpeg). It rewrites `media-files/` and `media/`.
 - Run `composer run test:demo` in `backend/`. It validates everything against the schemas and publication rules and checks that the demo can be unpublished and removed.
 
