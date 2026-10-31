@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import QuestionEditor from '../components/QuestionEditor.vue'
 import PublishedQuestionView from '../components/PublishedQuestionView.vue'
 import TestSettingsFields from '../components/TestSettingsFields.vue'
+import TestStatusBadge from '../components/TestStatusBadge.vue'
 import { testEdits, type EditorLesson, type TestEdits } from '../editor/test-settings'
 import { explicitUiLocale } from '../ui-locale'
 import {
@@ -339,13 +340,11 @@ onBeforeUnmount(() => {
       <header class="card mb-3">
         <div class="card-body d-flex flex-wrap align-items-center gap-2">
           <h1 class="h3 mb-0">{{ draft.title || t('catalogUntitled') }}</h1>
-          <span class="badge border" :class="editable ? 'text-body-secondary bg-body-tertiary' : 'text-success-emphasis bg-success-subtle'">
-            {{ t(editable ? 'editorDraftStatus' : 'catalogPublished') }}
-          </span>
+          <TestStatusBadge :status="editable ? 'draft' : 'published'" />
           <RouterLink :to="catalogLocation" class="editor-back ms-md-auto"><AppIcon name="arrow-left" /> {{ t('editorBackToLesson') }}</RouterLink>
         </div>
       </header>
-      <div v-if="!editable" class="alert alert-warning">{{ t('adminPublishedReadonly') }}</div>
+      <!-- The read-only notice lives once, in the sticky toolbar next to Unpublish. -->
       <div class="nav nav-tabs mb-3" role="tablist" :aria-label="t('editorTabs')" @keydown="tabKeys">
         <button id="editor-tab-questions" type="button" class="nav-link" role="tab" aria-controls="editor-panel-questions"
           :class="{ active: activeTab === 'questions' }" :aria-selected="activeTab === 'questions'"
@@ -389,9 +388,7 @@ onBeforeUnmount(() => {
           <section class="editor-publication card mt-3" aria-labelledby="test-settings-publication" :aria-busy="Boolean(publicationAction)">
             <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
               <h2 id="test-settings-publication" class="h6 mb-0">{{ t('editorPublication') }}</h2>
-              <span class="badge border" :class="editable ? 'text-body-secondary bg-body-tertiary' : 'text-success-emphasis bg-success-subtle'">
-                {{ t(editable ? 'editorDraftStatus' : 'catalogPublished') }}
-              </span>
+              <TestStatusBadge :status="editable ? 'draft' : 'published'" />
             </div>
             <div class="card-body">
               <p id="editor-publication-description">{{ t(editable ? 'editorPublicationDraftHint' : 'editorPublicationPublishedHint') }}</p>

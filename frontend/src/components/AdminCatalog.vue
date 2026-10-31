@@ -5,6 +5,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import TestSettingsFields from './TestSettingsFields.vue'
+import TestStatusBadge from './TestStatusBadge.vue'
 import { explicitUiLocale } from '../ui-locale'
 import type { TestSettings } from '../editor/test-settings'
 import type { Question } from '../editor/model'
@@ -467,21 +468,21 @@ onMounted(() => void load())
                   {{ test.title || t('catalogUntitled') }}
                 </RouterLink>
                 <p class="small text-secondary mb-1">{{ groupLabel(test.groupId) }} · {{ test.language }}</p>
-                <div v-if="test.status === 'published'" class="small text-success">
-                  {{ t('catalogPublished') }}
+                <div class="test-status d-flex flex-wrap align-items-baseline gap-2 small">
+                  <TestStatusBadge :status="test.status" />
+                  <template v-if="test.status !== 'published'">
+                    <span v-if="readiness[test.id]?.ready" class="text-primary">{{ t('adminReady') }}</span>
+                    <details v-else>
+                      <summary class="text-warning-emphasis">{{ t('adminIncomplete') }}</summary>
+                      <ul v-if="readiness[test.id]?.issues.length" class="mb-1 mt-1 ps-3">
+                        <li v-for="(issue, i) in readiness[test.id].issues" :key="i">
+                          {{ issue.path }}: {{ t('readiness_' + issue.code) }}
+                        </li>
+                      </ul>
+                      <p v-else class="text-secondary">{{ t('adminReadinessUnknown') }}</p>
+                    </details>
+                  </template>
                 </div>
-                <div v-else-if="readiness[test.id]?.ready" class="small text-primary">
-                  {{ t('adminReady') }}
-                </div>
-                <details v-else class="small">
-                  <summary class="text-warning-emphasis">{{ t('adminIncomplete') }}</summary>
-                  <ul v-if="readiness[test.id]?.issues.length" class="mb-1 mt-1 ps-3">
-                    <li v-for="(issue, i) in readiness[test.id].issues" :key="i">
-                      {{ issue.path }}: {{ t('readiness_' + issue.code) }}
-                    </li>
-                  </ul>
-                  <p v-else class="text-secondary">{{ t('adminReadinessUnknown') }}</p>
-                </details>
               </div>
               <details class="dropdown">
                 <summary class="btn btn-outline-secondary btn-sm icon-button" :aria-label="t('adminTestActions')" :title="t('adminTestActions')"><AppIcon name="three-dots-vertical" /></summary>

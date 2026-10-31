@@ -2,7 +2,7 @@
 
 **English** · [Čeština](../cs/author-guide.md)
 
-Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in the [Quick start](quick-start.md).
+Authors can create lessons, build tests with text, images and video, preview them and publish them for learners. Sign in at `/admin`; first-time account setup is explained in the [Quick start](quick-start.md). Once you are signed in, the header offers **Public site** (the site as learners see it), **Edit tests** and **Media library**.
 
 ## Start from the demo tests
 
