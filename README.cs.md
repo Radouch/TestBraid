@@ -4,7 +4,7 @@
 
 > TestBraid je webová aplikace pro tvorbu a vyplňování **multimediálních testů k samostatnému ověřování znalostí**, kterou provozujete na vlastním webhostingu.
 
-Je to **snadno instalovatelný** nástroj na testy, **ne** systém pro řízení výuky (LMS): studenti nemají žádné účty a žádné výsledky se neukládají.
+Je to **snadno instalovatelný** nástroj na testy, **nikoli** systém pro řízení výuky (LMS): studenti nemají žádné účty a žádné výsledky se neukládají.
 
 Můžete vytvořit libovolný počet lekcí a v každé z nich libovolný počet testů. Každý test může obsahovat libovolný počet otázek. Všechny obrázky a videa jsou vaše vlastní soubory uložené na vašem serveru, ne odkazy na videoplatformu.
 
