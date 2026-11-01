@@ -2,9 +2,13 @@
 
 **English** · [Čeština](README.cs.md)
 
-TestBraid is a self-hosted application for creating and completing multimedia self-assessment tests.
+> TestBraid is a self-hosted web application for creating and completing **multimedia self-assessment tests**.
 
-It is a simple tool for tests, not a learning management system: learners need no accounts and no results are stored. Pictures and videos are your own files, not links to a video platform. Read **[Why TestBraid](docs/en/why-testbraid.md)** to see whether it fits your needs.
+It is an **easy to install** tool for tests, **not** a learning management system (LMS): there are no learners accounts and no results are stored.
+
+You can create any number of lessons containg any number of tests. Each test can include any number of questions. All pictures and videos are your own files (stored locally), not links to a video platform.
+
+Read **[Why TestBraid](docs/en/why-testbraid.md)** to see whether it fits your needs.
 
 **[Try the demo](https://radouch.github.io/TestBraid/)**: take the demo tests in your browser, with nothing to install.
 
