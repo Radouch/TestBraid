@@ -93,11 +93,11 @@ export function validatePublication(value: unknown, context: PublicationContext)
         if (!ids.has(answer)) add(`${path}/correctOptionIds`, 'UNKNOWN_CORRECT_OPTION', 'A correct option ID does not exist.')
       }
     } else {
-      // Matching remains a strict bijection in PoC-A/B; future distractors are deferred.
+      // Matching requires a complete bijection, including when there is only one pair.
       const left = inspectItems(question.leftItems, `${path}/leftItems`)
       const right = inspectItems(question.rightItems, `${path}/rightItems`)
-      if (question.leftItems.length < 2 || question.rightItems.length !== question.leftItems.length) {
-        add(path, 'INVALID_MATCHING_SIZE', 'Matching needs at least two items per side, with equal counts.')
+      if (question.leftItems.length < 1 || question.rightItems.length !== question.leftItems.length) {
+        add(path, 'INVALID_MATCHING_SIZE', 'Matching needs at least one item per side, with equal counts.')
       }
       const leftMatched = new Set<string>()
       const rightMatched = new Set<string>()
