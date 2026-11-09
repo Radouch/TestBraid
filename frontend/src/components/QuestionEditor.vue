@@ -121,6 +121,12 @@ function updateContent(item: ContentItem, content: ContentItem['content']): void
             </select>
           </div>
         </div>
+        <label class="form-check d-flex align-items-center gap-2 mb-2" :for="'shuffle-' + question.id">
+          <input :id="'shuffle-' + question.id" class="form-check-input m-0" type="checkbox"
+            :checked="choice.shuffleOptions === true"
+            @change="choice.shuffleOptions = ($event.target as HTMLInputElement).checked" />
+          <span class="small">{{ t('editorShuffleOptions') }}</span>
+        </label>
         <p class="small text-secondary mb-2">{{ t('editorCorrectHint') }}</p>
         <p v-if="!choice.correctOptionIds.length" class="small text-warning-emphasis" role="status">{{ t('editorNoCorrectCompact') }}</p>
         <div v-for="(option, optionIndex) in choice.options" :key="option.id" class="answer-editor rounded p-2 p-md-3 mb-3" :data-option-id="option.id"

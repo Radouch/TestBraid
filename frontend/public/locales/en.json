@@ -151,6 +151,7 @@
   "editorMatching": "Matching",
   "editorRemoveQuestion": "Remove question",
   "editorPrompt": "Question / instructions",
+  "editorShuffleOptions": "Shuffle answer order for each attempt",
   "editorChoiceMode": "Choice mode",
   "editorSingle": "Select one correct answer",
   "editorMultiple": "Select one or more correct answers",

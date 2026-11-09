@@ -29,7 +29,7 @@ Každá otázka a odpověď se skládá z **textových, obrázkových a video bl
 
 ### Otázky s výběrem odpovědí
 
-Zvolte mezi **jednou správnou odpovědí** (přepínače) a **jednou či více správnými odpověďmi** (zaškrtávací pole). Přidejte odpovědi, sestavte jejich obsah a označte správnou odpověď nebo odpovědi. Otázka s více správnými odpověďmi je zodpovězena správně jen tehdy, když student vybere přesně všechny správné odpovědi.
+Zvolte mezi **jednou správnou odpovědí** (přepínače) a **jednou či více správnými odpověďmi** (zaškrtávací pole). Přidejte odpovědi, sestavte jejich obsah a označte správnou odpověď nebo odpovědi. Otázka s více správnými odpověďmi je zodpovězena správně jen tehdy, když student vybere přesně všechny správné odpovědi. Volba **Promíchat pořadí odpovědí při každém pokusu** náhodně mění jejich zobrazené pořadí při spuštění i opakování testu. Ve výchozím stavu zůstává pořadí zadané v editoru; promíchání nemění uložené pořadí ani správné odpovědi.
 
 ### Otázky s přiřazováním
 

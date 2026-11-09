@@ -16,6 +16,8 @@ export interface ChoiceQuestion {
   id: string
   type: 'choice'
   mode: 'single' | 'multiple'
+  /** Existing questions without this flag keep their authored option order. */
+  shuffleOptions?: boolean
   prompt: ContentBlock[]
   options: ContentItem[]
   correctOptionIds: string[]
@@ -68,7 +70,7 @@ export function blankItem(): ContentItem {
 }
 export function createChoice(): ChoiceQuestion {
   return {
-    id: id(), type: 'choice', mode: 'single',
+    id: id(), type: 'choice', mode: 'single', shuffleOptions: false,
     prompt: [blankBlock()],
     options: [blankItem(), blankItem()],
     correctOptionIds: [],

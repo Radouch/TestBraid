@@ -14,7 +14,7 @@ const imageId = '22222222-2222-4222-8222-222222222222'
 const replacementId = '33333333-3333-4333-8333-333333333333'
 const otherLessonId = '44444444-4444-4444-8444-444444444444'
 const choice = reactive<ChoiceQuestion>({
-  id: 'choice', type: 'choice', mode: 'single',
+  id: 'choice', type: 'choice', mode: 'single', shuffleOptions: false,
   prompt: [text('prompt-start', 'Watch the clip'), { id: 'clip', type: 'video', mediaId: videoId },
     text('prompt-end', 'Choose the matching answer'), { id: 'photo', type: 'image', mediaId: imageId }],
   options: [{ id: 'yes', content: [text('yes-text', 'Yes'), { id: 'answer-clip', type: 'video', mediaId: videoId }] },
@@ -111,6 +111,18 @@ const snapshot = () => JSON.stringify({ choice, matching, empty: empty.value })
 try {
   await settle()
   const initial = snapshot()
+  const shuffleControl = find<HTMLInputElement>('#shuffle-choice', question('choice'))
+  assert.equal(shuffleControl.checked, false, 'Answer shuffling starts disabled')
+  shuffleControl.checked = true
+  shuffleControl.dispatchEvent(new Event('change', { bubbles: true }))
+  await settle()
+  assert.equal(choice.shuffleOptions, true)
+  assert.equal(JSON.parse(JSON.stringify(choice)).shuffleOptions, true, 'Setting survives JSON serialization')
+  shuffleControl.checked = false
+  shuffleControl.dispatchEvent(new Event('change', { bubbles: true }))
+  await settle()
+  assert.equal(choice.shuffleOptions, false)
+  assert.equal(snapshot(), initial)
   assert.equal(calls.length, 0, 'Opening the editor does not enumerate private media')
   assert.ok(find('.question-state', question('choice')).textContent?.includes(cs.editorComplete!))
   assert.equal(find('.question-state', question('choice')).classList.contains('text-bg-success'), false)

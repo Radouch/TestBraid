@@ -4,7 +4,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ContentBlocksViewer from './ContentBlocksViewer.vue'
 import MatchingQuestionRunner from './MatchingQuestionRunner.vue'
-import { createMatchingOrder } from '../learner/presentation'
+import { createChoiceOrder, createMatchingOrder, choiceOptionsInOrder } from '../learner/presentation'
 import { choiceFeedback, questionProgress, type ChoiceFeedback, type ProgressState } from '../learner/overview'
 import { showsOverallScore, type ChoiceQuestion, type DraftTest, type Question } from '../editor/model'
 import {
@@ -31,6 +31,7 @@ const overviewOpen = ref(false)
 const activeQuestionId = ref('')
 const scrollOffset = ref(16)
 const matchingOrder = ref<Record<string, string[]>>({})
+const choiceOrder = ref<Record<string, string[]>>({})
 const result = computed(() => grade(props.test.questions, answers.value))
 const resultsById = computed(() => new Map(result.value.results.map(item => [item.questionId, item])))
 const incompleteDraft = computed(() => props.privatePreview && props.test.questions.length === 0)
@@ -87,6 +88,9 @@ function optionLetter(index: number): string {
   return index < 26 ? String.fromCharCode(65 + index) : String(index + 1)
 }
 /** Text answers read best one per row; pictures and videos sit two per row. */
+function visibleChoiceOptions(question: ChoiceQuestion) {
+  return choiceOptionsInOrder(question, choiceOrder.value[question.id])
+}
 function hasMediaOptions(question: ChoiceQuestion): boolean {
   return question.options.some(option => option.content.some(block => block.type !== 'text'))
 }
@@ -180,6 +184,7 @@ function reset(): void {
   overviewOpen.value = false
   activeQuestionId.value = props.test.questions[0]?.id ?? ''
   matchingOrder.value = createMatchingOrder(props.test.questions)
+  choiceOrder.value = createChoiceOrder(props.test.questions)
 }
 async function reviewMistakes(): Promise<void> {
   if (firstMistake.value) await jumpToQuestion(firstMistake.value.id)
@@ -316,7 +321,7 @@ onBeforeUnmount(() => {
             <template v-if="question.type === 'choice'">
               <p class="small text-secondary mt-3">{{ t(question.mode === 'single' ? 'runnerPickOne' : 'runnerPickMultiple') }}</p>
               <div class="choice-options" :class="{ 'choice-options-media': hasMediaOptions(question) }">
-                <div v-for="(option, optionIndex) in question.options" :key="option.id" class="choice-option rounded"
+                <div v-for="(option, optionIndex) in visibleChoiceOptions(question)" :key="option.id" class="choice-option rounded"
                   :class="'option-' + optionState(question, option.id)" @click="chooseFromCard($event, question, option.id)">
                   <!-- The accessible name is "Answer A" followed by the answer's own content. -->
                   <input :id="'runner-option-' + question.id + '-' + option.id" class="form-check-input"
