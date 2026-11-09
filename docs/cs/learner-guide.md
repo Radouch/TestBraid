@@ -34,7 +34,7 @@ Až budete hotovi, klikněte na **Vyhodnotit odpovědi**. Souhrn nahoře ukáže
 
 Otázka se počítá jako správně zodpovězená, jen když je zodpovězena zcela správně. Některé testy skrývají **celkový výsledek** (počet správně zodpovězených otázek), ale zpětnou vazbu k jednotlivým odpovědím zobrazují vždy.
 
-Tlačítkem **Zkusit znovu** začnete nový pokus. Předchozí odpovědi se vymažou; položky k přiřazování se mohou zobrazit v jiném pořadí.
+Tlačítkem **Zkusit znovu** začnete nový pokus. Předchozí odpovědi se vymažou; položky k přiřazování a u některých otázek i možnosti odpovědí se mohou zobrazit v jiném pořadí.
 
 ## Soukromí
 
