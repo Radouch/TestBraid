@@ -85,6 +85,18 @@
       "publish": false
     },
     {
+      "path": "tests/single-matching-pair.json",
+      "kind": "test",
+      "structural": true,
+      "publish": true
+    },
+    {
+      "path": "tests/zero-matching-pairs.json",
+      "kind": "test",
+      "structural": true,
+      "publish": false
+    },
+    {
       "path": "tests/media-answers-described.json",
       "kind": "test",
       "structural": true,
