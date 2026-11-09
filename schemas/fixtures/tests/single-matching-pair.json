@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "single-matching-pair",
+  "groupId": "group-lesson-1",
+  "language": "en",
+  "title": "One matching pair",
+  "description": "Identify the objects",
+  "status": "draft",
+  "createdAt": "2026-10-18T19:00:00Z",
+  "updatedAt": "2026-10-18T20:00:00Z",
+  "publishedAt": null,
+  "questions": [
+    {
+      "id": "question-2",
+      "type": "matching",
+      "prompt": [
+        {
+          "id": "b-5",
+          "type": "text",
+          "text": "Match the clips"
+        }
+      ],
+      "leftItems": [
+        {
+          "id": "l-1",
+          "content": [
+            {
+              "id": "b-6",
+              "type": "video",
+              "mediaId": "media-video-1",
+              "alt": "A dog running across a meadow"
+            }
+          ]
+        }
+      ],
+      "rightItems": [
+        {
+          "id": "r-2",
+          "content": [
+            {
+              "id": "b-9",
+              "type": "text",
+              "text": "Description B"
+            }
+          ]
+        }
+      ],
+      "matches": [
+        {
+          "leftId": "l-1",
+          "rightId": "r-2"
+        }
+      ]
+    }
+  ]
+}
