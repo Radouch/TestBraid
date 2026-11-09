@@ -35,6 +35,8 @@ Zvolte mezi **jednou správnou odpovědí** (přepínače) a **jednou či více 
 
 Vytvořte dvojice odpovídajících si položek. Na obou stranách může být text, obrázek nebo video. Při vyplňování testu student položky vybírá a spojuje do dvojic; pořadí protějšků se může mezi pokusy měnit.
 
+Nová přiřazovací otázka má předvyplněné dvě položky na každé straně, ale publikovat ji lze i s jedinou úplnou dvojicí.
+
 U obou typů otázek editor upozorňuje na neúplnost. Rozpracovaný test lze uložit i nedokončený, ale před publikováním musí být v pořádku.
 
 ## Práce s médii

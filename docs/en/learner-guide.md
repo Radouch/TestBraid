@@ -34,7 +34,7 @@ Select **Check answers** when ready. A summary at the top shows how many questio
 
 A question counts as correctly answered only when it is fully correct. Some tests hide the **overall result** (the number of correctly answered questions), but still show feedback on individual answers.
 
-Use **Try again** to start a new attempt. Your previous choices are cleared; matching items may appear in a different order.
+Use **Try again** to start a new attempt. Your previous choices are cleared; matching items and, when enabled by the author, choice answers may appear in a different order.
 
 ## Privacy
 
