@@ -151,6 +151,7 @@
   "editorMatching": "Přiřazování",
   "editorRemoveQuestion": "Odebrat otázku",
   "editorPrompt": "Zadání otázky",
+  "editorShuffleOptions": "Promíchat pořadí odpovědí při každém pokusu",
   "editorChoiceMode": "Způsob výběru",
   "editorSingle": "Jedna správná odpověď",
   "editorMultiple": "Jedna nebo více správných odpovědí",

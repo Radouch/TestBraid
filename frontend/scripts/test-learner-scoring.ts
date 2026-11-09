@@ -3,7 +3,7 @@ import { reactive } from 'vue'
 import { showsOverallScore, type ChoiceQuestion, type MatchingQuestion, type Question } from '../src/editor/model'
 import { freshAnswers, grade, hasValidAnswerKey, setChoiceAnswer, setMatchingAnswer } from '../src/learner/scoring'
 import { matchingPresentation } from '../src/learner/matching'
-import { createMatchingOrder } from '../src/learner/presentation'
+import { createChoiceOrder, createMatchingOrder, choiceOptionsInOrder } from '../src/learner/presentation'
 import { toggleChoiceCorrect } from '../src/editor/model'
 import { choiceFeedback, questionProgress } from '../src/learner/overview'
 
@@ -142,6 +142,22 @@ assert.equal(hasValidAnswerKey({
 }), false)
 
 console.log('PASS: anonymous scorer exact-choice sets, complete matching bijection, unanswered and reset')
+
+// Only opted-in choice questions shuffle; legacy and explicitly disabled ones
+// keep the authored order. This never changes stored arrays or answer-key IDs.
+const shuffledChoice: ChoiceQuestion = { ...choice, shuffleOptions: true }
+const originalChoice = JSON.stringify(shuffledChoice)
+assert.deepEqual(createChoiceOrder([choice, matching], () => 0), {})
+assert.deepEqual(createChoiceOrder([{ ...choice, shuffleOptions: false }], () => 0), {})
+const choiceOrder = createChoiceOrder([shuffledChoice], () => 0)
+assert.deepEqual(choiceOrder[choice.id], ['b', 'c', 'a'])
+assert.deepEqual(createChoiceOrder([shuffledChoice], () => 0.999)[choice.id], ['a', 'b', 'c'])
+assert.equal(choiceOptionsInOrder(choice), choice.options)
+assert.deepEqual(choiceOptionsInOrder(shuffledChoice, choiceOrder[choice.id]).map(option => option.id), ['b', 'c', 'a'])
+assert.deepEqual(createChoiceOrder([{ ...shuffledChoice, options: [] }], () => 0), { [choice.id]: [] })
+assert.equal(JSON.stringify(shuffledChoice), originalChoice)
+assert.equal(grade([shuffledChoice], { choices: { [choice.id]: ['c', 'a'] }, matches: {} }).correct, 1)
+console.log('PASS: opted-in choice permutations preserve canonical order, IDs and grading')
 
 // Order is presentation-only; every sampled permutation preserves stable IDs,
 // leaves the canonical arrays/key untouched and therefore preserves grading.

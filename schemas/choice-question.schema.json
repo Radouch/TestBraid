@@ -26,6 +26,10 @@
         "multiple"
       ]
     },
+    "shuffleOptions": {
+      "type": "boolean",
+      "description": "Shuffle answers on each new attempt. Defaults to false when absent."
+    },
     "prompt": {
       "type": "array",
       "items": {

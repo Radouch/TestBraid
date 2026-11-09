@@ -16,6 +16,7 @@ const sampleTestId = '0cb8066a-57a9-48d2-bb07-55a9f087a52b'
 
 const question = createChoice()
 assert.equal(question.options.length, 2)
+assert.equal(question.shuffleOptions, false)
 assert.ok(uuidPattern.test(question.id))
 assert.ok(new Set([question.id, ...question.options.map(x => x.id), ...question.prompt.map(x => x.id)]).size === 4)
 question.prompt[0] = textBlock('What is correct?')
@@ -69,12 +70,14 @@ assert.deepEqual(publicationProblems([matching]), [])
 
 // Copies must keep content/media and answer keys while sharing no structural IDs.
 const originalChoice = createChoice()
+originalChoice.shuffleOptions = true
 originalChoice.options[0]!.content = [textBlock('Before'), image, textBlock('After')]
 originalChoice.correctOptionIds = [originalChoice.options[0]!.id]
 const copiedChoice = duplicateQuestion(originalChoice)
 assert.equal(copiedChoice.type, 'choice')
 if (copiedChoice.type !== 'choice') throw new Error('Unexpected duplicate type')
 assert.notEqual(copiedChoice.id, originalChoice.id)
+assert.equal(copiedChoice.shuffleOptions, true, 'Duplicating a choice preserves shuffle settings')
 assert.deepEqual(copiedChoice.correctOptionIds, [copiedChoice.options[0]!.id])
 assert.deepEqual(copiedChoice.options[0]!.content.map(block => block.type), ['text', 'image', 'text'])
 const copiedImage = copiedChoice.options[0]!.content[1]!
@@ -169,6 +172,10 @@ const draft: DraftTest = {
   questions: [matching, copiedMatching],
 }
 assert.equal(validateDocument('test', draft).valid, true)
+assert.equal(validateDocument('test', { ...draft, questions: [originalChoice] }).valid, true)
+assert.equal(validateDocument('test', {
+  ...draft, questions: [{ ...originalChoice, shuffleOptions: 'yes' }],
+}).valid, false, 'Shuffle settings must be boolean')
 assert.equal(validatePublication(draft, {
   groupExists: id => id === groupId,
   mediaExists: () => true,

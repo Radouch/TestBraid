@@ -332,6 +332,43 @@ try {
   assert.equal(host.querySelector('[data-review-mistakes]'), null)
   assert.ok(find('.summary-actions').textContent?.includes('Zkusit znovu'))
 
+  // Opted-in choice answers shuffle at attempt start, not on locale change
+  // or answer selection. Missing/false settings retain authored order.
+  const legacyChoice: ChoiceQuestion = { ...textOnly, id: 'legacy-choice' }
+  const shuffledChoice: ChoiceQuestion = { ...textOnly, id: 'shuffled-choice', shuffleOptions: true }
+  const fixedChoice: ChoiceQuestion = { ...textOnly, id: 'fixed-choice', shuffleOptions: false }
+  const originalChoiceData = JSON.stringify([legacyChoice, shuffledChoice, fixedChoice])
+  const originalRandom = Math.random
+  const displayedIds = (id: string) => [...question(id).querySelectorAll<HTMLInputElement>('.choice-option input')]
+    .map(control => control.id.split('-').at(-1))
+  try {
+    Math.random = () => 0
+    test.value = { ...test.value, questions: [legacyChoice, shuffledChoice, fixedChoice] }
+    await settle()
+    assert.deepEqual(displayedIds('legacy-choice'), ['x', 'y', 'z'])
+    assert.deepEqual(displayedIds('fixed-choice'), ['x', 'y', 'z'])
+    assert.deepEqual(displayedIds('shuffled-choice'), ['y', 'z', 'x'])
+    await choose('shuffled-choice', 'x')
+    i18n.global.locale.value = 'en'
+    await settle()
+    assert.deepEqual(displayedIds('shuffled-choice'), ['y', 'z', 'x'])
+    assert.equal(input('shuffled-choice', 'x').checked, true)
+    i18n.global.locale.value = 'cs'
+    await settle()
+    await submit()
+    assert.equal(find('.summary-score').textContent, '1 / 3')
+    assert.ok(tile('shuffled-choice', 'x').classList.contains('option-chosen-correct'))
+    Math.random = () => 0.999
+    await retry()
+    assert.deepEqual(displayedIds('shuffled-choice'), ['x', 'y', 'z'])
+    assert.deepEqual(displayedIds('legacy-choice'), ['x', 'y', 'z'])
+    assert.deepEqual(displayedIds('fixed-choice'), ['x', 'y', 'z'])
+    assert.equal(JSON.stringify([legacyChoice, shuffledChoice, fixedChoice]), originalChoiceData)
+    console.log('PASS DOM: optional choice shuffling is stable per attempt, retries resample, grading stays ID-based')
+  } finally {
+    Math.random = originalRandom
+  }
+
   privatePreview.value = true
   test.value = { ...test.value, status: 'draft', questions: [{ ...choice, correctOptionIds: [] }, { ...matching, matches: [] }] }
   await settle()

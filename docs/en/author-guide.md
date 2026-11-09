@@ -29,7 +29,7 @@ Each question and answer is assembled from **text, image and video blocks**. Add
 
 ### Choice questions
 
-Choose between **one correct answer** (radio buttons) and **one or more correct answers** (checkboxes). Add answer options, compose their content, and mark the correct option(s). A multiple-answer question is correct only when the learner selects the complete correct set.
+Choose between **one correct answer** (radio buttons) and **one or more correct answers** (checkboxes). Add answer options, compose their content, and mark the correct option(s). A multiple-answer question is correct only when the learner selects the complete correct set. Check **Shuffle answer order for each attempt** to randomize the displayed answers whenever a learner starts or retries a test. By default, answers stay in the order you entered; shuffling does not change that saved order or the correct answers.
 
 ### Matching questions
 

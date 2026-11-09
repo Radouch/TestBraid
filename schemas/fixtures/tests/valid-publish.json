@@ -14,6 +14,7 @@
       "id": "question-1",
       "type": "choice",
       "mode": "single",
+      "shuffleOptions": true,
       "prompt": [
         {
           "id": "b-1",
