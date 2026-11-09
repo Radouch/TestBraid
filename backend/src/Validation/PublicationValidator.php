@@ -105,11 +105,11 @@ final class PublicationValidator
                     }
                 }
             } else {
-                // The initial matching implementation requires a complete bijection.
+                // Matching requires a complete bijection, including when there is only one pair.
                 $left = $inspectItems($question->leftItems, $path . '/leftItems');
                 $right = $inspectItems($question->rightItems, $path . '/rightItems');
-                if (count($question->leftItems) < 2 || count($question->rightItems) !== count($question->leftItems)) {
-                    $add($path, 'INVALID_MATCHING_SIZE', 'Matching needs at least two items per side, with equal counts.');
+                if (count($question->leftItems) < 1 || count($question->rightItems) !== count($question->leftItems)) {
+                    $add($path, 'INVALID_MATCHING_SIZE', 'Matching needs at least one item per side, with equal counts.');
                 }
                 $leftMatched = [];
                 $rightMatched = [];

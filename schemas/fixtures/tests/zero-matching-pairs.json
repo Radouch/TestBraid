@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "zero-matching-pairs",
+  "groupId": "group-lesson-1",
+  "language": "en",
+  "title": "No matching pairs",
+  "description": "Identify the objects",
+  "status": "draft",
+  "createdAt": "2026-10-18T19:00:00Z",
+  "updatedAt": "2026-10-18T20:00:00Z",
+  "publishedAt": null,
+  "questions": [
+    {
+      "id": "question-2",
+      "type": "matching",
+      "prompt": [
+        {
+          "id": "b-5",
+          "type": "text",
+          "text": "Match the clips"
+        }
+      ],
+      "leftItems": [],
+      "rightItems": [],
+      "matches": []
+    }
+  ]
+}

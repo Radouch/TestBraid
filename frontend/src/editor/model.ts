@@ -206,7 +206,7 @@ export function publicationProblems(questions: Question[]): string[] {
         problems.push('choiceCorrect')
       }
     } else {
-      if (question.leftItems.length < 2 || question.leftItems.length !== question.rightItems.length
+      if (question.leftItems.length < 1 || question.leftItems.length !== question.rightItems.length
         || [...question.leftItems, ...question.rightItems].some((item) => !meaningful(item.content))) {
         problems.push('matchItems')
       }
