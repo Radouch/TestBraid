@@ -52,6 +52,25 @@ assert.equal(grade([], initial).total, 0)
 assert.equal(hasValidAnswerKey(choice), true)
 assert.equal(hasValidAnswerKey(matching), true)
 
+// A complete one-pair matching question is valid and earns a point only when answered.
+const singlePair: MatchingQuestion = {
+  ...matching,
+  id: 'q-single-pair',
+  leftItems: matching.leftItems.slice(0, 1),
+  rightItems: matching.rightItems.slice(0, 1),
+  matches: [{ leftId: 'left1', rightId: 'right1' }],
+}
+assert.equal(hasValidAnswerKey(singlePair), true)
+assert.deepEqual(grade([singlePair], freshAnswers()).results[0], {
+  questionId: 'q-single-pair', answered: false, correct: false, points: 0,
+})
+const singlePairAnswers = setMatchingAnswer(freshAnswers(), singlePair, 'left1', 'right1')
+assert.deepEqual(grade([singlePair], singlePairAnswers).results[0], {
+  questionId: 'q-single-pair', answered: true, correct: true, points: 1,
+})
+assert.equal(hasValidAnswerKey({ ...singlePair, matches: [] }), false)
+assert.equal(hasValidAnswerKey({ ...singlePair, leftItems: [], rightItems: [], matches: [] }), false)
+
 // Simulate the exact author data path: question is nested in Vue reactive
 // editor state, its answer key is updated via an input handler and saved JSON
 // is reloaded by the private preview/runner.
