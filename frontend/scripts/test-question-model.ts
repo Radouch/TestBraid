@@ -44,6 +44,8 @@ assert.deepEqual(move([1, 2, 3], 0, -1), [1, 2, 3])
 
 // Canonical two-sided matching and change of counterpart must stay a bijection.
 const matching = createMatching()
+assert.equal(matching.leftItems.length, 2)
+assert.equal(matching.rightItems.length, 2)
 const left1 = matching.leftItems[0]!
 const left2 = matching.leftItems[1]!
 const right1 = matching.rightItems[0]!
@@ -66,6 +68,19 @@ assert.equal(matching.leftItems.length, 2)
 assert.equal(matching.rightItems.length, 2)
 assert.equal(matching.matches.length, 2)
 assert.deepEqual(publicationProblems([matching]), [])
+
+// The default still creates two pairs, but an author can publish just one.
+const singlePair = structuredClone(matching)
+removeMatchingPair(singlePair, singlePair.leftItems[1]!.id)
+assert.equal(singlePair.leftItems.length, 1)
+assert.equal(singlePair.rightItems.length, 1)
+assert.deepEqual(publicationProblems([singlePair]), [])
+const incompleteSingle = structuredClone(singlePair)
+incompleteSingle.matches = []
+assert.ok(publicationProblems([incompleteSingle]).includes('matchIncomplete'))
+const noPairs = structuredClone(singlePair)
+removeMatchingPair(noPairs, noPairs.leftItems[0]!.id)
+assert.ok(publicationProblems([noPairs]).includes('matchItems'))
 
 // Copies must keep content/media and answer keys while sharing no structural IDs.
 const originalChoice = createChoice()
@@ -174,6 +189,10 @@ assert.equal(validatePublication(draft, {
   mediaExists: () => true,
 }).valid, true)
 assert.equal(publicationProblems([createChoice()]).includes('missingPrompt'), true)
+const publicationContext = { groupExists: (id: string) => id === groupId, mediaExists: () => true }
+assert.equal(validatePublication({ ...draft, questions: [singlePair] }, publicationContext).valid, true)
+assert.equal(validatePublication({ ...draft, questions: [incompleteSingle] }, publicationContext).valid, false)
+assert.equal(validatePublication({ ...draft, questions: [noPairs] }, publicationContext).valid, false)
 
 // Pictures and videos that are a whole answer or matching item need a description.
 const mediaId = '11111111-1111-4111-8111-111111111111'
