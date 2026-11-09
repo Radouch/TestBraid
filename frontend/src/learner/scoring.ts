@@ -50,7 +50,7 @@ export function hasValidAnswerKey(question: Question): boolean {
   const left = question.leftItems.map(item => item.id)
   const right = new Set(question.rightItems.map(item => item.id))
   const leftMatch = new Map(question.matches.map(pair => [pair.leftId, pair.rightId]))
-  return left.length >= 2
+  return left.length >= 1
     && left.length === right.size
     && leftMatch.size === left.length
     && question.matches.length === left.length
