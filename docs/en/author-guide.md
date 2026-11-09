@@ -35,6 +35,8 @@ Choose between **one correct answer** (radio buttons) and **one or more correct 
 
 Create pairs of corresponding items. Each side can contain text, images or video. When taking the test, learners choose items and pair them; the order of counterparts may change between attempts.
 
+A new matching question starts with two items on each side, but you can publish it with just one complete pair.
+
 For both question types, the editor shows completeness warnings. A draft may be saved while unfinished, but must be valid before it can be published.
 
 ## Use media
