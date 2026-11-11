@@ -17,7 +17,8 @@ Rozbalte aktualizační archiv. Obsah jeho složky `www/` nahrajte do své veře
 - **Zachovejte** stávající složky `config/` a `storage/` v soukromé složce, nahranou složku `media/` ve veřejné složce a případný `bootstrap.local.php`. Aktualizační archiv tyto soubory konkrétní instalace záměrně neobsahuje.
 - **Složku `vendor/` v soukromé složce vyměňte celou**, nespojujte nové soubory závislostí se starými.
 - Aktualizujte zároveň `assets/` ve veřejné složce a `templates/index.html` v soukromé složce. Patří ke stejnému sestavení.
-- Ponechte dodaná pravidla v souborech `.htaccess`. **Nepoužívejte** synchronizační nástroj s volbou „smazat chybějící soubory“ pro celý web.
+- **Nahrajte a aktualizujte také skryté soubory `.htaccess`**, včetně `www/media/.htaccess`. Stará pravidla mohou blokovat nově podporované formáty, i když jejich nahrávání a náhled v editoru fungují. Samotné soubory v `media/` zachovejte.
+- **Nepoužívejte** synchronizační nástroj s volbou „smazat chybějící soubory“ pro celý web.
 
 Pokud starší instalace ještě má ve veřejné složce soubor `index.html`, smažte tento **zastaralý soubor aplikace**, jakmile je na místě nový `index.php`.
 
@@ -25,6 +26,6 @@ ZIP s vydáním už obsahuje závislosti PHP. Na hostingu není potřeba Compose
 
 ## 3. Zkontrolujte výsledek
 
-Znovu načtěte aplikaci, přihlaste se a ověřte, že existující lekce, rozpracovaný a publikovaný test stále fungují. Ověřte, že jsou dostupné obrázky a videa, a zkuste znovu načíst přímý odkaz na test. Zkontrolujte, že se nezměnil název webu, jazyky rozhraní a adresa.
+Znovu načtěte aplikaci, přihlaste se a ověřte, že existující lekce, rozpracovaný a publikovaný test stále fungují. Ověřte, že jsou dostupné obrázky, videa i zvukové nahrávky, a zkuste znovu načíst přímý odkaz na test. Zkontrolujte, že se nezměnil název webu, jazyky rozhraní a adresa.
 
 Pokud web nefunguje, porovnejte nahrané soubory s archivem a podívejte se do [Řešení problémů](troubleshooting.md). V případě potřeby obnovte ověřenou, slučitelnou verzi aplikace a zálohu; trvalé soubory kvůli opravě neúspěšné aktualizace nemažte.

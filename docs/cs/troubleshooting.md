@@ -14,8 +14,8 @@ Většina problémů vzniká tím, že se nenahrál některý soubor, chybí skr
 | Chyba týkající se backendu nebo konfigurace | Soukromá složka `testbraid-backend` leží vedle veřejné složky (nebo na ni ukazuje `bootstrap.local.php`); existují `vendor/` a `config/app.json`; `app.json` je platný JSON. |
 | Nejde založit prvního autora ani se přihlásit | Web běží přes HTTPS; `testbraid-backend/config/setup.key` obsahuje instalační klíč (32–256 znaků) a zadali jste stejný instalační klíč; PHP smí zapisovat do `testbraid-backend/config/`. |
 | Nejde uložit lekci nebo test | PHP smí zapisovat do `testbraid-backend/storage/`. |
-| Nejde nahrát obrázek nebo video | Podporovaný formát (JPEG, PNG, WebP, MP4, WebM); velikost v mezích limitů z [Konfigurace](configuration.md#limity-nahrávání); volné místo na disku. |
-| Obrázky nebo videa publikovaného testu se nezobrazují | Test je publikovaný; PHP smí zapisovat do složky `media` ve veřejné složce; je v ní soubor `.htaccess`; prohlížeč podporuje formát videa. |
+| Nejde nahrát obrázek, video nebo zvuk | Podporovaný formát (JPEG, PNG, WebP, MP4, WebM, MP3, M4A, WAV); velikost v mezích limitů z [Konfigurace](configuration.md#limity-nahrávání); volné místo na disku. |
+| Veřejné médium se nenačte nebo nepřehraje, ale v editoru funguje | Test je publikovaný; PHP smí zapisovat do veřejné složky `media/`; **nahrajte aktuální `www/media/.htaccess`** (FTP klienti mohou skryté soubory vynechat). Stará pravidla mohou u MP3, M4A a WAV vracet HTTP 403. Při HTTP 404 zkontrolujte, zda veřejný soubor existuje. |
 
 U webu nainstalovaného na adrese typu `/kurzy/` musí souhlasit složka uvnitř veřejné složky, `basePath` v `app.json` a směrování v Apache. Pokud soukromá složka leží jinde, zkontrolujte také cestu v souboru `bootstrap.local.php`.
 
