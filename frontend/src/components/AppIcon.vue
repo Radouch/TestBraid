@@ -29,6 +29,7 @@ import threeDots from 'bootstrap-icons/icons/three-dots.svg?raw'
 import threeDotsVertical from 'bootstrap-icons/icons/three-dots-vertical.svg?raw'
 import trash from 'bootstrap-icons/icons/trash3.svg?raw'
 import upload from 'bootstrap-icons/icons/upload.svg?raw'
+import volumeUp from 'bootstrap-icons/icons/volume-up.svg?raw'
 import x from 'bootstrap-icons/icons/x-lg.svg?raw'
 
 const icons = {
@@ -39,7 +40,7 @@ const icons = {
   copy, eye, 'file-earmark-plus': filePlus, 'folder-plus': folderPlus, image,
   'link-45deg': link, 'list-check': listCheck, 'pencil-square': pencil, 'play-btn': play,
   'plus-lg': plus, floppy: save, 'text-left': text, 'three-dots': threeDots,
-  'three-dots-vertical': threeDotsVertical, trash3: trash, upload, 'x-lg': x,
+  'three-dots-vertical': threeDotsVertical, trash3: trash, upload, 'volume-up': volumeUp, 'x-lg': x,
 } as const
 defineProps<{ name: keyof typeof icons }>()
 

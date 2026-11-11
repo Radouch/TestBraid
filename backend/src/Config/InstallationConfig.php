@@ -26,7 +26,7 @@ final class InstallationConfig
 
     /**
      * @param array{name:string|array<string,string>,description:string|array<string,string>} $site
-     * @param array{maxImageSizeMiB:int,maxVideoSizeMiB:int,maxAudioSizeMiB:int,maxAudioSizeMiB:int} $uploads
+     * @param array{maxImageSizeMiB:int,maxVideoSizeMiB:int,maxAudioSizeMiB:int} $uploads
      * @param list<string> $uiLanguages
      */
     private function __construct(
@@ -48,7 +48,7 @@ final class InstallationConfig
         return $this->uiLanguages;
     }
 
-    /** @return array{maxImageSizeMiB:int,maxVideoSizeMiB:int} */
+    /** @return array{maxImageSizeMiB:int,maxVideoSizeMiB:int,maxAudioSizeMiB:int} */
     public function uploads(): array
     {
         return $this->uploads;

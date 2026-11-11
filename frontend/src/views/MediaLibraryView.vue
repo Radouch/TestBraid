@@ -3,6 +3,7 @@ import { appBaseUrl } from '../deployment-base'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MediaUploader from '../components/MediaUploader.vue'
+import AppIcon from '../components/AppIcon.vue'
 import { authorSession, refreshAuthorSession } from '../auth'
 
 interface MediaItem {
@@ -168,7 +169,7 @@ onMounted(async () => {
             <video v-else-if="media.kind === 'video'" :src="preview(media.id)" controls preload="metadata"
               class="w-100" style="height: 180px" />
             <div v-else class="d-flex flex-column align-items-center justify-content-center gap-2 p-3" style="min-height: 180px">
-              <i class="bi bi-volume-up fs-3" aria-hidden="true"></i>
+              <AppIcon name="volume-up" />
               <audio :src="preview(media.id)" :aria-label="media.originalName" controls preload="metadata" class="w-100" />
             </div>
             <div class="card-body">

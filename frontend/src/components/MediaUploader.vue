@@ -105,9 +105,9 @@ function beforeAddFile(item: { file: File }): boolean {
 const acceptedTypes = computed(() => props.kind === 'image'
   ? ['image/jpeg', 'image/png', 'image/webp']
   : props.kind === 'video' ? ['video/mp4', 'video/webm']
-    : props.kind === 'audio' ? ['audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/wav', 'audio/x-wav', 'audio/wave']
+    : props.kind === 'audio' ? ['audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/wav', 'audio/x-wav', 'audio/wave']
       : ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm',
-          'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/wav', 'audio/x-wav', 'audio/wave'])
+          'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/wav', 'audio/x-wav', 'audio/wave'])
 
 function uploaded(response: string): string {
   let parsed: unknown

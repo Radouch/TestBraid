@@ -47,7 +47,6 @@ onMounted(measure)
 }
 .audio-media { display: flex; align-items: center; gap: .5rem; width: 100%; max-width: 28rem; min-width: 0; }
 .audio-media audio { display: block; width: 100%; min-width: 0; }
-.audio-media :deep(.bi) { flex-shrink: 0; }
 .media-portrait {
   max-height: min(var(--content-media-portrait-height, 560px), max(8rem, calc(100svh - 10rem)));
 }
