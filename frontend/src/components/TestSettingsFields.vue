@@ -1,3 +1,4 @@
+import { lessonName } from '../lesson-names'
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -5,7 +6,7 @@ import type { EditorLesson, TestSettings } from '../editor/test-settings'
 import { languageOptions } from '../i18n'
 
 const props = defineProps<{ settings: TestSettings; lessons: EditorLesson[]; lessonsUnavailable?: boolean }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 // The home page lists a test only under the interface language with the same
 // code, so the content language is chosen from the site's languages. A stored
 // value outside them (an older free-text entry, or a language later removed
@@ -32,7 +33,7 @@ const unofferedLanguage = computed(() => props.settings.language
               <option v-if="!lessons.some(lesson => lesson.id === settings.groupId)" :value="settings.groupId">
                 {{ t('editorCurrentLesson') }}
               </option>
-              <option v-for="lesson in lessons" :key="lesson.id" :value="lesson.id">{{ lesson.name }}</option>
+              <option v-for="lesson in lessons" :key="lesson.id" :value="lesson.id">{{ lessonName(lesson, locale) }}</option>
             </select>
           </div>
           <div class="col-md-4">
