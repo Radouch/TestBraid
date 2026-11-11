@@ -9,14 +9,14 @@ import type { DraftTest } from '../editor/model'
 import { fetchPublicCatalog, publicCatalogLocation, publicLessonForTest, type PublicLesson } from '../public-catalog'
 import { explicitUiLocale } from '../ui-locale'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const test = ref<DraftTest | null>(null)
 const mediaUrls = ref<Record<string, string>>({})
 const loading = ref(true)
 const error = ref('')
 const groups = ref<PublicLesson[]>([])
-const lesson = computed(() => test.value ? publicLessonForTest(groups.value, test.value) : undefined)
+const lesson = computed(() => test.value ? publicLessonForTest(groups.value, test.value, locale.value) : undefined)
 const catalogLocation = computed(() => {
   const lang = explicitUiLocale(route.query.lang)
   return {
