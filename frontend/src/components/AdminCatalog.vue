@@ -7,13 +7,12 @@ import { useRoute, useRouter } from 'vue-router'
 import TestSettingsFields from './TestSettingsFields.vue'
 import TestStatusBadge from './TestStatusBadge.vue'
 import { explicitUiLocale } from '../ui-locale'
+import { lessonName, type LocalizedLesson } from '../lesson-names'
+import { languageOptions } from '../i18n'
 import type { TestSettings } from '../editor/test-settings'
 import type { Question } from '../editor/model'
 
-interface Group {
-  id: string
-  name: string
-}
+interface Group extends LocalizedLesson {}
 interface TestRecord {
   id: string
   groupId: string
@@ -38,7 +37,6 @@ const tests = ref<TestRecord[]>([])
 const readiness = ref<Record<string, { ready: boolean; issues: Array<{path: string; code: string; message: string}> }>>({})
 const createDialog = ref<HTMLDialogElement | null>(null)
 const lessonDialog = ref<HTMLDialogElement | null>(null)
-const lessonInput = ref<HTMLInputElement | null>(null)
 const dialogError = ref('')
 let dialogOrigin: HTMLElement | null = null
 const fallbackLink = ref('')
@@ -50,7 +48,8 @@ const error = ref('')
 const notice = ref('')
 
 const renamingId = ref('')
-const renameValue = ref('')
+const lessonNames = ref<Record<string, string>>({})
+const hasLessonName = computed(() => Object.values(lessonNames.value).some(name => name.trim()))
 const groupFilter = ref('')
 // New tests start in the interface language the author is using.
 const newTest = ref<TestSettings>({ groupId: '', title: '', description: '', language: locale.value, showOverallScore: true })
@@ -98,12 +97,16 @@ async function openLessonDialog(group?: Group, event?: MouseEvent): Promise<void
   if (busy.value) return
   rememberOrigin(event)
   renamingId.value = group?.id ?? ''
-  renameValue.value = group?.name ?? ''
+  lessonNames.value = group?.names ? { ...group.names } : group
+    ? { [languageOptions.value.find(option => option.code === locale.value)?.code
+      ?? languageOptions.value[0]?.code ?? locale.value]: group.name }
+    : {}
   dialogError.value = ''
   await nextTick()
   lessonDialog.value?.showModal()
-  lessonInput.value?.focus()
-  lessonInput.value?.select()
+  const first = lessonDialog.value?.querySelector<HTMLInputElement>('input')
+  first?.focus()
+  first?.select()
 }
 
 function api(path: string): string {
@@ -131,7 +134,10 @@ async function request<T>(method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', p
   }
   if (!response.ok) {
     // Avoid showing arbitrary server/internal exception messages in the UI.
-    throw new Error(t('catalogRequestFailed') + ': ' + (payload.error?.code ?? 'HTTP_' + response.status))
+    const code = payload.error?.code
+    if (code === 'GROUP_NAME_EXISTS') throw new Error(t('catalogLessonNameExists'))
+    if (code === 'TEST_TITLE_EXISTS') throw new Error(t('catalogTestTitleExists'))
+    throw new Error(t('catalogRequestFailed') + ': ' + (code ?? 'HTTP_' + response.status))
   }
   return payload
 }
@@ -166,14 +172,16 @@ async function load(): Promise<void> {
 }
 
 async function saveLesson(): Promise<void> {
-  const name = renameValue.value.trim()
-  if (!name || busy.value) return
+  const names = Object.fromEntries(Object.entries(lessonNames.value)
+    .map(([language, name]) => [language, name.trim()])
+    .filter(([, name]) => Boolean(name)))
+  if (!Object.keys(names).length || busy.value) return
   busy.value = true
   dialogError.value = ''
   notice.value = ''
   try {
     const editing = !!renamingId.value
-    const group = await request<Group>(editing ? 'PATCH' : 'POST', editing ? 'groups/' + encodeURIComponent(renamingId.value) : 'groups', { name })
+    const group = await request<Group>(editing ? 'PATCH' : 'POST', editing ? 'groups/' + encodeURIComponent(renamingId.value) : 'groups', { names })
     lessonDialog.value?.close()
     await refresh()
     if (!editing) await selectGroup(group.id)
@@ -199,7 +207,7 @@ function closeActionMenu(event: MouseEvent): void {
 }
 
 async function deleteGroup(group: Group): Promise<void> {
-  if (busy.value || lessonHasTests(group.id) || !window.confirm(t('catalogDeleteGroupConfirm', { name: group.name }))) return
+  if (busy.value || lessonHasTests(group.id) || !window.confirm(t('catalogDeleteGroupConfirm', { name: lessonName(group, locale.value) }))) return
   busy.value = true
   error.value = ''
   notice.value = ''
@@ -213,6 +221,24 @@ async function deleteGroup(group: Group): Promise<void> {
     } else {
       showError(cause)
     }
+  } finally {
+    busy.value = false
+  }
+}
+
+/** Duplicate a lesson and all of its tests on the server. */
+async function duplicateGroup(group: Group): Promise<void> {
+  if (busy.value) return
+  busy.value = true
+  error.value = ''
+  notice.value = ''
+  try {
+    const copy = await request<Group>('POST', 'groups/' + encodeURIComponent(group.id) + '/duplicate')
+    await refresh()
+    await selectGroup(copy.id)
+    notice.value = t('catalogGroupDuplicated')
+  } catch (cause) {
+    showError(cause)
   } finally {
     busy.value = false
   }
@@ -258,7 +284,8 @@ async function createTest(): Promise<void> {
 }
 
 function groupLabel(id: string): string {
-  return groups.value.find((group) => group.id === id)?.name ?? t('editorCurrentLesson')
+  const group = groups.value.find(item => item.id === id)
+  return group ? lessonName(group, locale.value) : t('editorCurrentLesson')
 }
 
 async function changePublication(test: TestRecord, action: 'publish' | 'unpublish'): Promise<void> {
@@ -385,7 +412,7 @@ onMounted(() => void load())
         <label class="form-label" for="catalog-lesson-select">{{ t('adminLessons') }}</label>
         <select id="catalog-lesson-select" class="form-select mb-2" :value="groupFilter" :disabled="busy" @change="selectGroup(($event.target as HTMLSelectElement).value)">
           <option value="">{{ t('adminAllTests') }} ({{ tests.length }})</option>
-          <option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option>
+          <option v-for="group in groups" :key="group.id" :value="group.id">{{ lessonName(group, locale) }}</option>
         </select>
         <div class="d-flex flex-wrap gap-2">
           <button type="button" class="btn btn-outline-primary btn-sm" :disabled="busy" @click="openLessonDialog(undefined, $event)"><AppIcon name="folder-plus" />{{ t('catalogAddGroup') }}</button>
@@ -394,6 +421,7 @@ onMounted(() => void load())
             <div class="dropdown-menu show position-absolute" @click="closeActionMenu">
               <button type="button" class="dropdown-item" :disabled="busy || groups[0]?.id === selectedGroup.id" @click="moveLesson(selectedGroup.id, -1)"><AppIcon name="arrow-up" />{{ t('adminMoveUp') }}</button>
               <button type="button" class="dropdown-item" :disabled="busy || groups.at(-1)?.id === selectedGroup.id" @click="moveLesson(selectedGroup.id, 1)"><AppIcon name="arrow-down" />{{ t('adminMoveDown') }}</button>
+              <button type="button" class="dropdown-item" :disabled="busy" @click="duplicateGroup(selectedGroup)"><AppIcon name="copy" />{{ t('catalogDuplicateGroup') }}</button>
               <button type="button" class="dropdown-item text-danger" :disabled="busy || lessonHasTests(selectedGroup.id)" :title="lessonHasTests(selectedGroup.id) ? t('catalogGroupNotEmpty') : undefined" @click="deleteGroup(selectedGroup)"><AppIcon name="trash3" />{{ t('catalogDelete') }}</button>
             </div>
           </details>
@@ -417,7 +445,7 @@ onMounted(() => void load())
                 <button type="button" class="btn btn-link text-start text-decoration-none flex-grow-1"
                   :class="{ 'fw-bold': groupFilter === group.id }" :aria-pressed="groupFilter === group.id" :disabled="busy"
                   @click="selectGroup(group.id)">
-                  {{ group.name }} <span class="text-secondary">({{ tests.filter(test => test.groupId === group.id).length }})</span>
+                  {{ lessonName(group, locale) }} <span class="text-secondary">({{ tests.filter(test => test.groupId === group.id).length }})</span>
                 </button>
                 <details class="dropdown">
                   <summary class="btn btn-outline-secondary btn-sm icon-button" :aria-label="t('adminLessonActions')" :title="t('adminLessonActions')"><AppIcon name="three-dots-vertical" /></summary>
@@ -429,6 +457,7 @@ onMounted(() => void load())
                     <button class="dropdown-item" type="button" :disabled="busy" @click="openLessonDialog(group, $event)">
                       <AppIcon name="pencil-square" />{{ t('catalogRenameGroup') }}
                     </button>
+                    <button class="dropdown-item" type="button" :disabled="busy" @click="duplicateGroup(group)"><AppIcon name="copy" />{{ t('catalogDuplicateGroup') }}</button>
                     <button class="dropdown-item text-danger" type="button"
                       :disabled="busy || lessonHasTests(group.id)"
                       :title="lessonHasTests(group.id) ? t('catalogGroupNotEmpty') : undefined"
@@ -445,7 +474,7 @@ onMounted(() => void load())
       <section class="col-12 col-lg-8" aria-labelledby="tests-heading">
         <div class="card p-3">
           <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h3 id="tests-heading" class="h5 mb-0">{{ selectedGroup?.name ?? t('adminAllTests') }} <span class="badge bg-body-secondary text-body-secondary">{{ filteredTests.length }}</span></h3>
+            <h3 id="tests-heading" class="h5 mb-0">{{ selectedGroup ? lessonName(selectedGroup, locale) : t('adminAllTests') }} <span class="badge bg-body-secondary text-body-secondary">{{ filteredTests.length }}</span></h3>
             <button v-if="selectedGroup" type="button" class="btn btn-outline-secondary btn-sm ms-md-auto" :disabled="busy" @click="openLessonDialog(selectedGroup, $event)"><AppIcon name="pencil-square" />{{ t('catalogRenameGroup') }}</button>
             <button type="button" class="btn btn-primary btn-sm" :disabled="busy || groups.length === 0"
               @click="openCreate">
@@ -529,11 +558,17 @@ onMounted(() => void load())
       <form @submit.prevent="saveLesson">
         <h2 id="lesson-dialog-heading" class="h5 mb-3">{{ t(renamingId ? 'adminRenameLesson' : 'catalogAddGroup') }}</h2>
         <p v-if="dialogError" class="alert alert-danger" role="alert">{{ dialogError }}</p>
-        <label for="lesson-dialog-name" class="form-label">{{ t('adminLessonName') }}</label>
-        <input id="lesson-dialog-name" ref="lessonInput" v-model="renameValue" class="form-control" maxlength="250" required :disabled="busy" />
+        <p class="form-text">{{ t('catalogLessonNamesHint') }}</p>
+        <div v-for="language in languageOptions" :key="language.code" class="mb-3">
+          <label :for="'lesson-dialog-name-' + language.code" class="form-label">
+            {{ t('catalogLessonNameLanguage', { language: language.label }) }}
+          </label>
+          <input :id="'lesson-dialog-name-' + language.code" v-model="lessonNames[language.code]"
+            class="form-control" maxlength="250" :lang="language.code" :disabled="busy" />
+        </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end mt-3">
           <button type="button" class="btn btn-outline-secondary" :disabled="busy" @click="lessonDialog?.close()">{{ t('catalogCancel') }}</button>
-          <button type="submit" class="btn btn-primary" :disabled="busy || !renameValue.trim()"><AppIcon name="floppy" />{{ t('catalogSave') }}</button>
+          <button type="submit" class="btn btn-primary" :disabled="busy || !hasLessonName"><AppIcon name="floppy" />{{ t('catalogSave') }}</button>
         </div>
       </form>
     </dialog>
