@@ -26,7 +26,7 @@ final class InstallationConfig
 
     /**
      * @param array{name:string|array<string,string>,description:string|array<string,string>} $site
-     * @param array{maxImageSizeMiB:int,maxVideoSizeMiB:int} $uploads
+     * @param array{maxImageSizeMiB:int,maxVideoSizeMiB:int,maxAudioSizeMiB:int,maxAudioSizeMiB:int} $uploads
      * @param list<string> $uiLanguages
      */
     private function __construct(
@@ -188,9 +188,10 @@ final class InstallationConfig
             $basePath = null;
         }
 
-        if (!is_array($uploads) || count($uploads) !== 2
+        if (!is_array($uploads) || (count($uploads) < 2 || count($uploads) > 3)
             || !array_key_exists('maxImageSizeMiB', $uploads)
-            || !array_key_exists('maxVideoSizeMiB', $uploads)) {
+            || !array_key_exists('maxVideoSizeMiB', $uploads)
+            || array_diff(array_keys($uploads), ['maxImageSizeMiB', 'maxVideoSizeMiB', 'maxAudioSizeMiB']) !== []) {
             throw new ApiProblem(503, $errorCode, 'Upload limits configuration has invalid fields.');
         }
         foreach ($uploads as $value) {
@@ -198,6 +199,8 @@ final class InstallationConfig
                 throw new ApiProblem(503, $errorCode, 'Upload limits must be integers between 1 and 2048 MiB.');
             }
         }
+        // Legacy configurations remain valid without a new audio setting.
+        $uploads['maxAudioSizeMiB'] ??= 32;
         return new self($site, $uploads, $uiLanguages, $basePath);
     }
 

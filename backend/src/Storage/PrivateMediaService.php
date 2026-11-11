@@ -23,6 +23,9 @@ final class PrivateMediaService
         'image/webp' => ['kind' => 'image', 'extension' => 'webp', 'aliases' => ['webp']],
         'video/mp4' => ['kind' => 'video', 'extension' => 'mp4', 'aliases' => ['mp4']],
         'video/webm' => ['kind' => 'video', 'extension' => 'webm', 'aliases' => ['webm']],
+        'audio/mpeg' => ['kind' => 'audio', 'extension' => 'mp3', 'aliases' => ['mp3']],
+        'audio/mp4' => ['kind' => 'audio', 'extension' => 'm4a', 'aliases' => ['m4a']],
+        'audio/wav' => ['kind' => 'audio', 'extension' => 'wav', 'aliases' => ['wav']],
     ];
 
     private JsonFileRepository $repository;
@@ -37,7 +40,7 @@ final class PrivateMediaService
     public function upload(UploadedFileInterface $upload, ?string $groupId = null): stdClass
     {
         $limits = UploadLimits::fromBackendRoot($this->backendRoot);
-        $maximum = max($limits->maxBytes('image'), $limits->maxBytes('video'));
+        $maximum = max($limits->maxBytes('image'), $limits->maxBytes('video'), $limits->maxBytes('audio'));
         if ($upload->getError() !== UPLOAD_ERR_OK) {
             $tooLarge = in_array($upload->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
             throw new ApiProblem($tooLarge ? 413 : 400, $tooLarge ? 'FILE_TOO_LARGE' : 'UPLOAD_FAILED', 'The file upload failed.');
@@ -116,8 +119,23 @@ final class PrivateMediaService
             if (!is_string($detected)) {
                 throw new ApiProblem(415, 'UNSUPPORTED_MEDIA', 'The file format is not supported.');
             }
-            // Some fileinfo databases use application/mp4 for ISO BMFF.
-            if ($detected === 'application/mp4') $detected = 'video/mp4';
+            // MIME aliases vary by PHP fileinfo database. A possibly video
+            // MP4 is accepted as M4A only when it advertises an audio brand.
+            if ($clientExtension === 'wav' && in_array($detected,
+                ['audio/x-wav', 'audio/wave', 'audio/vnd.wave'], true)) $detected = 'audio/wav';
+            if ($clientExtension === 'mp3' && $detected === 'audio/mp3') $detected = 'audio/mpeg';
+            if ($clientExtension === 'm4a') {
+                if (in_array($detected, ['audio/x-m4a', 'audio/m4a', 'audio/mp4'], true)) {
+                    $detected = 'audio/mp4';
+                } elseif (in_array($detected, ['video/mp4', 'application/mp4'], true)) {
+                    $header = file_get_contents($temporary, false, null, 0, 32);
+                    if (is_string($header) && strlen($header) >= 16
+                        && substr($header, 4, 4) === 'ftyp'
+                        && str_contains(substr($header, 8), 'M4A ')) $detected = 'audio/mp4';
+                }
+            } elseif ($detected === 'application/mp4') {
+                $detected = 'video/mp4';
+            }
             $format = self::FORMATS[$detected] ?? null;
             if ($format === null || !in_array($clientExtension, $format['aliases'], true)) {
                 throw new ApiProblem(415, 'UNSUPPORTED_MEDIA', 'The file format and extension must match an allowed type.');
@@ -142,14 +160,21 @@ final class PrivateMediaService
                 } finally {
                     fclose($fh);
                 }
-                $validContainer = $detected === 'video/mp4'
-                    ? $length >= 16 && strlen($first) >= 16
+                $validContainer = match ($detected) {
+                    'video/mp4', 'audio/mp4' => $length >= 16 && strlen($first) >= 16
                         && substr($first, 4, 4) === 'ftyp'
-                        && unpack('N', substr($first, 0, 4))[1] >= 16
-                    : strlen($first) >= 12 && str_starts_with($first, "\x1a\x45\xdf\xa3")
-                        && str_contains($first, 'webm');
+                        && unpack('N', substr($first, 0, 4))[1] >= 16,
+                    'video/webm' => strlen($first) >= 12 && str_starts_with($first, "\x1a\x45\xdf\xa3")
+                        && str_contains($first, 'webm'),
+                    'audio/wav' => strlen($first) >= 44 && substr($first, 0, 4) === 'RIFF'
+                        && substr($first, 8, 4) === 'WAVE',
+                    'audio/mpeg' => str_starts_with($first, 'ID3')
+                        || (strlen($first) >= 2 && ord($first[0]) === 0xff
+                            && (ord($first[1]) & 0xe0) === 0xe0),
+                    default => false,
+                };
                 if (!$validContainer) {
-                    throw new ApiProblem(415, 'INVALID_MEDIA', 'Video container could not be verified.');
+                    throw new ApiProblem(415, 'INVALID_MEDIA', 'Media container could not be verified.');
                 }
             }
 
