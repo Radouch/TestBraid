@@ -9,6 +9,7 @@ use RuntimeException;
 use stdClass;
 use TestBraid\Http\ApiProblem;
 use TestBraid\Storage\JsonFileRepository;
+use TestBraid\Storage\LessonNames;
 use TestBraid\Storage\PrivateMediaService;
 use TestBraid\Validation\PublicationValidator;
 use TestBraid\Validation\SchemaValidator;
@@ -218,13 +219,13 @@ class PublicationService
      * escape through a list endpoint. Each test's detail route independently
      * checks its current published status after a withdrawal.
      *
-     * @return array{groups: list<array{id: string, name: string, tests: list<array{id: string, title: string, language: string, questionCount: int}>}>}
+     * @return array{groups: list<array{id: string, name: string, names: ?stdClass, tests: list<array{id: string, title: string, language: string, questionCount: int}>}>}
      */
     public function publicCatalog(): array
     {
         $groups = [];
         foreach ($this->store->all('groups') as $group) {
-            $groups[$group->id] = ['id' => $group->id, 'name' => $group->name, 'position' => $group->position ?? null, 'tests' => []];
+            $groups[$group->id] = ['id' => $group->id, 'name' => LessonNames::fallback($group), 'names' => $group->names ?? null, 'position' => $group->position ?? null, 'tests' => []];
         }
 
         foreach ($this->store->all('tests') as $test) {
