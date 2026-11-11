@@ -7,7 +7,7 @@ import { authorSession, refreshAuthorSession } from '../auth'
 
 interface MediaItem {
   id: string
-  kind: 'image' | 'video'
+  kind: 'image' | 'video' | 'audio'
   originalName: string
   mimeType: string
   sizeBytes: number
@@ -26,7 +26,7 @@ const assigningId = ref<string | null>(null)
 const lessonFilter = ref('__all__')
 const uploadLesson = ref('__unassigned__')
 const deletingId = ref<string | null>(null)
-const filter = ref<'all' | 'image' | 'video'>('all')
+const filter = ref<'all' | 'image' | 'video' | 'audio'>('all')
 const search = ref('')
 const displayed = computed(() => items.value.filter(media =>
   (lessonFilter.value === '__all__' || (lessonFilter.value === '__unassigned__' ? !media.groupId : media.groupId === lessonFilter.value))
@@ -152,6 +152,7 @@ onMounted(async () => {
           <option value="all">{{ t('mediaAll') }}</option>
           <option value="image">{{ t('mediaImages') }}</option>
           <option value="video">{{ t('mediaVideos') }}</option>
+          <option value="audio">{{ t('mediaAudio') }}</option>
         </select>
       </div>
       <p v-if="error" role="alert" class="alert alert-danger">{{ error }}</p>
@@ -164,8 +165,12 @@ onMounted(async () => {
           <article class="card h-100">
             <img v-if="media.kind === 'image'" :src="preview(media.id)" :alt="media.originalName"
               class="card-img-top object-fit-contain media-preview" style="height: 180px" />
-            <video v-else :src="preview(media.id)" controls preload="metadata"
+            <video v-else-if="media.kind === 'video'" :src="preview(media.id)" controls preload="metadata"
               class="w-100" style="height: 180px" />
+            <div v-else class="d-flex flex-column align-items-center justify-content-center gap-2 p-3" style="min-height: 180px">
+              <i class="bi bi-volume-up fs-3" aria-hidden="true"></i>
+              <audio :src="preview(media.id)" :aria-label="media.originalName" controls preload="metadata" class="w-100" />
+            </div>
             <div class="card-body">
               <h3 class="h6 text-break">{{ media.originalName }}</h3>
               <p class="small text-secondary mb-1">{{ media.kind }} · {{ Math.round(media.sizeBytes / 1024) }} KiB</p>
