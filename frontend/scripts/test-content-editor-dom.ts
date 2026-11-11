@@ -332,7 +332,7 @@ try {
   assert.ok(selectAudio)
   await click(selectAudio)
   assert.equal(empty.value.length, 1)
-  assert.equal(empty.value[0]!.type, 'audio')
+  assert.equal((empty.value as ContentBlock[])[0]?.type, 'audio')
   assert.equal(find<HTMLAudioElement>('.empty-composer audio').getAttribute('src'),
     '/training/api/admin/media/' + audioId + '/preview')
   actions = await menu('.empty-composer .block-actions')
