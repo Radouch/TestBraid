@@ -104,7 +104,9 @@ async function openLessonDialog(group?: Group, event?: MouseEvent): Promise<void
   dialogError.value = ''
   await nextTick()
   lessonDialog.value?.showModal()
-  const first = lessonDialog.value?.querySelector<HTMLInputElement>('input')
+  // Focus the author's current language even when it is not listed first.
+  const first = lessonDialog.value?.querySelector<HTMLInputElement>('#lesson-dialog-name-' + locale.value)
+    ?? lessonDialog.value?.querySelector<HTMLInputElement>('input')
   first?.focus()
   first?.select()
 }
