@@ -1,5 +1,5 @@
-import { lessonName as localizedLessonName } from '../lesson-names'
 <script setup lang="ts">
+import { lessonName as localizedLessonName } from '../lesson-names'
 import { appBaseUrl } from '../deployment-base'
 import AppIcon from '../components/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
