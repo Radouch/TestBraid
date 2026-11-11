@@ -14,7 +14,7 @@ Nová instalace obsahuje dvě publikované **ukázkové lekce**, českou a angli
 
 Vyberte lekci a klikněte na **Nový test**. Nastavte název, nepovinný popis, **Jazyk obsahu** a to, zda se má zobrazovat celkový výsledek testu. Jazyk obsahu vybíráte z jazyků rozhraní webu; předvyplněný je jazyk, ve kterém web právě používáte. Úvodní stránka test ukáže jen návštěvníkům, kteří mají zvolený jeho jazyk. Nový test je **rozpracovaný** a anonymní návštěvníci ho nevidí.
 
-Testy můžete v rámci lekce přeřazovat, existující test duplikovat nebo rozpracovaný test přesunout do jiné lekce. Duplikovaný test používá stejná média; soubory se znovu nenahrávají.
+Testy můžete v rámci lekce přeřazovat, existující test duplikovat nebo rozpracovaný test přesunout do jiné lekce. Duplikovaný test automaticky získá nejbližší volné číslo v názvu v rámci své lekce (například `Zvířata (1)`). Název můžete změnit v Nastavení testu. Kopie používá stejná média; soubory se znovu nenahrávají.
 
 ## Úprava testu
 
