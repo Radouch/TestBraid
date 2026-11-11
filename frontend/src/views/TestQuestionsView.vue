@@ -1,3 +1,4 @@
+import { lessonName as localizedLessonName } from '../lesson-names'
 <script setup lang="ts">
 import { appBaseUrl } from '../deployment-base'
 import AppIcon from '../components/AppIcon.vue'
@@ -17,7 +18,7 @@ import {
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const page = ref<HTMLElement | null>(null)
 const toolbar = ref<HTMLElement | null>(null)
 const form = ref<HTMLFormElement | null>(null)
@@ -47,7 +48,10 @@ const languageQuery = computed(() => {
   const lang = explicitUiLocale(route.query.lang)
   return lang ? { lang } : {}
 })
-const lessonName = computed(() => lessons.value.find(lesson => lesson.id === draft.value?.groupId)?.name ?? t('editorCurrentLesson'))
+const lessonName = computed(() => {
+  const lesson = lessons.value.find(item => item.id === draft.value?.groupId)
+  return lesson ? localizedLessonName(lesson, locale.value) : t('editorCurrentLesson')
+})
 const catalogLocation = computed(() => ({ name: 'admin', query: { ...languageQuery.value, lesson: draft.value?.groupId || undefined } }))
 const previewLocation = computed(() => ({ name: 'test-preview', params: { id: test.value?.id },
   query: { ...languageQuery.value, editorTab: activeTab.value } }))
@@ -225,7 +229,8 @@ async function save(): Promise<void> {
     })
     if (!response.ok) {
       const result = await response.json().catch(() => ({})) as { error?: { code?: string } }
-      throw new Error(t('editorSaveFailed') + ' (' + (result.error?.code ?? response.status) + ')')
+      throw new Error(result.error?.code === 'TEST_TITLE_EXISTS' ? t('catalogTestTitleExists')
+        : t('editorSaveFailed') + ' (' + (result.error?.code ?? response.status) + ')')
     }
     applySaved(await response.json() as DraftTest)
     success.value = t('editorTestSaved')
