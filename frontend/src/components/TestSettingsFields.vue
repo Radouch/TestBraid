@@ -1,5 +1,5 @@
-import { lessonName } from '../lesson-names'
 <script setup lang="ts">
+import { lessonName } from '../lesson-names'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { EditorLesson, TestSettings } from '../editor/test-settings'
