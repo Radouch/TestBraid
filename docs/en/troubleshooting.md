@@ -14,8 +14,8 @@ Most problems come from a file that was not uploaded, a hidden `.htaccess` file 
 | Error about the backend or configuration | The private folder `testbraid-backend` is next to the public folder (or `bootstrap.local.php` points to it); `vendor/` and `config/app.json` exist; `app.json` is valid JSON. |
 | Cannot create the first author or sign in | The site uses HTTPS; `testbraid-backend/config/setup.key` contains the setup key (32–256 characters) and you typed the same setup key; PHP can write to `testbraid-backend/config/`. |
 | Saving lessons or tests fails | PHP can write to `testbraid-backend/storage/`. |
-| Uploading an image or video fails | Supported format (JPEG, PNG, WebP, MP4, WebM); file size within the limits in [Configuration](configuration.md#upload-limits); free disk space. |
-| Images or videos of a published test do not show | The test is published; PHP can write to the `media` folder in your public folder; its `.htaccess` is present; the browser supports the video format. |
+| Uploading an image, video or audio file fails | Supported format (JPEG, PNG, WebP, MP4, WebM, MP3, M4A, WAV); file size within the limits in [Configuration](configuration.md#upload-limits); free disk space. |
+| Published media does not load or play, but author preview works | The test is published; PHP can write to the public `media/` folder; **replace `www/media/.htaccess` with the current version** (hidden files can be skipped by FTP clients). An old version can return HTTP 403 for MP3, M4A and WAV. If the request instead returns 404, verify the public file exists. |
 
 For a site installed under a URL such as `/courses/`, the folder inside your public folder, `basePath` in `app.json` and Apache routing must all agree. If the private folder lives elsewhere, also check the local `bootstrap.local.php` filesystem path.
 

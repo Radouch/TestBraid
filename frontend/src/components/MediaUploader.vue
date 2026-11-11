@@ -10,13 +10,13 @@ import 'filepond/dist/filepond.min.css'
 
 export interface UploadedMedia {
   mediaId: string
-  kind: 'image' | 'video'
+  kind: 'image' | 'video' | 'audio'
   mimeType: string
   originalName: string
   sizeBytes: number
 }
 
-const props = defineProps<{ csrfToken: string; kind?: 'image' | 'video'; groupId?: string | null }>()
+const props = defineProps<{ csrfToken: string; kind?: 'image' | 'video' | 'audio'; groupId?: string | null }>()
 const emit = defineEmits<{ uploaded: [media: UploadedMedia] }>()
 const { t } = useI18n()
 const uploadError = ref('')
@@ -53,10 +53,11 @@ async function uploadSelected(): Promise<void> {
 }
 
 const FilePond = vueFilePond(FilePondPluginFileValidateType, FilePondPluginFileValidateSize)
-interface UploadWarning { kind: 'image' | 'video'; configuredMaxBytes: number; effectiveMaxBytes: number }
+interface UploadWarning { kind: 'image' | 'video' | 'audio'; configuredMaxBytes: number; effectiveMaxBytes: number }
 interface UploadLimits {
   imageMaxBytes: number
   videoMaxBytes: number
+  audioMaxBytes: number
   phpUploadMaxBytes: number | null
   phpPostMaxBytes: number | null
   warnings: UploadWarning[]
@@ -64,7 +65,7 @@ interface UploadLimits {
 const limits = ref<UploadLimits | null>(null)
 const limitsError = ref('')
 const fileMaximum = computed(() => limits.value
-  ? Math.max(limits.value.imageMaxBytes, limits.value.videoMaxBytes) : 0)
+  ? Math.max(limits.value.imageMaxBytes, limits.value.videoMaxBytes, limits.value.audioMaxBytes) : 0)
 const asMiB = (bytes: number) => (bytes / 1048576).toLocaleString(undefined, { maximumFractionDigits: 1 })
 const phpMiB = (bytes: number | null) => bytes === null ? t('mediaUnlimited') : asMiB(bytes) + ' MiB'
 
@@ -77,7 +78,7 @@ onMounted(async () => {
     })
     if (!response.ok) throw new Error('Unavailable')
     const data = await response.json() as UploadLimits
-    if (!Number.isSafeInteger(data.imageMaxBytes) || !Number.isSafeInteger(data.videoMaxBytes)
+    if (!Number.isSafeInteger(data.imageMaxBytes) || !Number.isSafeInteger(data.videoMaxBytes) || !Number.isSafeInteger(data.audioMaxBytes)
       || !Array.isArray(data.warnings)) throw new Error('Invalid response')
     limits.value = data
   } catch {
@@ -89,10 +90,10 @@ onMounted(async () => {
 // prevents an image from inheriting the larger video allowance.
 function beforeAddFile(item: { file: File }): boolean {
   if (!limits.value) return false
-  const kind = props.kind ?? (item.file.type.startsWith('image/') ? 'image' : 'video')
-  const allowed = kind === 'image' ? limits.value.imageMaxBytes : limits.value.videoMaxBytes
+  const kind = props.kind ?? (item.file.type.startsWith('image/') ? 'image' : item.file.type.startsWith('audio/') || /\.(mp3|m4a|wav)$/i.test(item.file.name) ? 'audio' : 'video')
+  const allowed = kind === 'image' ? limits.value.imageMaxBytes : kind === 'audio' ? limits.value.audioMaxBytes : limits.value.videoMaxBytes
   if (item.file.size > allowed) {
-    uploadError.value = t('mediaFileTooLarge', { kind: t(kind === 'image' ? 'mediaImages' : 'mediaVideos'), max: asMiB(allowed) })
+    uploadError.value = t('mediaFileTooLarge', { kind: t(kind === 'image' ? 'mediaImages' : kind === 'audio' ? 'mediaAudio' : 'mediaVideos'), max: asMiB(allowed) })
     return false
   }
   uploadError.value = ''
@@ -104,7 +105,9 @@ function beforeAddFile(item: { file: File }): boolean {
 const acceptedTypes = computed(() => props.kind === 'image'
   ? ['image/jpeg', 'image/png', 'image/webp']
   : props.kind === 'video' ? ['video/mp4', 'video/webm']
-    : ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+    : props.kind === 'audio' ? ['audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/wav', 'audio/x-wav', 'audio/wave']
+      : ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm',
+          'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/wav', 'audio/x-wav', 'audio/wave'])
 
 function uploaded(response: string): string {
   let parsed: unknown
@@ -116,7 +119,7 @@ function uploaded(response: string): string {
   }
   if (!parsed || typeof parsed !== 'object' || !('mediaId' in parsed)
     || typeof parsed.mediaId !== 'string' || !('kind' in parsed)
-    || (parsed.kind !== 'image' && parsed.kind !== 'video')
+    || (parsed.kind !== 'image' && parsed.kind !== 'video' && parsed.kind !== 'audio')
     || !('mimeType' in parsed) || typeof parsed.mimeType !== 'string'
     || !('originalName' in parsed) || typeof parsed.originalName !== 'string'
     || !('sizeBytes' in parsed) || typeof parsed.sizeBytes !== 'number') {
@@ -176,7 +179,7 @@ const server = computed(() => ({
       <ul class="mb-0 small">
         <li v-for="warning in limits.warnings" :key="warning.kind">
           {{ t('mediaLimitsReduced', {
-            kind: t(warning.kind === 'image' ? 'mediaImages' : 'mediaVideos'),
+            kind: t(warning.kind === 'image' ? 'mediaImages' : warning.kind === 'audio' ? 'mediaAudio' : 'mediaVideos'),
             configured: asMiB(warning.configuredMaxBytes),
             effective: asMiB(warning.effectiveMaxBytes),
           }) }}
@@ -214,7 +217,7 @@ const server = computed(() => ({
       </p>
     </div>
     <p v-if="limits" class="form-text">{{ t('mediaFormats', {
-      image: asMiB(limits.imageMaxBytes), video: asMiB(limits.videoMaxBytes),
+      image: asMiB(limits.imageMaxBytes), video: asMiB(limits.videoMaxBytes), audio: asMiB(limits.audioMaxBytes),
     }) }}</p>
   </div>
 </template>

@@ -2,9 +2,15 @@
 # allowlisted non-executable extensions are required for Apache to serve a file.
 # Temporary .stage-* data and unrelated files are denied, even if left after a
 # process crash. Do not rely on shared-host Options overrides.
-<FilesMatch "^(?![0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(?:jpg|png|webp|mp4|webm)$)">
+<FilesMatch "^(?![0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(?:jpg|png|webp|mp4|webm|mp3|m4a|wav)$)">
   Require all denied
 </FilesMatch>
+
+<IfModule mod_mime.c>
+  AddType audio/mpeg .mp3
+  AddType audio/mp4 .m4a
+  AddType audio/wav .wav
+</IfModule>
 
 <IfModule mod_autoindex.c>
   IndexIgnore *

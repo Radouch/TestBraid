@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace TestBraid\Storage;
 
 use TestBraid\Config\InstallationConfig;
+use TestBraid\Http\ApiProblem;
 
 /**
  * Upload policy loaded from the operator-owned private JSON file on every
@@ -18,6 +19,7 @@ final class UploadLimits
 
     private int $imageConfigured;
     private int $videoConfigured;
+    private int $audioConfigured;
     private ?int $phpUploadMaximum;
     private ?int $phpPostMaximum;
     private bool $uploadsEnabled;
@@ -31,6 +33,7 @@ final class UploadLimits
         $limits = InstallationConfig::fromFile($file, 'UPLOAD_CONFIG_INVALID')->uploads();
         $this->imageConfigured = $limits['maxImageSizeMiB'] * self::MIB;
         $this->videoConfigured = $limits['maxVideoSizeMiB'] * self::MIB;
+        $this->audioConfigured = $limits['maxAudioSizeMiB'] * self::MIB;
         $this->phpUploadMaximum = self::iniBytes($phpUploadSetting ?? (string) ini_get('upload_max_filesize'));
         $this->phpPostMaximum = self::iniBytes($phpPostSetting ?? (string) ini_get('post_max_size'));
         $this->uploadsEnabled = $uploadsEnabled ?? filter_var(ini_get('file_uploads'), FILTER_VALIDATE_BOOLEAN);
@@ -63,6 +66,7 @@ final class UploadLimits
         $configured = match ($kind) {
             'image' => $this->imageConfigured,
             'video' => $this->videoConfigured,
+            'audio' => $this->audioConfigured,
             default => throw new \InvalidArgumentException('Unknown media kind.'),
         };
         if (!$this->uploadsEnabled) return 0;
@@ -80,7 +84,7 @@ final class UploadLimits
     public function asResponse(): array
     {
         $warnings = [];
-        foreach (['image' => $this->imageConfigured, 'video' => $this->videoConfigured] as $kind => $configured) {
+        foreach (['image' => $this->imageConfigured, 'video' => $this->videoConfigured, 'audio' => $this->audioConfigured] as $kind => $configured) {
             $effective = $this->maxBytes($kind);
             if ($effective < $configured) {
                 $warnings[] = [
@@ -93,8 +97,10 @@ final class UploadLimits
         return [
             'imageMaxBytes' => $this->maxBytes('image'),
             'videoMaxBytes' => $this->maxBytes('video'),
+            'audioMaxBytes' => $this->maxBytes('audio'),
             'configuredImageMaxBytes' => $this->imageConfigured,
             'configuredVideoMaxBytes' => $this->videoConfigured,
+            'configuredAudioMaxBytes' => $this->audioConfigured,
             'phpUploadMaxBytes' => $this->phpUploadMaximum,
             'phpPostMaxBytes' => $this->phpPostMaximum,
             'fileUploadsEnabled' => $this->uploadsEnabled,

@@ -12,7 +12,7 @@ Dodaný soubor vypadá takto:
     "name": { "cs": "TestBraid", "en": "TestBraid" },
     "description": { "cs": "Aplikace pro tvorbu a vyplňování …", "en": "An application for creating and taking …" }
   },
-  "uploads": { "maxImageSizeMiB": 10, "maxVideoSizeMiB": 64 },
+  "uploads": { "maxImageSizeMiB": 10, "maxVideoSizeMiB": 64, "maxAudioSizeMiB": 32 },
   "uiLanguages": ["en", "cs"],
   "basePath": "/"
 }
@@ -44,7 +44,7 @@ Jazyk rozhraní **nepřekládá** testy. Každý test má svůj vlastní jazyk o
 
 ## Limity nahrávání
 
-`uploads.maxImageSizeMiB` a `uploads.maxVideoSizeMiB` určují největší povolený obrázek a video v MiB. Limity PHP na vašem hostingu (`upload_max_filesize` a `post_max_size`) mohou povolit méně. Jejich zvýšení je nastavení hostingu, ne TestBraidu. Limity platí pro každý soubor zvlášť, viz [Knihovna médií](media-library.md).
+`uploads.maxImageSizeMiB`, `uploads.maxVideoSizeMiB` a `uploads.maxAudioSizeMiB` určují největší povolenou velikost obrázku, videa a zvukové nahrávky v MiB. Starší konfigurace bez nastavení pro zvuk používají 32 MiB. Limity PHP na vašem hostingu (`upload_max_filesize` a `post_max_size`) mohou povolit méně. Jejich zvýšení je nastavení hostingu, ne TestBraidu. Limity platí pro každý soubor zvlášť, viz [Knihovna médií](media-library.md).
 
 ## Pokročilé: cesta k instalaci a umístění soukromé složky
 

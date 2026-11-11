@@ -45,7 +45,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   const path = String(input).replace('/training/api/', '')
   assert.equal(init?.method ?? 'GET', 'GET')
   assert.equal(init?.credentials, 'same-origin')
-  if (path === 'admin/media/limits') return Response.json({ imageMaxBytes: 10485760, videoMaxBytes: 104857600,
+  if (path === 'admin/media/limits') return Response.json({ imageMaxBytes: 10485760, videoMaxBytes: 104857600, audioMaxBytes: 33554432,
     phpUploadMaxBytes: null, phpPostMaxBytes: null, warnings: [] })
   if (path === 'admin/media') return Response.json({ media: [] })
   if (path === 'admin/groups') return Response.json({ groups: [{ id: lessonId, name: 'Lesson' }] })
@@ -107,11 +107,13 @@ async function transport(adapter: UploadBoundary, file: File, groupId: string | 
 }
 
 try {
-  for (const [groupId, kind] of [[undefined, 'image'], [null, 'image'], [lessonId, 'image'], [lessonId, 'video']] as const) {
+  for (const [groupId, kind] of [[undefined, 'image'], [null, 'image'], [lessonId, 'image'], [lessonId, 'video'], [lessonId, 'audio']] as const) {
     await mount(MediaUploader, { csrfToken: 'session-csrf', groupId, kind })
     assert.equal(boundary().allowMultiple, false, 'Editor attachments must stay single-file')
     assert.equal(boundary().instantUpload, true, 'Editor attachments must still upload immediately')
-    const file = new File([kind === 'image' ? jpeg : video], kind === 'image' ? 'Pozdrav.JPG' : 'Pozdrav.mp4', { type: kind === 'image' ? 'image/jpeg' : 'video/mp4' })
+    const file = new File([kind === 'image' ? jpeg : kind === 'video' ? video : Buffer.from('ID3sample')],
+      kind === 'image' ? 'Pozdrav.JPG' : kind === 'video' ? 'Pozdrav.mp4' : 'Pozdrav.mp3',
+      { type: kind === 'image' ? 'image/jpeg' : kind === 'video' ? 'video/mp4' : 'audio/mpeg' })
     await transport(boundary(), file, groupId, { caption: 'Not application metadata' })
   }
   console.log('PASS UPLOAD DOM: real FilePond multipart serialization, binary-only file parts, filenames/bytes/MIME, lesson assignment, base path and CSRF')

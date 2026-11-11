@@ -3,10 +3,10 @@
  * The JSON shapes match the shared PHP/Ajv schemas; no parallel
  * server-side question format is introduced.
  */
-export type BlockKind = 'text' | 'image' | 'video'
+export type BlockKind = 'text' | 'image' | 'video' | 'audio'
 export type ContentBlock =
   | { id: string; type: 'text'; text: string }
-  | { id: string; type: 'image' | 'video'; mediaId: string; alt?: string }
+  | { id: string; type: 'image' | 'video' | 'audio'; mediaId: string; alt?: string }
 
 export interface ContentItem {
   id: string
@@ -188,7 +188,7 @@ export function publicationProblems(questions: Question[]): string[] {
   const problems: string[] = []
   const meaningful = (blocks: ContentBlock[]) =>
     blocks.some((block) => block.type === 'text' ? block.text.trim() !== '' : uuidPattern.test(block.mediaId))
-  // Pictures and videos that are a whole answer or matching item need a
+  // Media blocks that are a whole answer or matching item need a
   // description, or screen reader users cannot tell the items apart.
   const undescribedMedia = (blocks: ContentBlock[]) =>
     !blocks.some((block) => block.type === 'text' && block.text.trim() !== '')
