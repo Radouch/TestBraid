@@ -201,7 +201,7 @@ assert.equal(validatePublication({ ...draft, questions: [singlePair] }, publicat
 assert.equal(validatePublication({ ...draft, questions: [incompleteSingle] }, publicationContext).valid, false)
 assert.equal(validatePublication({ ...draft, questions: [noPairs] }, publicationContext).valid, false)
 
-// Pictures and videos that are a whole answer or matching item need a description.
+// Media-only answers and matching items need an accessible description.
 const mediaId = '11111111-1111-4111-8111-111111111111'
 const media = (alt?: string): ContentBlock => ({ id: crypto.randomUUID(), type: 'image', mediaId, ...(alt === undefined ? {} : { alt }) })
 const pictureChoice = createChoice()
@@ -217,5 +217,16 @@ assert.deepEqual(publicationProblems([pictureChoice]), [], 'A picture next to an
 const videoMatching = structuredClone(matching)
 videoMatching.leftItems[0]!.content = [{ id: crypto.randomUUID(), type: 'video', mediaId }]
 assert.deepEqual(publicationProblems([videoMatching]), ['missingAlt'])
+const audio = createBlock('audio')
+assert.equal(audio.type, 'audio')
+if (audio.type === 'audio') audio.mediaId = mediaId
+const audioMatching = structuredClone(matching)
+audioMatching.leftItems[0]!.content = [audio]
+assert.equal(validateDocument('test', { ...draft, questions: [audioMatching] }).valid, true,
+  'Audio must satisfy the shared content-block schema')
+assert.deepEqual(publicationProblems([audioMatching]), ['missingAlt'])
+assert.equal(validatePublication({ ...draft, questions: [audioMatching] }, publicationContext).valid, false)
+if (audio.type === 'audio') audio.alt = 'Spoken greeting'
+assert.equal(validatePublication({ ...draft, questions: [audioMatching] }, publicationContext).valid, true)
 
 console.log('PASS: schema-compatible choice/matching editor models, media validation and assignment invariants')

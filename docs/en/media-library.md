@@ -2,16 +2,16 @@
 
 **English** · [Čeština](../cs/media-library.md)
 
-The media library stores images and videos for reuse in any test. Sign in and open **Media library** (`/admin/media`).
+The media library stores images, videos and audio recordings for reuse in any test. Sign in and open **Media library** (`/admin/media`).
 
 ## Upload files
 
-The library accepts **JPEG, PNG and WebP images** and **MP4 and WebM videos**. File-size limits are configured by the site operator and may also be restricted by the hosting provider.
+The library accepts **JPEG, PNG and WebP images** and **MP4 and WebM videos**, and **MP3, M4A and WAV audio**. File-size limits are configured by the site operator and may also be restricted by the hosting provider.
 
 To upload several files:
 
 1. Choose a **Media lesson** if you want the files organized under a particular lesson.
-2. Select or drop **multiple images and videos**.
+2. Select or drop **multiple images, videos and audio files**.
 3. Click **Upload selected files** once to start the batch.
 4. Review the result. Successfully uploaded files stay available even if others fail; retry failed files as needed.
 
@@ -23,7 +23,9 @@ The uploader inside a **test question** works differently: it attaches and uploa
 
 Media can be assigned to one **media lesson**, or left unassigned. This acts like a virtual folder: changing the lesson does **not** move the file or restrict where it can be used. A test may use media assigned to another lesson.
 
-Filter by lesson and file type, or search for part of the original filename. The library also shows which tests use each item.
+Filter by lesson and media type, or search for part of the original filename. The library also shows which tests use each item.
+
+Audio recordings use the browser's native player, with playback, pause and seeking. The same player is used in tests; original filenames are not shown to learners. The description field provides an accessible name for screen-reader users, required if an audio recording is the only content of an answer or matching item.
 
 ## Reuse and deletion
 
