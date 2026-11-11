@@ -1,3 +1,4 @@
+import { lessonName, type LocalizedLesson } from '../lesson-names'
 <script setup lang="ts">
 import { appBaseUrl } from '../deployment-base'
 import { onMounted, ref, computed, watch } from 'vue'
@@ -16,9 +17,9 @@ interface MediaItem {
   groupId: string | null
   usedIn: Array<{ id: string; title: string; status: string }>
 }
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const items = ref<MediaItem[]>([])
-const lessons = ref<Array<{ id: string; name: string }>>([])
+const lessons = ref<LocalizedLesson[]>([])
 const loading = ref(true)
 const error = ref('')
 const deleteError = ref('')
@@ -50,7 +51,7 @@ async function load(): Promise<void> {
     ])
     if (!response.ok || !groupsResponse.ok) throw new Error(t('mediaLibraryUnavailable'))
     const data = await response.json() as { media: MediaItem[] }
-    const groups = await groupsResponse.json() as { groups: Array<{ id: string; name: string }> }
+    const groups = await groupsResponse.json() as { groups: LocalizedLesson[] }
     items.value = data.media
     lessons.value = groups.groups
   } catch {
@@ -132,7 +133,7 @@ onMounted(async () => {
           <label for="media-upload-lesson" class="form-label">{{ t('mediaHomeLesson') }}</label>
           <select id="media-upload-lesson" v-model="uploadLesson" class="form-select" style="max-width: 23rem">
             <option value="__unassigned__">{{ t('mediaUnassigned') }}</option>
-            <option v-for="lesson in lessons" :key="lesson.id" :value="lesson.id">{{ lesson.name }}</option>
+            <option v-for="lesson in lessons" :key="lesson.id" :value="lesson.id">{{ lessonName(lesson, locale) }}</option>
           </select>
         </div>
         <MediaUploader :csrf-token="authorSession.csrfToken"
