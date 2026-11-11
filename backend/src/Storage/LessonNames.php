@@ -33,6 +33,12 @@ final class LessonNames
         return $names;
     }
 
+    public static function fallbackFromNames(stdClass $names): string
+    {
+        foreach ($names as $name) return $name;
+        return '';
+    }
+
     public static function fallback(stdClass $record): string
     {
         if (isset($record->name) && is_string($record->name)) return $record->name;
