@@ -208,7 +208,7 @@ final class AdminDataRoutes
                 $this->checkGroup($source->groupId);
                 $copy = clone $source;
                 $copy->id = JsonFileRepository::uuid();
-                $copy->title = $source->title;
+                $copy->title = $this->duplicateTestTitle($source);
                 $copy->status = 'draft';
                 $copy->position = $this->nextPosition('tests', $copy->groupId);
                 $copy->publishedAt = null;
@@ -508,6 +508,36 @@ final class AdminDataRoutes
                 throw new ApiProblem(422, 'INVALID_ORDER', 'Unknown or repeated record ID in order.');
             }
             $seen[$id] = true;
+        }
+    }
+
+    /**
+     * Give a duplicated test the lowest free numbered title in its own lesson.
+     * The surrounding publication lock keeps selection and creation atomic;
+     * manually entered test titles remain unrestricted.
+     */
+    private function duplicateTestTitle(stdClass $source): string
+    {
+        // Remove trailing copy numbers instead of producing "Title (2) (1)".
+        $base = trim($source->title);
+        $base = preg_replace('/(?: \\([1-9][0-9]*\\))+$/', '', $base) ?? $base;
+        if ($base === '') $base = 'Test';
+
+        $used = [];
+        foreach ($this->store()->all('tests') as $test) {
+            if ($test->groupId === $source->groupId) {
+                $used[$test->title] = true;
+            }
+        }
+
+        for ($number = 1; ; $number++) {
+            $suffix = ' (' . $number . ')';
+            // JSON Schema titles allow 250 Unicode characters, not 250 bytes.
+            // Avoid requiring mbstring on ordinary PHP hosting.
+            $limit = 250 - strlen($suffix);
+            preg_match('/^.{0,' . $limit . '}/us', $base, $matches);
+            $candidate = rtrim($matches[0] ?? '') . $suffix;
+            if (!isset($used[$candidate])) return $candidate;
         }
     }
 
