@@ -2,16 +2,16 @@
 
 [English](../en/media-library.md) · **Čeština**
 
-Knihovna médií uchovává obrázky a videa, která můžete použít v libovolném testu. Přihlaste se a otevřete **Knihovna médií** (`/admin/media`).
+Knihovna médií uchovává obrázky, videa a zvukové nahrávky, která můžete použít v libovolném testu. Přihlaste se a otevřete **Knihovna médií** (`/admin/media`).
 
 ## Nahrávání souborů
 
-Knihovna přijímá **obrázky JPEG, PNG a WebP** a **videa MP4 a WebM**. Limity velikosti souborů nastavuje správce webu a dál je může omezit poskytovatel hostingu.
+Knihovna přijímá **obrázky JPEG, PNG a WebP** a **videa MP4 a WebM** a **zvuk MP3, M4A a WAV**. Limity velikosti souborů nastavuje správce webu a dál je může omezit poskytovatel hostingu.
 
 Nahrání více souborů:
 
 1. Pokud chcete soubory zařadit k určité lekci, zvolte **Lekce média**.
-2. Vyberte nebo přetáhněte **více obrázků a videí**.
+2. Vyberte nebo přetáhněte **více obrázků, videí a zvukových souborů**.
 3. Jedním kliknutím na **Nahrát vybrané soubory** spusťte nahrávání.
 4. Zkontrolujte výsledek. Úspěšně nahrané soubory zůstanou k dispozici, i když jiné selžou; neúspěšné soubory můžete nahrát znovu.
 
@@ -24,6 +24,8 @@ Nahrávání uvnitř **otázky testu** funguje jinak: připojuje a nahrává **v
 Médium lze přiřadit k jedné **lekci média**, nebo ponechat nepřiřazené. Funguje to jako virtuální složka: změna lekce soubor **nepřesune** ani neomezí, kde ho lze použít. Test může používat i média přiřazená k jiné lekci.
 
 Média můžete filtrovat podle lekce a typu souboru nebo vyhledat podle části původního názvu souboru. Knihovna také ukazuje, které testy jednotlivá média používají.
+
+Zvukové nahrávky se přehrávají standardním přehrávačem prohlížeče s možností pozastavení a posunu. Stejný přehrávač se používá v testu, kde studenti nevidí původní název souboru. Popis slouží jako přístupný název pro čtečky obrazovky a je povinný, tvoří-li zvuk jediný obsah odpovědi nebo položky k přiřazení.
 
 ## Opakované použití a mazání
 

@@ -11,7 +11,8 @@
   },
   "uploads": {
     "maxImageSizeMiB": 10,
-    "maxVideoSizeMiB": 64
+    "maxVideoSizeMiB": 64,
+    "maxAudioSizeMiB": 32
   },
   "uiLanguages": [
     "en",

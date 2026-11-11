@@ -17,12 +17,12 @@ const root = ref<HTMLElement | null>(null)
 const pickerDialog = ref<HTMLDialogElement | null>(null)
 const pickerLessonId = 'media-picker-lesson-' + useId()
 let pickerOrigin: HTMLElement | null = null
-const mediaChoices = ref<Array<{ id: string; kind: 'image' | 'video'; originalName: string; groupId: string | null }>>([])
+const mediaChoices = ref<Array<{ id: string; kind: 'image' | 'video' | 'audio'; originalName: string; groupId: string | null }>>([])
 const lessons = ref<Array<{ id: string; name: string }>>([])
 const lessonFilter = ref('__all__')
 const pickerError = ref('')
 const pickerLoading = ref(false)
-const pickerKind = ref<'image' | 'video'>('image')
+const pickerKind = ref<'image' | 'video' | 'audio'>('image')
 // Target by stable block ID, never by an index that could change while an
 // upload or library request is pending. New media is inserted only on success.
 const pickerTarget = ref<{ blockId: string } | { beforeId: string | null } | null>(null)
@@ -84,7 +84,7 @@ async function insert(kind: BlockKind, index: number): Promise<void> {
   await nextTick()
   root.value?.querySelector<HTMLTextAreaElement>('#text-' + block.id)?.focus()
 }
-async function openPicker(kind: 'image' | 'video', target: NonNullable<typeof pickerTarget.value>): Promise<void> {
+async function openPicker(kind: 'image' | 'video' | 'audio', target: NonNullable<typeof pickerTarget.value>): Promise<void> {
   libraryRequest?.abort()
   const request = new AbortController()
   libraryRequest = request
@@ -185,12 +185,12 @@ onUnmounted(() => libraryRequest?.abort())
         </template>
         <div v-else class="block-media">
           <div v-if="uuidPattern.test(block.mediaId)" class="block-media-preview">
-            <ContentMedia :kind="block.type" :src="preview(block.mediaId)" :label="t(block.type === 'image' ? 'editorImagePreview' : 'editorVideoPreview')" />
+            <ContentMedia :kind="block.type" :src="preview(block.mediaId)" :label="t('editor' + (block.type === 'image' ? 'Image' : block.type === 'video' ? 'Video' : 'Audio') + 'Preview')" />
           </div>
           <p v-else class="text-warning-emphasis small mb-2">{{ t('editorChooseMedia') }}</p>
           <button type="button" class="btn btn-outline-secondary btn-sm replace-media"
             @click="openPicker(block.type, { blockId: block.id })">
-            <AppIcon :name="uuidPattern.test(block.mediaId) ? 'pencil-square' : block.type === 'image' ? 'image' : 'play-btn'" />
+            <AppIcon :name="uuidPattern.test(block.mediaId) ? 'pencil-square' : block.type === 'image' ? 'image' : block.type === 'video' ? 'play-btn' : 'volume-up'" />
             {{ uuidPattern.test(block.mediaId) ? t('editorReplaceMedia') : t('mediaChooseFromLibrary') }}
           </button>
           <div v-if="uuidPattern.test(block.mediaId)" class="block-alt">
@@ -204,8 +204,8 @@ onUnmounted(() => libraryRequest?.abort())
       </div>
       <EditorMenu class="block-actions" :label="label + ' · ' + t('editorBlockActions', { index: index + 1 })">
         <p class="small text-secondary px-2 pt-1 mb-1">{{ t('editorInsertContent', { index: index + 1 }) }}</p>
-        <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind" type="button" class="btn btn-sm insert-block"
-          :data-insert-kind="kind" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
+        <button v-for="kind in (['text', 'image', 'video', 'audio'] as const)" :key="kind" type="button" class="btn btn-sm insert-block"
+          :data-insert-kind="kind" @click="insert(kind, index)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : kind === 'video' ? 'play-btn' : 'volume-up'" />{{ t('editorKind_' + kind) }}</button>
         <hr class="my-1" />
         <button type="button" class="btn btn-sm move-block-up" :disabled="index === 0"
           :aria-label="t('editorMoveBlockUp', { index: index + 1 })" @click="update(move(modelValue, index, -1))"><AppIcon name="arrow-up" />{{ t('editorMoveUp') }}</button>
@@ -216,8 +216,8 @@ onUnmounted(() => libraryRequest?.abort())
     </div>
     <EditorMenu class="append-content mt-1" :label="addLabel ?? t('editorAddContent')" align="start">
       <template #trigger><span class="text-primary"><AppIcon name="plus-lg" /> {{ addLabel ?? t('editorAddContent') }}</span></template>
-      <button v-for="kind in (['text', 'image', 'video'] as const)" :key="kind"
-        type="button" class="btn btn-sm" :data-insert-kind="kind" @click="insert(kind, modelValue.length)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : 'play-btn'" />{{ t('editorKind_' + kind) }}</button>
+      <button v-for="kind in (['text', 'image', 'video', 'audio'] as const)" :key="kind"
+        type="button" class="btn btn-sm" :data-insert-kind="kind" @click="insert(kind, modelValue.length)"><AppIcon :name="kind === 'text' ? 'text-left' : kind === 'image' ? 'image' : kind === 'video' ? 'play-btn' : 'volume-up'" />{{ t('editorKind_' + kind) }}</button>
     </EditorMenu>
 
     <dialog ref="pickerDialog" class="media-dialog border rounded shadow p-3 p-md-4"
@@ -239,10 +239,13 @@ onUnmounted(() => libraryRequest?.abort())
           <button type="button" class="btn btn-outline-secondary w-100 text-break" @click="chooseMedia(media.id)">
             <img v-if="media.kind === 'image'" :src="preview(media.id)" alt=""
               class="w-100 object-fit-contain media-preview" style="height: 110px" />
-            <video v-else :src="preview(media.id)" preload="metadata" class="w-100" style="height: 110px" />
+            <video v-else-if="media.kind === 'video'" :src="preview(media.id)" preload="metadata" class="w-100" style="height: 110px" />
+            <span v-else class="d-block py-4"><AppIcon name="volume-up" /></span>
             <span class="small d-block">{{ media.originalName }}</span>
             <span class="small text-secondary d-block">{{ lessonName(media.groupId) }}</span>
           </button>
+          <audio v-if="media.kind === 'audio'" :src="preview(media.id)" :aria-label="media.originalName"
+            controls preload="metadata" class="w-100 mt-1" />
         </div>
       </div>
       <p v-if="!pickerLoading && !pickerError && !matchingMedia.length" class="text-secondary">{{ t('mediaNoItems') }}</p>

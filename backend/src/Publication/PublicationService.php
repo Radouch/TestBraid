@@ -442,7 +442,7 @@ class PublicationService
     private function publicPath(stdClass $media): string
     {
         if (!JsonFileRepository::validId($media->id)
-            || !in_array($media->extension, ['jpg', 'png', 'webp', 'mp4', 'webm'], true)) {
+            || !in_array($media->extension, ['jpg', 'png', 'webp', 'mp4', 'webm', 'mp3', 'm4a', 'wav'], true)) {
             throw new RuntimeException('Invalid public media metadata.');
         }
         return $this->publicDir . '/' . $media->id . '.' . $media->extension;
@@ -503,7 +503,7 @@ class PublicationService
                 }
                 continue;
             }
-            if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|mp4|webm)$/D', $name)) continue;
+            if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|mp4|webm|mp3|m4a|wav)$/D', $name)) continue;
             if ($item->isLink()) throw new RuntimeException('Refusing public media symlink during reconciliation.');
             if (!isset($active[$name]) && $item->isFile() && !unlink($item->getPathname())) {
                 throw new RuntimeException('Cannot clean up obsolete public media.');

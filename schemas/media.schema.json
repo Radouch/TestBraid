@@ -25,7 +25,8 @@
     "kind": {
       "enum": [
         "image",
-        "video"
+        "video",
+        "audio"
       ]
     },
     "mimeType": {

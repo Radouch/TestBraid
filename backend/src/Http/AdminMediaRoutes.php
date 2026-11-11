@@ -75,7 +75,7 @@ final class AdminMediaRoutes
                 }
                 $sizeHeader = $request->getHeaderLine('Content-Length');
                 if ($sizeHeader !== '' && ctype_digit($sizeHeader)
-                    && (float) $sizeHeader > max($limits->maxBytes('image'), $limits->maxBytes('video')) + 1048576) {
+                    && (float) $sizeHeader > max($limits->maxBytes('image'), $limits->maxBytes('video'), $limits->maxBytes('audio')) + 1048576) {
                     throw new ApiProblem(413, 'FILE_TOO_LARGE', 'Request exceeds the upload limit.');
                 }
                 $uploads = $request->getUploadedFiles();

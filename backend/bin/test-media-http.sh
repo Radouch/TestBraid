@@ -39,6 +39,10 @@ printf '%s\n' 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGNkYPjPw
 base64 -d "$ROOT/bin/fixtures/tiny.mp4.b64" > "$TEMP/clip.mp4"
 base64 -d "$ROOT/bin/fixtures/tiny.webm.b64" > "$TEMP/clip.webm"
 base64 -d "$ROOT/bin/fixtures/tiny.jpg.b64" > "$TEMP/photo.jpg"
+base64 -d "$ROOT/bin/fixtures/tiny.mp3.b64" > "$TEMP/clip.mp3"
+base64 -d "$ROOT/bin/fixtures/tiny.m4a.b64" > "$TEMP/clip.m4a"
+# Minimal valid mono PCM WAV, generated without an external audio encoder.
+php -r '$pcm=str_repeat("\x00",256);file_put_contents($argv[1],"RIFF".pack("V",36+strlen($pcm))."WAVEfmt ".pack("VvvVVvv",16,1,1,8000,16000,2,16)."data".pack("V",strlen($pcm)).$pcm);' "$TEMP/clip.wav"
 printf '<?php echo "danger";' > "$TEMP/evil.php"
 printf 'not a video' > "$TEMP/invalid.mp4"
 
@@ -114,6 +118,9 @@ check '.error.code == "UNSUPPORTED_MEDIA"'
 expect 415 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
   -F "file=@$TEMP/invalid.mp4;type=video/mp4"
 check '.error.code == "UNSUPPORTED_MEDIA"'
+expect 415 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
+  -F "file=@$TEMP/blue.png;filename=spoof.mp3;type=audio/mpeg"
+check '.error.code == "UNSUPPORTED_MEDIA"'
 if find "$TEMP/private-storage/media-files" -name '*.php' -o -name '*.mp4' | grep -q .; then
   echo 'Invalid media unexpectedly persisted' >&2; exit 1
 fi
@@ -159,6 +166,26 @@ check --arg PNG "$PNG_ID" --arg MP4 "$MP4_ID" --arg WEBM "$WEBM_ID" '
   and ([.media[].usedIn[]] | length) == 0'
 expect 200 "$HOST/api/admin/media/$WEBM_ID/preview"
 cmp "$TEMP/body" "$TEMP/clip.webm"
+
+# Audio accepts MP3, M4A and WAV, verifies the binary type, and supports byte ranges.
+for EXT in mp3 m4a wav; do
+  expect 201 "$HOST/api/admin/media" -H "X-CSRF-Token: $CSRF" \
+    -F "file=@$TEMP/clip.$EXT;type=application/octet-stream"
+  AUDIO_ID="$(jq -r '.mediaId' "$TEMP/body")"
+  check '.kind == "audio"'
+  case "$EXT" in
+    mp3) check '.mimeType == "audio/mpeg"' ;;
+    m4a) check '.mimeType == "audio/mp4"' ;;
+    wav) check '.mimeType == "audio/wav"' ;;
+  esac
+  test -f "$TEMP/private-storage/media-files/$AUDIO_ID.$EXT"
+  expect 200 "$HOST/api/admin/media/$AUDIO_ID/preview" -D "$TEMP/headers"
+  cmp "$TEMP/body" "$TEMP/clip.$EXT"
+  grep -qi "^Content-Type: audio/" "$TEMP/headers"
+  expect 206 "$HOST/api/admin/media/$AUDIO_ID/preview" -H 'Range: bytes=0-15' -D "$TEMP/headers"
+  cmp "$TEMP/body" <(head -c 16 "$TEMP/clip.$EXT")
+  expect 200 "$HOST/api/admin/media/$AUDIO_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+done
 
 # An unused private upload can be removed, but not while referenced by any
 # draft (including another copy of the draft).
@@ -283,4 +310,4 @@ check '.error.code == "AUTH_REQUIRED"'
 expect 401 "$HOST/api/admin/media/$MP4_ID"
 check '.error.code == "AUTH_REQUIRED"'
 
-echo "PASS: protected image/video uploads, MIME sniffing, rejection, private persistence and byte-range previews"
+echo "PASS: protected image/video/audio uploads, MIME sniffing, rejection, private persistence and byte-range previews"

@@ -11,6 +11,7 @@ const en = JSON.parse(readFileSync('public/locales/en.json', 'utf8')) as Record<
 const text = (id: string, value: string) => ({ id, type: 'text' as const, text: value })
 const videoId = '11111111-1111-4111-8111-111111111111'
 const imageId = '22222222-2222-4222-8222-222222222222'
+const audioId = '55555555-5555-4555-8555-555555555555'
 const replacementId = '33333333-3333-4333-8333-333333333333'
 const otherLessonId = '44444444-4444-4444-8444-444444444444'
 const choice = reactive<ChoiceQuestion>({
@@ -32,6 +33,7 @@ const i18n = createI18n({ legacy: false, locale: 'cs', fallbackLocale: 'en', war
 const media = [
   { id: videoId, kind: 'video', originalName: 'Original.mp4', groupId: 'lesson' },
   { id: imageId, kind: 'image', originalName: 'Photo.jpg', groupId: 'lesson' },
+  { id: audioId, kind: 'audio', originalName: 'Greeting.mp3', groupId: 'lesson' },
   { id: replacementId, kind: 'video', originalName: 'Replacement.mp4', groupId: 'lesson' },
   { id: otherLessonId, kind: 'video', originalName: 'Other lesson.mp4', groupId: 'other' },
 ]
@@ -51,7 +53,7 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
     return failMedia ? Response.json({}, { status: 503 }) : Response.json({ media })
   }
   if (path === 'admin/groups') return Response.json({ groups: [{ id: 'lesson', name: 'Lesson' }, { id: 'other', name: 'Other lesson' }] })
-  if (path === 'admin/media/limits') return Response.json({ imageMaxBytes: 10485760, videoMaxBytes: 104857600,
+  if (path === 'admin/media/limits') return Response.json({ imageMaxBytes: 10485760, videoMaxBytes: 104857600, audioMaxBytes: 33554432,
     phpUploadMaxBytes: null, phpPostMaxBytes: null, warnings: [] })
   throw new Error('Unexpected content-editor request: ' + path)
 }) as typeof fetch
@@ -316,6 +318,26 @@ try {
   find<HTMLDialogElement>('dialog[open]').close()
   await settle()
   failMedia = false
+
+  // Audio is a selectable media block; its preview remains independently playable.
+  actions = await menu('.append-content', find('.empty-composer'))
+  await click(find('[data-insert-kind=audio]', actions))
+  const audioDialog = find<HTMLDialogElement>('dialog[open]')
+  assert.ok(audioDialog.textContent?.includes(cs.editorSelectMedia_audio!))
+  const previewAudio = find<HTMLAudioElement>('audio', audioDialog)
+  assert.equal(previewAudio.getAttribute('controls'), '')
+  assert.equal(previewAudio.closest('button'), null, 'Preview playback must not select the media')
+  const selectAudio = [...audioDialog.querySelectorAll<HTMLButtonElement>('button')]
+    .find(button => button.textContent?.includes('Greeting.mp3'))
+  assert.ok(selectAudio)
+  await click(selectAudio)
+  assert.equal(empty.value.length, 1)
+  assert.equal((empty.value as ContentBlock[])[0]?.type, 'audio')
+  assert.equal(find<HTMLAudioElement>('.empty-composer audio').getAttribute('src'),
+    '/training/api/admin/media/' + audioId + '/preview')
+  actions = await menu('.empty-composer .block-actions')
+  await click(find('.remove-block', actions))
+  assert.deepEqual(empty.value, [])
 
   actions = await menu('.block-actions', block('prompt-start'))
   const summary = find<HTMLElement>('summary', actions)

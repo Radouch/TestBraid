@@ -13,9 +13,11 @@ const choice: ChoiceQuestion = {
 }
 const mediaId = '11111111-1111-4111-8111-111111111111'
 const imageId = '22222222-2222-4222-8222-222222222222'
+const audioId = '33333333-3333-4333-8333-333333333333'
 // Descriptions reach learners as the image's alt and the video's accessible name;
 // a description of only spaces counts as none.
 choice.options[1]!.content.push({ id: 'clip', type: 'video', mediaId, alt: '   ' })
+choice.options[0]!.content.push({ id: 'sound', type: 'audio', mediaId: audioId, alt: 'Recording A' })
 choice.options[3]!.content.push({ id: 'image', type: 'image', mediaId: imageId, alt: 'A stop sign' })
 const matching: MatchingQuestion = {
   id: 'matching', type: 'matching', prompt: [text('mp', 'Match the signs')],
@@ -37,7 +39,7 @@ const test = shallowRef<DraftTest>({
     { ...choice, id: 'missing' }, textOnly, { ...textOnly, id: 'last' }],
 })
 const privatePreview = shallowRef(false)
-const mediaUrls = shallowRef({ [mediaId]: '/training/media/example.mp4', [imageId]: '/training/media/example.jpg' })
+const mediaUrls = shallowRef({ [mediaId]: '/training/media/example.mp4', [imageId]: '/training/media/example.jpg', [audioId]: '/training/media/example.mp3' })
 const original = JSON.stringify(test.value)
 const cs = JSON.parse(readFileSync('public/locales/cs.json', 'utf8')) as Record<string, string>
 const i18n = createI18n({ legacy: false, locale: 'cs', fallbackLocale: 'en', messages: {
@@ -120,6 +122,13 @@ try {
   assert.equal(find('video').getAttribute('src'), '/training/media/example.mp4')
   assert.equal(find('img', question('choice')).getAttribute('alt'), 'A stop sign')
   assert.equal(find('video', question('choice')).hasAttribute('aria-label'), false)
+  const audioPlayer = find<HTMLAudioElement>('audio', tile('choice', 'a'))
+  assert.equal(audioPlayer.getAttribute('controls'), '')
+  assert.equal(audioPlayer.getAttribute('src'), '/training/media/example.mp3')
+  assert.equal(audioPlayer.getAttribute('aria-label'), 'Recording A')
+  assert.equal(audioPlayer.closest('button, label'), null)
+  await click(audioPlayer)
+  assert.equal(input('choice', 'a').checked, false, 'Playing audio must not choose an answer')
 
   // Options show a letter; the input's accessible name is "Odpověď A" plus the option content.
   const labelledBy = input('choice', 'a').getAttribute('aria-labelledby')?.split(' ') ?? []

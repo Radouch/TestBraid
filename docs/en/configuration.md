@@ -12,7 +12,7 @@ The supplied file looks like this:
     "name": { "cs": "TestBraid", "en": "TestBraid" },
     "description": { "cs": "…", "en": "An application for creating and taking …" }
   },
-  "uploads": { "maxImageSizeMiB": 10, "maxVideoSizeMiB": 64 },
+  "uploads": { "maxImageSizeMiB": 10, "maxVideoSizeMiB": 64, "maxAudioSizeMiB": 32 },
   "uiLanguages": ["en", "cs"],
   "basePath": "/"
 }
@@ -44,7 +44,7 @@ The interface language does **not** translate tests. Each test has its own conte
 
 ## Upload limits
 
-`uploads.maxImageSizeMiB` and `uploads.maxVideoSizeMiB` set the largest image and video file allowed, in MiB. Your hosting's PHP limits (`upload_max_filesize` and `post_max_size`) may set a lower limit. Raising those is a hosting setting, not a TestBraid one. Limits apply to each file separately, see [Media library](media-library.md).
+`uploads.maxImageSizeMiB`, `uploads.maxVideoSizeMiB` and `uploads.maxAudioSizeMiB` set per-file limits for images, videos and audio, in MiB. Existing configurations without the audio setting use 32 MiB. Your hosting's PHP limits (`upload_max_filesize` and `post_max_size`) may set a lower limit. Raising those is a hosting setting, not a TestBraid one. Limits apply to each file separately, see [Media library](media-library.md).
 
 ## Advanced: installation path and private folder location
 
