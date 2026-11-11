@@ -520,7 +520,7 @@ final class AdminDataRoutes
     {
         // Remove trailing copy numbers instead of producing "Title (2) (1)".
         $base = trim($source->title);
-        $base = preg_replace('/(?: \\([1-9][0-9]*\\))+$/', '', $base) ?? $base;
+        $base = preg_replace('/(?: \([1-9][0-9]*\))+$/', '', $base) ?? $base;
         if ($base === '') $base = 'Test';
 
         $used = [];
