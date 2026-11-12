@@ -1,3 +1,5 @@
+import { lessonName, type LocalizedLesson } from './lesson-names'
+
 export interface PublicTestSummary {
   id: string
   title: string
@@ -7,9 +9,7 @@ export interface PublicTestSummary {
 
 export const PUBLIC_CATALOG_ANCHOR = 'public-catalog-heading'
 
-export interface PublicLesson {
-  id: string
-  name: string
+export interface PublicLesson extends LocalizedLesson {
   tests: PublicTestSummary[]
 }
 
@@ -17,6 +17,8 @@ function isPublicLesson(value: unknown): value is PublicLesson {
   if (value === null || typeof value !== 'object') return false
   const lesson = value as Partial<PublicLesson>
   return typeof lesson.id === 'string' && typeof lesson.name === 'string'
+    && (lesson.names == null || (typeof lesson.names === 'object' && !Array.isArray(lesson.names)
+      && Object.values(lesson.names).every(name => typeof name === 'string')))
     && Array.isArray(lesson.tests) && lesson.tests.every(test => test !== null
       && typeof test === 'object' && typeof test.id === 'string'
       && typeof test.title === 'string' && typeof test.language === 'string'
@@ -42,16 +44,18 @@ export async function fetchPublicCatalog(basePath: string, signal?: AbortSignal)
 export function publicLessonsForLanguage(groups: PublicLesson[], language: string): PublicLesson[] {
   return groups.map(group => ({
     ...group,
+    name: lessonName(group, language),
     tests: group.tests.filter(test => test.language === language),
   })).filter(group => group.tests.length > 0)
 }
 
 /** A lesson name is valid only when the published catalog also lists this test. */
 export function publicLessonForTest(
-  groups: PublicLesson[], test: { id: string; groupId: string },
+  groups: PublicLesson[], test: { id: string; groupId: string }, language?: string,
 ): PublicLesson | undefined {
-  return groups.find(group => group.id === test.groupId
+  const group = groups.find(group => group.id === test.groupId
     && group.tests.some(summary => summary.id === test.id))
+  return group && language ? { ...group, name: lessonName(group, language) } : group
 }
 
 export function publicLessonAnchor(lessonId: string): string {

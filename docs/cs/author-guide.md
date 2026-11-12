@@ -10,11 +10,11 @@ Nová instalace obsahuje dvě publikované **ukázkové lekce**, českou a angli
 
 ## Uspořádání lekcí a testů
 
-**Lekce** sdružuje související testy. Lekce vytváříte a přejmenováváte v přehledu **Editace testů** a podle potřeby měníte jejich pořadí. Lekci, která obsahuje testy, nelze smazat.
+**Lekce** sdružuje související testy. V přehledu **Editace testů** jí můžete zadat názvy v jednotlivých jazycích rozhraní (např. *Lekce 1* česky a *Lesson 1* anglicky). Stačí vyplnit jeden název; chybějící překlady, stejně jako starší lekce s jediným názvem, používají dostupný název. Lekce lze řadit nebo přes **Duplikovat lekci** zkopírovat včetně všech testů. Kopie testů jsou rozpracované a sdílejí původní média. Lekci, která obsahuje testy, nelze smazat.
 
 Vyberte lekci a klikněte na **Nový test**. Nastavte název, nepovinný popis, **Jazyk obsahu** a to, zda se má zobrazovat celkový výsledek testu. Jazyk obsahu vybíráte z jazyků rozhraní webu; předvyplněný je jazyk, ve kterém web právě používáte. Úvodní stránka test ukáže jen návštěvníkům, kteří mají zvolený jeho jazyk. Nový test je **rozpracovaný** a anonymní návštěvníci ho nevidí.
 
-Testy můžete v rámci lekce přeřazovat, existující test duplikovat nebo rozpracovaný test přesunout do jiné lekce. Duplikovaný test používá stejná média; soubory se znovu nenahrávají.
+Testy můžete v rámci lekce přeřazovat, existující test duplikovat nebo rozpracovaný test přesunout do jiné lekce. Názvy testů musejí být jedinečné v rámci lekce a jazyka obsahu (bez ohledu na velikost písmen); různým jazykům stejné názvy nevadí. Názvy lekcí musejí být jedinečné ve všech zobrazovaných jazycích. Duplikovaný test automaticky získá nejbližší volné číslo v názvu v rámci své lekce a jazyka (například `Zvířata (1)`). Název můžete změnit v Nastavení testu. Kopie používá stejná média; soubory se znovu nenahrávají.
 
 ## Úprava testu
 

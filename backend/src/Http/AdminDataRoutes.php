@@ -9,6 +9,8 @@ use Slim\Routing\RouteCollectorProxy;
 use stdClass;
 use TestBraid\Publication\PublicationService;
 use TestBraid\Storage\JsonFileRepository;
+use TestBraid\Storage\LessonNames;
+use TestBraid\Config\InstallationConfig;
 use TestBraid\Validation\SchemaValidator;
 
 /**
@@ -47,41 +49,131 @@ final class AdminDataRoutes
             return ['groups' => $this->orderRecords($this->store()->all('groups'), 'name')];
         }));
 
-        $group->post('/groups', fn (Request $r, Response $p): Response => $this->handle($p, function () use ($r): stdClass {
-            $data = JsonRequest::fields($r, ['name']);
-            $group = (object) [
-                'schemaVersion' => 1,
-                'id' => JsonFileRepository::uuid(),
-                'name' => $data->name,
-                'position' => $this->nextPosition('groups'),
-                'createdAt' => self::now(),
-                'updatedAt' => self::now(),
-            ];
-            if (!is_string($data->name) || trim($data->name) === '') {
-                throw new ApiProblem(422, 'VALIDATION_FAILED', 'Group name is required.');
-            }
-            $this->validate('group', $group);
-            $this->store()->write('groups', $group->id, $group, true);
-            return $group;
-        }, 201));
+        $group->post('/groups', fn (Request $r, Response $p): Response =>
+            $this->handle($p, fn (): stdClass => $this->publisher()->exclusive(function () use ($r): stdClass {
+                $data = JsonRequest::fields($r, [], ['name', 'names']);
+                $names = $this->lessonNamesFromRequest($data);
+                $group = (object) [
+                    'schemaVersion' => 1,
+                    'id' => JsonFileRepository::uuid(),
+                    'name' => $names->fallback,
+                    'position' => $this->nextPosition('groups'),
+                    'createdAt' => self::now(),
+                    'updatedAt' => self::now(),
+                ];
+                if ($names->names !== null) $group->names = $names->names;
+                $this->validate('group', $group);
+                $this->assertUniqueGroup($group);
+                $this->store()->write('groups', $group->id, $group, true);
+                return $group;
+            }), 201)
+        );
 
         $group->patch('/groups/{id}', fn (Request $r, Response $p, array $args): Response =>
-            $this->handle($p, function () use ($r, $args): stdClass {
+            $this->handle($p, fn (): stdClass => $this->publisher()->exclusive(function () use ($r, $args): stdClass {
                 $id = $this->id($args['id']);
                 $existing = $this->store()->get('groups', $id);
-                if ($existing === null) {
-                    throw new ApiProblem(404, 'NOT_FOUND', 'Group not found.');
-                }
-                $data = JsonRequest::fields($r, ['name']);
-                if (!is_string($data->name) || trim($data->name) === '') {
-                    throw new ApiProblem(422, 'VALIDATION_FAILED', 'Group name is required.');
-                }
-                $existing->name = $data->name;
+                if ($existing === null) throw new ApiProblem(404, 'NOT_FOUND', 'Group not found.');
+                $data = JsonRequest::fields($r, [], ['name', 'names']);
+                $names = $this->lessonNamesFromRequest($data);
+                $changed = $existing->name !== $names->fallback
+                    || json_encode($existing->names ?? null) !== json_encode($names->names);
+                $existing->name = $names->fallback;
+                if ($names->names === null) unset($existing->names);
+                else $existing->names = $names->names;
                 $existing->updatedAt = self::now();
                 $this->validate('group', $existing);
+                // Existing duplicate data is editable if only unrelated fields change.
+                if ($changed) $this->assertUniqueGroup($existing, $id);
                 $this->store()->write('groups', $id, $existing, false);
                 return $existing;
-            })
+            }))
+        );
+
+        // Copy the lesson and all its tests as independent drafts. Originals,
+        // media assignments and published media files are never modified.
+        $group->post('/groups/{id}/duplicate', fn (Request $r, Response $p, array $args): Response =>
+            $this->handle($p, fn (): stdClass => $this->publisher()->exclusive(function () use ($args): stdClass {
+                $sourceId = $this->id($args['id']);
+                $source = $this->store()->get('groups', $sourceId);
+                if ($source === null) throw new ApiProblem(404, 'NOT_FOUND', 'Group not found.');
+                $allGroups = $this->store()->all('groups');
+                $uiLanguages = $this->uiLanguages();
+                $newGroup = clone $source;
+                $newGroup->id = JsonFileRepository::uuid();
+                for ($number = 1; ; $number++) {
+                    $newGroup->name = LessonNames::numbered($source->name, $number);
+                    if (isset($source->names)) {
+                        $newGroup->names = new stdClass();
+                        foreach ($source->names as $language => $title) {
+                            $newGroup->names->$language = LessonNames::numbered($title, $number);
+                        }
+                        $newGroup->name = LessonNames::fallbackFromNames($newGroup->names);
+                    }
+                    try {
+                        LessonNames::assertUnique($newGroup, $allGroups, $uiLanguages);
+                        break;
+                    } catch (ApiProblem $problem) {
+                        if ($problem->errorCode !== 'GROUP_NAME_EXISTS') throw $problem;
+                    }
+                }
+                $newGroup->position = $this->nextPosition('groups');
+                $newGroup->createdAt = self::now();
+                $newGroup->updatedAt = self::now();
+                $this->validate('group', $newGroup);
+
+                $sourceTests = array_values(array_filter($this->store()->all('tests'),
+                    static fn (stdClass $test): bool => $test->groupId === $sourceId));
+                $sourceTests = $this->orderRecords($sourceTests, 'title');
+                $copies = [];
+                $used = [];
+                foreach ($sourceTests as $position => $sourceTest) {
+                    $copy = clone $sourceTest;
+                    $copy->id = JsonFileRepository::uuid();
+                    $copy->groupId = $newGroup->id;
+                    $copy->status = 'draft';
+                    $copy->publishedAt = null;
+                    $copy->position = $position;
+                    $copy->createdAt = self::now();
+                    $copy->updatedAt = self::now();
+                    $key = $copy->language . ':' . LessonNames::key($copy->title);
+                    if (isset($used[$key])) {
+                        $originalTitle = $copy->title !== '' ? $copy->title : 'Test';
+                        for ($n = 1; ; $n++) {
+                            $candidate = LessonNames::numbered($originalTitle, $n);
+                            if (!isset($used[$copy->language . ':' . LessonNames::key($candidate)])) {
+                                $copy->title = $candidate;
+                                break;
+                            }
+                        }
+                    }
+                    $used[$copy->language . ':' . LessonNames::key($copy->title)] = true;
+                    $this->validate('test', $copy);
+                    $this->checkDraft($copy);
+                    $copies[] = $copy;
+                }
+
+                $created = [];
+                try {
+                    $this->store()->write('groups', $newGroup->id, $newGroup, true);
+                    $created[] = ['groups', $newGroup->id];
+                    foreach ($copies as $copy) {
+                        $this->store()->write('tests', $copy->id, $copy, true);
+                        $created[] = ['tests', $copy->id];
+                    }
+                } catch (\Throwable $failure) {
+                    // There is no multi-file transaction in JSON storage.
+                    // Roll back every created entity on ordinary write failures.
+                    foreach (array_reverse($created) as [$kind, $id]) {
+                        try { $this->store()->delete($kind, $id); }
+                        catch (\Throwable $cleanup) {
+                            error_log('TestBraid lesson duplicate rollback failed: ' . get_class($cleanup));
+                        }
+                    }
+                    throw $failure;
+                }
+                return $newGroup;
+            }), 201)
         );
 
         // Never cascade-delete lesson content: require the group to be empty.
@@ -153,6 +245,7 @@ final class AdminDataRoutes
             ];
             $this->validate('test', $test);
             $this->checkDraft($test);
+            $this->assertUniqueTest($test);
             $this->store()->write('tests', $test->id, $test, true);
             return $test;
             })
@@ -208,7 +301,7 @@ final class AdminDataRoutes
                 $this->checkGroup($source->groupId);
                 $copy = clone $source;
                 $copy->id = JsonFileRepository::uuid();
-                $copy->title = $source->title;
+                $copy->title = $this->duplicateTestTitle($source);
                 $copy->status = 'draft';
                 $copy->position = $this->nextPosition('tests', $copy->groupId);
                 $copy->publishedAt = null;
@@ -288,6 +381,10 @@ final class AdminDataRoutes
                 }
                 $this->validate('test', $test);
                 $this->checkDraft($test);
+                if ($test->title !== $previous->title || $test->groupId !== $previous->groupId
+                    || $test->language !== $previous->language) {
+                    $this->assertUniqueTest($test, $id);
+                }
                 if ($previous->status === 'published') {
                     return $this->publisher()->replacePublished($test);
                 }
@@ -508,6 +605,68 @@ final class AdminDataRoutes
                 throw new ApiProblem(422, 'INVALID_ORDER', 'Unknown or repeated record ID in order.');
             }
             $seen[$id] = true;
+        }
+    }
+
+    /** @return list<string> */
+    private function uiLanguages(): array
+    {
+        return InstallationConfig::publicConfiguration($this->backendRoot)['uiLanguages'];
+    }
+
+    /** Accept old one-name API clients, but store localized names for new forms. */
+    private function lessonNamesFromRequest(stdClass $data): stdClass
+    {
+        $hasNames = property_exists($data, 'names');
+        $hasName = property_exists($data, 'name');
+        if ($hasNames === $hasName) {
+            throw new ApiProblem(422, 'VALIDATION_FAILED', 'Provide either name or names.');
+        }
+        if ($hasNames) {
+            $names = LessonNames::fromInput($data->names);
+            foreach ($names as $language => $_) {
+                if (!in_array($language, $this->uiLanguages(), true)) {
+                    throw new ApiProblem(422, 'VALIDATION_FAILED', 'Unsupported lesson language.');
+                }
+            }
+            return (object) ['names' => $names, 'fallback' => LessonNames::fallbackFromNames($names)];
+        }
+        if (!is_string($data->name) || trim($data->name) === '') {
+            throw new ApiProblem(422, 'VALIDATION_FAILED', 'Group name is required.');
+        }
+        return (object) ['names' => null, 'fallback' => trim($data->name)];
+    }
+
+    private function assertUniqueGroup(stdClass $candidate, ?string $excludeId = null): void
+    {
+        LessonNames::assertUnique($candidate, $this->store()->all('groups'), $this->uiLanguages(), $excludeId);
+    }
+
+    private function assertUniqueTest(stdClass $candidate, ?string $excludeId = null): void
+    {
+        if (trim($candidate->title) === '') return;
+        $key = LessonNames::key($candidate->title);
+        foreach ($this->store()->all('tests') as $test) {
+            if ($test->id !== $excludeId && $test->groupId === $candidate->groupId
+                && $test->language === $candidate->language
+                && LessonNames::key($test->title) === $key) {
+                throw new ApiProblem(409, 'TEST_TITLE_EXISTS', 'A test with this title already exists in this lesson and language.');
+            }
+        }
+    }
+
+    /** Copy suffixes are scoped to the lesson AND content language. */
+    private function duplicateTestTitle(stdClass $source): string
+    {
+        $used = [];
+        foreach ($this->store()->all('tests') as $test) {
+            if ($test->groupId === $source->groupId && $test->language === $source->language) {
+                $used[LessonNames::key($test->title)] = true;
+            }
+        }
+        for ($number = 1; ; $number++) {
+            $candidate = LessonNames::numbered($source->title !== '' ? $source->title : 'Test', $number);
+            if (!isset($used[LessonNames::key($candidate)])) return $candidate;
         }
     }
 

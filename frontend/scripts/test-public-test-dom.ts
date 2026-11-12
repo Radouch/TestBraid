@@ -29,7 +29,7 @@ globalThis.fetch = (async (input: string | URL | Request) => {
   const path = String(input).replace('/training/api/', '')
   if (path === 'public/catalog') {
     return catalogAvailable
-      ? Response.json({ groups: [{ id: 'lesson-1', name: 'Ukázková lekce', tests: [
+      ? Response.json({ groups: [{ id: 'lesson-1', name: 'Ukázková lekce', names: { cs: 'Ukázková lekce', en: 'Sample lesson' }, tests: [
         { id: 'shapes', title: 'Tvary', language: 'cs', questionCount: 1 },
         { id: 'pairs', title: 'Dvojice s velmi dlouhým názvem, který se na telefonu zalomí', language: 'cs', questionCount: 2 },
       ] }] })
@@ -95,6 +95,11 @@ try {
   assert.equal(backNavigation().length, 1, 'One way back above the test, none below it')
   const back = find<HTMLAnchorElement>('a', backNavigation()[0]!)
   assert.equal(back.textContent?.trim(), 'Ukázková lekce')
+  i18n.global.locale.value = 'en'
+  await settle()
+  assert.equal(back.textContent?.trim(), 'Sample lesson', 'Public lesson follows interface language')
+  i18n.global.locale.value = 'cs'
+  await settle()
   assert.ok(back.getAttribute('href')?.endsWith(publicLessonHash('lesson-1')))
   assert.equal(occurrences('Lekce:'), 0, 'No separate "Lesson:" line')
   assert.equal(occurrences(cs.runnerNoStorage!), 1)

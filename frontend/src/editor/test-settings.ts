@@ -1,6 +1,7 @@
+import type { LocalizedLesson } from '../lesson-names'
 import { showsOverallScore, type DraftTest, type Question } from './model'
 
-export interface EditorLesson { id: string; name: string }
+export interface EditorLesson extends LocalizedLesson {}
 export interface TestSettings {
   groupId: string
   title: string

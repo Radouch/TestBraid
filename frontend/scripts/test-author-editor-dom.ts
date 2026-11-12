@@ -30,7 +30,7 @@ const fixture: DraftTest = {
 const stored: Record<string, DraftTest> = { draft: structuredClone(fixture), other: { ...structuredClone(fixture), id: 'other', title: 'Other test', groupId: 'b', language: 'de' } }
 // The site's interface languages, as loadInterfaceTranslations() sets them at startup.
 languageOptions.value = [{ code: 'en', label: 'English' }, { code: 'cs', label: 'Čeština' }]
-const lessons = [{ id: 'a', name: 'Lesson A' }, { id: 'b', name: 'Lesson B' }]
+const lessons: Array<{ id: string; name: string; names?: Record<string, string> }> = [{ id: 'a', name: 'Lesson A' }, { id: 'b', name: 'Lesson B' }]
 const calls: Array<{ method: string; path: string; body?: Record<string, unknown> }> = []
 let authenticated = true
 let holdLessons = true
@@ -61,14 +61,15 @@ globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) =>
   calls.push({ method, path, body })
   if (path === 'auth/session') return Response.json({ authenticated, csrfToken: 'session-csrf' })
   if (path === 'admin/groups') {
-    if (method === 'POST') { const group = { id: 'new-lesson', name: String(body!.name) }; lessons.push(group); return Response.json(group) }
+    if (method === 'POST') { const names = body!.names as Record<string, string>; const group = { id: 'new-lesson', name: Object.values(names)[0]!, names }; lessons.push(group); return Response.json(group) }
     if (holdLessons) return new Promise<Response>(resolve => { resolveLessons = resolve })
     return failLessons ? Response.json({}, { status: 503 }) : Response.json({ groups: lessons })
   }
   if (path.startsWith('admin/groups/') && method === 'PATCH') {
     if (failRename) return Response.json({ error: { code: 'UNAVAILABLE' } }, { status: 503 })
     const group = lessons.find(item => item.id === path.split('/').at(-1))!
-    group.name = String(body!.name)
+    group.names = body!.names as Record<string, string>
+    group.name = Object.values(group.names)[0]!
     return Response.json(group)
   }
   if (path === 'admin/tests/readiness') return Response.json({ tests: Object.fromEntries(Object.keys(stored).map(id => [id, { ready: true, issues: [] }])) })
@@ -299,17 +300,19 @@ try {
   await click(renameButton)
   const lessonDialog = find<HTMLDialogElement>('dialog[aria-labelledby=lesson-dialog-heading]')
   assert.ok(lessonDialog.open)
-  assert.equal(document.activeElement, find('#lesson-dialog-name'))
-  await fill('#lesson-dialog-name', 'Renamed lesson')
+  assert.equal(document.activeElement, find('#lesson-dialog-name-cs'))
+  await fill('#lesson-dialog-name-cs', 'Renamed lesson')
   failRename = true
   await submit(find<HTMLFormElement>('form', lessonDialog))
   assert.ok(lessonDialog.open)
   assert.ok(lessonDialog.querySelector('[role=alert]'))
-  assert.equal(find<HTMLInputElement>('#lesson-dialog-name').value, 'Renamed lesson')
+  assert.equal(find<HTMLInputElement>('#lesson-dialog-name-cs').value, 'Renamed lesson')
   failRename = false
   await submit(find<HTMLFormElement>('form', lessonDialog))
   assert.equal(lessonDialog.open, false)
   assert.ok(find('#tests-heading').textContent?.includes('Renamed lesson'))
+  assert.deepEqual(calls.find(call => call.method === 'PATCH' && call.path === 'admin/groups/b')?.body?.names,
+    { cs: 'Renamed lesson' })
   assert.equal(document.activeElement, renameButton)
   const newButton = [...host.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.includes(cs.adminNewTest!))!
   // A new test starts in the interface language the author is using, not a fixed one.
@@ -348,11 +351,13 @@ try {
   const addLesson = [...host.querySelectorAll<HTMLButtonElement>('button')]
     .find(button => button.textContent?.includes(cs.catalogAddGroup!))!
   await click(addLesson)
-  await fill('#lesson-dialog-name', 'New lesson')
+  await fill('#lesson-dialog-name-cs', 'New lesson')
   await submit(find<HTMLFormElement>('dialog[aria-labelledby=lesson-dialog-heading] form'))
   assert.equal(router.currentRoute.value.query.lesson, 'new-lesson')
   assert.ok(find('#tests-heading').textContent?.includes('New lesson'))
   assert.equal(calls.filter(call => call.method === 'POST' && call.path === 'admin/groups').length, 1)
+  assert.deepEqual(calls.find(call => call.method === 'POST' && call.path === 'admin/groups')?.body?.names,
+    { cs: 'New lesson' })
   console.log('PASS AUTHOR DOM: duplication preserves questions/scoring and new lessons use the same focused dialog')
 
   await router.push('/admin/tests/created/questions?tab=settings&lang=cs')

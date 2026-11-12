@@ -193,7 +193,7 @@ check '.questions[0].prompt[0].type == "text"'
 expect 200 "$HOST/api/admin/tests/readiness"
 check --arg ID "$TEST_ID" '.tests[$ID].ready == true and (.tests[$ID].issues | length) == 0'
 expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
-check --arg ID "$TEST_ID" '.id != $ID and .status == "draft" and .showOverallScore == false and (.questions | length) == 1'
+check --arg ID "$TEST_ID" '.id != $ID and .title == "Updated test (1)" and .status == "draft" and .showOverallScore == false and (.questions | length) == 1'
 COPY_ID="$(jq -r '.id' "$TEMP/body")"
 expect 200 "$HOST/api/admin/tests"
 check --arg ID "$COPY_ID" '([.tests[].id] | index($ID)) != null'
@@ -210,6 +210,166 @@ expect 200 "$HOST/api/admin/groups/order" -X PUT -H "X-CSRF-Token: $CSRF" \
 check --arg ID "$GROUP" '.groups[0].id == $ID and .groups[0].position == 0'
 expect 200 "$HOST/api/admin/tests/$COPY_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
 check '.deleted == true'
+
+# Repeated duplications use the lowest free suffix in the same lesson.
+expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Updated test (1)"'
+COPY_ONE="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Updated test (2)"'
+COPY_TWO="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$COPY_TWO/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Updated test (3)"'
+COPY_THREE="$(jq -r '.id' "$TEMP/body")"
+
+# Gaps are reused, even when duplicating a previously numbered copy.
+expect 200 "$HOST/api/admin/tests/$COPY_TWO" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 201 "$HOST/api/admin/tests/$COPY_THREE/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Updated test (2)"'
+GAP_COPY="$(jq -r '.id' "$TEMP/body")"
+
+# Titles in another language in the same lesson do not occupy copy suffixes.
+jq '.title = "Updated test (4)" | .language = "cs"' "$TEMP/create.json" > "$TEMP/czech-title.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/czech-title.json"
+CZECH_TEST="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Updated test (4)"'
+COPY_FIVE="$(jq -r '.id' "$TEMP/body")"
+for id in "$COPY_ONE" "$COPY_THREE" "$GAP_COPY" "$CZECH_TEST" "$COPY_FIVE"; do
+  expect 200 "$HOST/api/admin/tests/$id" -X DELETE -H "X-CSRF-Token: $CSRF"
+done
+
+# Other lessons have independent title sequences.
+expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"name":"Other lesson"}'
+OTHER_GROUP="$(jq -r '.id' "$TEMP/body")"
+jq --arg group "$OTHER_GROUP" '.groupId = $group | .title = "Updated test (1)"' \
+  "$TEMP/create.json" > "$TEMP/other-lesson.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/other-lesson.json"
+OTHER_TEST="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$TEST_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Updated test (1)"'
+INDEPENDENT_COPY="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/tests/$INDEPENDENT_COPY" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/tests/$OTHER_TEST" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/groups/$OTHER_GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+
+# The 250-character title limit counts Unicode characters, not UTF-8 bytes.
+LONG_TITLE="$(printf 'ž%.0s' {1..250})"
+LONG_PREFIX="$(printf 'ž%.0s' {1..246})"
+jq --arg title "$LONG_TITLE" '.title = $title' "$TEMP/create.json" > "$TEMP/long-title.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/long-title.json"
+LONG_ID="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$LONG_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check --arg prefix "$LONG_PREFIX" '.title == ($prefix + " (1)") and (.title | length) == 250'
+LONG_COPY="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$LONG_COPY/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check --arg prefix "$LONG_PREFIX" '.title == ($prefix + " (2)") and (.title | length) == 250'
+LONG_COPY_TWO="$(jq -r '.id' "$TEMP/body")"
+for id in "$LONG_COPY_TWO" "$LONG_COPY" "$LONG_ID"; do
+  expect 200 "$HOST/api/admin/tests/$id" -X DELETE -H "X-CSRF-Token: $CSRF"
+done
+
+# An untitled draft still gets a readable title when duplicated.
+jq '.title = ""' "$TEMP/create.json" > "$TEMP/untitled.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/untitled.json"
+UNTITLED_ID="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/tests/$UNTITLED_ID/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.title == "Test (1)"'
+UNTITLED_COPY="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/tests/$UNTITLED_COPY" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/tests/$UNTITLED_ID" -X DELETE -H "X-CSRF-Token: $CSRF"
+
+# Name collisions are checked by lesson + content language, not globally.
+jq '.title = "updated TEST"' "$TEMP/create.json" > "$TEMP/collision-test.json"
+expect 409 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/collision-test.json"
+check '.error.code == "TEST_TITLE_EXISTS"'
+jq '.title = "Updated test" | .language = "cs"' "$TEMP/create.json" > "$TEMP/allowed-czech.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/allowed-czech.json"
+CS_TEST="$(jq -r '.id' "$TEMP/body")"
+# Moving between languages or lessons is also checked, not just renaming.
+jq '.title = "Updated test" | .language = "cs"' "$TEMP/update.json" > "$TEMP/collision-update.json"
+expect 409 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/collision-update.json"
+check '.error.code == "TEST_TITLE_EXISTS"'
+expect 200 "$HOST/api/admin/tests/$TEST_ID"
+check '.language == "en" and .title == "Updated test"'
+
+# Uniqueness is enforced for legacy and multilingual lesson records.
+expect 409 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"name":"renamed LESSON"}'
+check '.error.code == "GROUP_NAME_EXISTS"'
+expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"names":{"cs":"Lekce 1","en":"Lesson 1"}}'
+check '.name == "Lekce 1" and .names.cs == "Lekce 1" and .names.en == "Lesson 1"'
+BILINGUAL_GROUP="$(jq -r '.id' "$TEMP/body")"
+expect 409 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"names":{"cs":"jiná lekce","en":"LESSON 1"}}'
+check '.error.code == "GROUP_NAME_EXISTS"'
+expect 409 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"names":{"cs":"LEKCE 1"}}'
+check '.error.code == "GROUP_NAME_EXISTS"'
+expect 422 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"names":{}}'
+check '.error.code == "VALIDATION_FAILED"'
+expect 200 "$HOST/api/admin/groups/$BILINGUAL_GROUP" -X PATCH -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"names":{"cs":"Nová lekce","en":"New lesson"}}'
+check '.names.cs == "Nová lekce" and .names.en == "New lesson"'
+expect 409 "$HOST/api/admin/groups/$BILINGUAL_GROUP" -X PATCH -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"names":{"cs":"Renamed lesson","en":"Other title"}}'
+check '.error.code == "GROUP_NAME_EXISTS"'
+expect 200 "$HOST/api/admin/groups"
+check --arg id "$BILINGUAL_GROUP" 'any(.groups[]; .id == $id and .names.en == "New lesson")'
+
+# Copying a localized lesson creates matching numbered translations and tests.
+expect 201 "$HOST/api/admin/groups/$BILINGUAL_GROUP/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.name == "Nová lekce (1)" and .names.cs == "Nová lekce (1)" and .names.en == "New lesson (1)"'
+LESSON_COPY="$(jq -r '.id' "$TEMP/body")"
+expect 201 "$HOST/api/admin/groups/$BILINGUAL_GROUP/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.names.cs == "Nová lekce (2)" and .names.en == "New lesson (2)"'
+LESSON_COPY_TWO="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/groups/$LESSON_COPY_TWO" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/groups/$LESSON_COPY" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/groups/$BILINGUAL_GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+
+# A lesson copy preserves test titles by language, order and media references.
+expect 201 "$HOST/api/admin/groups/$GROUP/duplicate" -X POST -H "X-CSRF-Token: $CSRF"
+check '.name == "Renamed lesson (1)"'
+CLONED_GROUP="$(jq -r '.id' "$TEMP/body")"
+expect 200 "$HOST/api/admin/tests?groupId=$CLONED_GROUP"
+check --arg group "$CLONED_GROUP" '(.tests | length) == 2 and
+  any(.tests[]; .groupId == $group and .language == "en" and .title == "Updated test" and .status == "draft" and (.questions | length) == 1) and
+  any(.tests[]; .groupId == $group and .language == "cs" and .title == "Updated test" and .status == "draft")'
+CLONED_TESTS="$(jq -r '[.tests[].id] | join(" ")' "$TEMP/body")"
+for id in $CLONED_TESTS; do
+  expect 200 "$HOST/api/admin/tests/$id" -X DELETE -H "X-CSRF-Token: $CSRF"
+done
+expect 200 "$HOST/api/admin/groups/$CLONED_GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+
+# A conflicting destination title blocks a move and leaves source data intact.
+expect 201 "$HOST/api/admin/groups" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" -d '{"name":"Move target"}'
+MOVE_GROUP="$(jq -r '.id' "$TEMP/body")"
+jq --arg id "$MOVE_GROUP" '.groupId = $id | .title = "Updated test"' \
+  "$TEMP/create.json" > "$TEMP/move-target.json"
+expect 201 "$HOST/api/admin/tests" -X POST -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/move-target.json"
+MOVE_TEST="$(jq -r '.id' "$TEMP/body")"
+jq --arg id "$MOVE_GROUP" '.groupId = $id' "$TEMP/update.json" > "$TEMP/move-attempt.json"
+expect 409 "$HOST/api/admin/tests/$TEST_ID" -X PUT -H 'Content-Type: application/json' \
+  -H "X-CSRF-Token: $CSRF" --data-binary "@$TEMP/move-attempt.json"
+check '.error.code == "TEST_TITLE_EXISTS"'
+expect 200 "$HOST/api/admin/tests/$TEST_ID"
+check --arg group "$GROUP" '.groupId == $group'
+expect 200 "$HOST/api/admin/tests/$MOVE_TEST" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/groups/$MOVE_GROUP" -X DELETE -H "X-CSRF-Token: $CSRF"
+expect 200 "$HOST/api/admin/tests/$CS_TEST" -X DELETE -H "X-CSRF-Token: $CSRF"
 
 # Deletions must be protected by auth and CSRF and must never
 # silently cascade: a lesson with even one draft test cannot be deleted.
